@@ -1,0 +1,55 @@
+@use 'tokens' as *;
+
+.root {
+  padding: 12px 0;
+}
+
+.twoColumns {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mainColumn {
+  min-width: 0; // prevent overflow
+}
+
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 80px;
+
+  @media (max-width: 1100px) {
+    position: static;
+  }
+}
+
+.separator {
+  border-top: 1px solid $border;
+  margin: 16px 0;
+}
+
+// RTE display overrides (scoped)
+.rteDisplay {
+  :global {
+    blockquote {
+      border-left: 3px solid $blue;
+      margin: 8px 0;
+      padding: 8px 16px;
+      background: $bg;
+      border-radius: 0 $radius-sm $radius-sm 0;
+    }
+    img { max-width: 100%; height: auto; border-radius: $radius; margin: 8px 0; }
+    a { color: $blue; text-decoration: underline; }
+    ul, ol { margin: 8px 0; padding-left: 24px; }
+    li { margin: 2px 0; }
+    p { margin: 0 0 6px 0; }
+  }
+}

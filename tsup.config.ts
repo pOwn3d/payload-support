@@ -1,0 +1,82 @@
+import { defineConfig, type Options } from 'tsup'
+import { writeFileSync, readFileSync, rmSync } from 'fs'
+
+const CLIENT_BANNER = '"use client";\n'
+
+const serverExternals = [
+  'payload',
+  'payload/shared',
+  '@payloadcms/ui',
+  '@payloadcms/translations',
+  '@payloadcms/next',
+  '@payloadcms/next/templates',
+  'react',
+  'react-dom',
+  'react/jsx-runtime',
+  'next',
+  'next/navigation',
+  'next/link',
+  'next/headers',
+  '@consilioweb/payload-support',
+  '@consilioweb/payload-support/client',
+  '@anthropic-ai/sdk',
+  'openai',
+]
+
+const clientExternals = [
+  'payload',
+  'payload/shared',
+  '@payloadcms/ui',
+  '@payloadcms/translations',
+  '@payloadcms/next',
+  '@payloadcms/next/templates',
+  'react',
+  'react-dom',
+  'react/jsx-runtime',
+  'next',
+  'next/navigation',
+  'next/link',
+  '@consilioweb/payload-support',
+  '@consilioweb/payload-support/client',
+]
+
+rmSync('dist', { recursive: true, force: true })
+
+const sharedConfig: Partial<Options> = {
+  format: ['esm', 'cjs'],
+  dts: true,
+  sourcemap: false,
+  splitting: false,
+  treeshake: true,
+  target: 'es2022',
+  external: serverExternals,
+  clean: false,
+}
+
+export default defineConfig([
+  // Server entry — plugin + collections + types
+  {
+    ...sharedConfig,
+    entry: { index: 'src/index.ts' },
+  },
+  // Client entry — React components
+  {
+    ...sharedConfig,
+    external: clientExternals,
+    entry: { client: 'src/client.ts' },
+    onSuccess: async () => {
+      for (const file of ['dist/client.js', 'dist/client.cjs']) {
+        try {
+          const content = readFileSync(file, 'utf-8')
+          writeFileSync(file, CLIENT_BANNER + content)
+        } catch { /* ignore if file doesn't exist */ }
+      }
+      console.log('✓ Prepended "use client" to client bundles')
+    },
+  },
+  // Views entry — server components
+  {
+    ...sharedConfig,
+    entry: { views: 'src/views.ts' },
+  },
+])

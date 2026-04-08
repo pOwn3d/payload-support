@@ -1,0 +1,311 @@
+// BillingView — Clean admin aesthetic, 2026
+
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+// Header
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--theme-text);
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--theme-elevation-500);
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+// Filters
+.filters {
+  padding: 16px;
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  background: var(--theme-elevation-100);
+  margin-bottom: 20px;
+}
+
+.quickPeriod {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filterRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--theme-elevation-500);
+  margin-bottom: 4px;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-300);
+  font-size: 14px;
+  background: var(--theme-elevation-100);
+  color: var(--theme-text);
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+}
+
+.select {
+  composes: input;
+  min-width: 180px;
+}
+
+.rateRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rateInput {
+  composes: input;
+  width: 80px;
+}
+
+.rateUnit {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--theme-text);
+}
+
+// Buttons
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-300);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 100ms, background-color 100ms;
+
+  &:hover { opacity: 0.9; }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.btnPrimary { composes: btn; background: #2563eb; }
+.btnSecondary { composes: btn; background: var(--theme-elevation-100); color: var(--theme-text); }
+.btnAmber { composes: btn; background: #d97706; }
+.btnMuted { composes: btn; background: var(--theme-elevation-150); color: var(--theme-text); }
+.btnGreen { composes: btn; background: #16a34a; }
+.btnSuccess { composes: btn; background: #22c55e; }
+
+// Empty state
+.empty {
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-500);
+  font-size: 14px;
+}
+
+// Project group card
+.groupCard {
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.groupHeader {
+  padding: 12px 16px;
+  background: var(--theme-elevation-150);
+  border-bottom: 1px solid var(--theme-elevation-300);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.groupName {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--theme-text);
+}
+
+.groupClient {
+  color: var(--theme-elevation-500);
+  margin-left: 10px;
+  font-size: 13px;
+}
+
+.groupTotals {
+  text-align: right;
+}
+
+.groupDuration {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--theme-text);
+}
+
+.groupAmount {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--theme-text);
+}
+
+.groupAmountBilled {
+  composes: groupAmount;
+  color: #16a34a;
+}
+
+.groupAmountStrike {
+  font-size: 11px;
+  color: var(--theme-elevation-500);
+  text-decoration: line-through;
+}
+
+// Table
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.th {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  color: var(--theme-elevation-500);
+  background: var(--theme-elevation-50);
+  border-bottom: 1px solid var(--theme-elevation-300);
+}
+
+.thLeft { composes: th; text-align: left; }
+.thCheckbox { composes: th; width: 40px; }
+
+.td {
+  padding: 8px 12px;
+  text-align: center;
+  vertical-align: top;
+  color: var(--theme-text);
+}
+
+.tdLeft { composes: td; text-align: left; }
+
+.tableRow {
+  border-bottom: 1px solid var(--theme-elevation-200);
+  transition: opacity 200ms, background-color 200ms;
+}
+
+.tableRowBilled {
+  composes: tableRow;
+  background: var(--theme-elevation-100);
+  opacity: 0.4;
+}
+
+.tableRowEven {
+  background: var(--theme-elevation-100);
+}
+
+.tableRowOdd {
+  background: var(--theme-elevation-50);
+}
+
+.checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.ticketLink {
+  color: var(--theme-text);
+  text-decoration: underline;
+  font-weight: 700;
+
+  &:hover { color: #2563eb; }
+}
+
+.strikethrough {
+  text-decoration: line-through;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.secondary {
+  color: var(--theme-elevation-500);
+}
+
+.billedAmount {
+  font-weight: 700;
+  color: #16a34a;
+}
+
+// Grand total
+.grandTotal {
+  padding: 16px;
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  background: var(--theme-elevation-150);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.totalMeta {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+}
+
+.totalChecked {
+  margin-left: 8px;
+  color: #16a34a;
+}
+
+.totalAmount {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.totalActions {
+  display: flex;
+  gap: 8px;
+}

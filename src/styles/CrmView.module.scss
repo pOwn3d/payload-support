@@ -1,0 +1,554 @@
+// CRM View — Clean SaaS design, 2026
+
+$font-stack: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+$font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+$accent: #2563eb;
+$green: #16a34a;
+$orange: #ea580c;
+$amber: #d97706;
+$red: #dc2626;
+
+// Layout
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  font-family: $font-stack;
+}
+
+// Header
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--theme-text);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+  font-weight: 400;
+}
+
+// Grid layout
+.grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Cards
+.card {
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 10px;
+  background: var(--theme-elevation-0, #fff);
+}
+
+// Sidebar: client list
+.sidebar {
+  composes: card;
+  overflow: hidden;
+}
+
+.sidebarSearch {
+  padding: 12px;
+  border-bottom: 1px solid var(--theme-elevation-200);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-0, #fff);
+  color: var(--theme-text);
+  font-size: 13px;
+  font-family: $font-stack;
+  transition: border-color 150ms, box-shadow 150ms;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $accent;
+    box-shadow: 0 0 0 3px rgba($accent, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--theme-elevation-400);
+  }
+}
+
+.clientList {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.clientItem {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--theme-elevation-100);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 80ms;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.clientItemActive {
+  background: var(--theme-elevation-50);
+  border-left-color: $accent;
+}
+
+.clientCompany {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.clientName {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+.clientEmail {
+  font-size: 11px;
+  color: var(--theme-elevation-400);
+}
+
+// Empty / loading states
+.emptyState {
+  padding: 24px;
+  text-align: center;
+  color: var(--theme-elevation-400);
+  font-size: 13px;
+}
+
+.placeholder {
+  composes: card;
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+}
+
+.loadingCard {
+  composes: card;
+  padding: 40px;
+}
+
+// Detail panel
+.detailStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// Client header card
+.clientHeader {
+  composes: card;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.clientHeaderName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.clientHeaderContact {
+  font-size: 14px;
+  color: var(--theme-elevation-500);
+  margin-top: 4px;
+}
+
+.clientContactRow {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--theme-text);
+}
+
+.clientNotes {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--theme-elevation-50);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  font-style: italic;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+}
+
+// Buttons
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: $font-stack;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 100ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btnPrimary {
+  composes: btn;
+  background: $accent;
+  color: #fff;
+  border-color: $accent;
+
+  &:hover {
+    background: darken($accent, 8%);
+  }
+}
+
+.btnWarning {
+  composes: btn;
+  background: $orange;
+  color: #fff;
+  border-color: $orange;
+
+  &:hover {
+    background: darken($orange, 8%);
+  }
+}
+
+// Success toast
+.successBanner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+// Merge panel
+.mergePanel {
+  padding: 16px;
+  border-radius: 10px;
+  background: #fff7ed;
+  border: 2px solid $orange;
+
+  // Dark mode override
+  @media (prefers-color-scheme: dark) {
+    background: rgba($orange, 0.06);
+  }
+}
+
+.mergePanelTitle {
+  font-size: 13px;
+  font-weight: 800;
+  color: $orange;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+.mergePanelDesc {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.mergeInput {
+  composes: searchInput;
+  margin-bottom: 8px;
+}
+
+.mergeResultList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mergeResultItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-0, #fff);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-family: $font-stack;
+  width: 100%;
+  transition: background 80ms;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+}
+
+.mergeResultEmail {
+  color: var(--theme-elevation-400);
+  font-size: 12px;
+}
+
+.mergeResultName {
+  color: var(--theme-elevation-500);
+  margin-left: 8px;
+}
+
+.mergeEmpty {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  font-style: italic;
+  margin: 0;
+}
+
+// Stats grid
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.statCard {
+  composes: card;
+  padding: 10px 12px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--theme-elevation-500);
+  letter-spacing: 0.03em;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.statAccent   { color: $accent; }
+.statGreen    { color: $green; }
+.statOrange   { color: $orange; }
+.statAmber    { color: $amber; }
+
+// Section card with content
+.sectionCard {
+  composes: card;
+  padding: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--theme-text);
+  letter-spacing: 0.02em;
+}
+
+.sectionLink {
+  font-size: 12px;
+  font-weight: 700;
+  color: $accent;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Projects list
+.projectList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.projectChip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1.5px solid var(--theme-elevation-200);
+  text-decoration: none;
+  color: var(--theme-text);
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color 100ms;
+
+  &:hover {
+    border-color: var(--theme-elevation-400);
+  }
+}
+
+// Badges
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.badgeAccent {
+  background: $accent;
+  color: #fff;
+}
+
+.badgeGreen {
+  background: $green;
+  color: #fff;
+}
+
+.badgeOrange {
+  background: $orange;
+  color: #fff;
+}
+
+.badgeAmber {
+  background: $amber;
+  color: #000;
+}
+
+.badgeMuted {
+  background: var(--theme-elevation-300);
+  color: #fff;
+}
+
+// Tickets table
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--theme-elevation-500);
+  border-bottom: 1px solid var(--theme-elevation-200);
+  letter-spacing: 0.03em;
+}
+
+.table th:nth-child(3) {
+  text-align: center;
+}
+
+.table th:nth-child(4) {
+  text-align: right;
+}
+
+.table td {
+  padding: 6px 8px;
+}
+
+.table tr {
+  border-bottom: 1px solid var(--theme-elevation-100);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.ticketLink {
+  color: var(--theme-text);
+  font-weight: 700;
+  text-decoration: underline;
+  font-family: $font-mono;
+  font-size: 11px;
+
+  &:hover {
+    color: $accent;
+  }
+}
+
+.ticketSubject {
+  font-weight: 600;
+}
+
+.ticketStatusCell {
+  text-align: center;
+}
+
+.ticketDate {
+  text-align: right;
+  font-size: 11px;
+  color: var(--theme-elevation-400);
+}
+
+.ticketEmpty {
+  color: var(--theme-elevation-400);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px;
+}
+
+// Skeleton placeholder
+.skeleton {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--theme-elevation-150, var(--theme-elevation-100));
+  animation: pulse 1.5s ease-in-out infinite;
+  margin-bottom: 10px;
+
+  &:nth-child(2) { width: 80%; }
+  &:nth-child(3) { width: 60%; }
+  &:nth-child(4) { width: 70%; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

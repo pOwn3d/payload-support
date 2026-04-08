@@ -1,0 +1,190 @@
+import { useState, useRef, useCallback } from 'react'
+import type { ClientInfo, CannedResponse } from '../types'
+import type { RichTextEditorHandle } from '../context'
+
+export function useReply(
+  id: string | number | undefined,
+  client: ClientInfo | null,
+  cannedResponses: CannedResponse[],
+  ticketNumber: string,
+  ticketSubject: string,
+  fetchAll: () => void,
+  handleNextTicket: () => void,
+  replyEditorRef: React.RefObject<RichTextEditorHandle | null>,
+) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [replyBody, setReplyBody] = useState('')
+  const [replyHtml, setReplyHtml] = useState('')
+  const [replyFiles, setReplyFiles] = useState<File[]>([])
+  const [isInternal, setIsInternal] = useState(false)
+  const [notifyClient, setNotifyClient] = useState(false)
+  const [sendAsClient, setSendAsClient] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState('')
+
+  const handleEditorFileUpload = useCallback(async (file: File): Promise<string | null> => {
+    if (file.size > 5 * 1024 * 1024) return null
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('_payload', JSON.stringify({ alt: file.name }))
+    try {
+      const res = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData })
+      if (res.ok) {
+        const data = await res.json()
+        return data.doc?.url || null
+      }
+    } catch { /* ignore */ }
+    return null
+  }, [])
+
+  const replaceCannedVariables = useCallback((text: string): string => {
+    let result = text
+    if (client) {
+      result = result.replace(/\{\{client\.firstName\}\}/g, client.firstName || 'Client')
+      result = result.replace(/\{\{client\.lastName\}\}/g, client.lastName || '')
+      result = result.replace(/\{\{client\.company\}\}/g, client.company || '')
+      result = result.replace(/\{\{client\.email\}\}/g, client.email || '')
+      result = result.replace(/\{\{clientName\}\}/g, client.firstName || 'Client')
+    }
+    result = result.replace(/\{\{ticket\.number\}\}/g, ticketNumber || '')
+    result = result.replace(/\{\{ticket\.subject\}\}/g, ticketSubject || '')
+    result = result.replace(/\{\{agent\.name\}\}/g, 'Support')
+    return result
+  }, [client, ticketNumber, ticketSubject])
+
+  const handleCannedSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = cannedResponses.find((cr) => String(cr.id) === e.target.value)
+    if (selected) {
+      const body = replaceCannedVariables(selected.body)
+      const html = body.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />')
+      setReplyBody(body)
+      setReplyHtml(html)
+      replyEditorRef.current?.setContent(html)
+    }
+    e.target.value = ''
+  }
+
+  const handleReplyFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const maxSize = 1 * 1024 * 1024
+      const newFiles = Array.from(e.target.files!)
+      const tooLarge = newFiles.filter((f) => f.size > maxSize)
+      if (tooLarge.length > 0) {
+        alert(`Fichier(s) trop volumineux (max 1 Mo) : ${tooLarge.map((f) => f.name).join(', ')}`)
+      }
+      setReplyFiles((prev) => [...prev, ...newFiles.filter((f) => f.size <= maxSize)])
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const uploadFiles = async (files: File[]): Promise<number[]> => {
+    const uploadedIds: number[] = []
+    for (const file of files) {
+      if (file.size > 1 * 1024 * 1024) continue
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('_payload', JSON.stringify({ alt: file.name }))
+      const uploadRes = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData })
+      if (uploadRes.ok) {
+        const d = await uploadRes.json()
+        if (d.doc?.id) uploadedIds.push(d.doc.id)
+      }
+    }
+    return uploadedIds
+  }
+
+  const resetReply = () => {
+    setReplyBody('')
+    setReplyHtml('')
+    setReplyFiles([])
+    setIsInternal(false)
+    setNotifyClient(false)
+    setSendAsClient(false)
+    replyEditorRef.current?.clear()
+  }
+
+  const handleSendReply = async () => {
+    if (!replyBody.trim() || !id) return
+    setSending(true)
+    try {
+      const uploadedIds = await uploadFiles(replyFiles)
+      const finalBody = replyBody.trim() || (replyHtml ? '[Contenu enrichi]' : '')
+      const messageData: Record<string, unknown> = {
+        ticket: id,
+        body: finalBody,
+        ...(replyHtml ? { bodyHtml: replyHtml } : {}),
+        authorType: sendAsClient ? 'client' : 'admin',
+        isInternal,
+        skipNotification: isInternal || !notifyClient,
+        ...(sendAsClient && client ? { authorClient: client.id } : {}),
+      }
+      if (uploadedIds.length > 0) {
+        messageData.attachments = uploadedIds.map((mid) => ({ file: mid }))
+      }
+
+      const res = await fetch('/api/ticket-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(messageData),
+      })
+      if (res.ok) {
+        resetReply()
+        fetchAll()
+        if (!isInternal) handleNextTicket()
+      }
+    } catch { /* ignore */ } finally {
+      setSending(false)
+    }
+  }
+
+  const handleScheduleReply = async () => {
+    if (!replyBody.trim() || !id || !scheduleDate) return
+    setSending(true)
+    try {
+      const uploadedIds = await uploadFiles(replyFiles)
+      const messageData: Record<string, unknown> = {
+        ticket: id,
+        body: replyBody.trim(),
+        ...(replyHtml ? { bodyHtml: replyHtml } : {}),
+        authorType: 'admin',
+        isInternal: false,
+        skipNotification: true,
+        scheduledAt: new Date(scheduleDate).toISOString(),
+        scheduledSent: false,
+      }
+      if (uploadedIds.length > 0) {
+        messageData.attachments = uploadedIds.map((mid) => ({ file: mid }))
+      }
+
+      const res = await fetch('/api/ticket-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(messageData),
+      })
+      if (res.ok) {
+        resetReply()
+        setShowSchedule(false)
+        setScheduleDate('')
+        fetchAll()
+      }
+    } catch { /* ignore */ } finally {
+      setSending(false)
+    }
+  }
+
+  return {
+    fileInputRef,
+    replyBody, setReplyBody, replyHtml, setReplyHtml,
+    replyFiles, setReplyFiles,
+    isInternal, setIsInternal,
+    notifyClient, setNotifyClient,
+    sendAsClient, setSendAsClient,
+    sending,
+    showSchedule, setShowSchedule, scheduleDate, setScheduleDate,
+    handleEditorFileUpload, handleCannedSelect, handleReplyFileChange,
+    handleSendReply, handleScheduleReply,
+  }
+}
