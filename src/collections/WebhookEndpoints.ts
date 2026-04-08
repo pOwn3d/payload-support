@@ -58,6 +58,7 @@ export function createWebhookEndpointsCollection(slugs: CollectionSlugs): Collec
           { label: 'Ticket créé', value: 'ticket_created' },
           { label: 'Ticket résolu', value: 'ticket_resolved' },
           { label: 'Réponse au ticket', value: 'ticket_replied' },
+          { label: 'Ticket assigné', value: 'ticket_assigned' },
           { label: 'SLA dépassé', value: 'sla_breached' },
         ],
         admin: {

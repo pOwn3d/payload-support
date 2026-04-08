@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireClient, handleAuthError } from '../utils/auth'
 
 /**
  * GET /api/support/export-data
@@ -13,9 +14,7 @@ export function createExportDataEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.supportClients) {
-          return Response.json({ error: 'Non autorisé' }, { status: 401 })
-        }
+        requireClient(req, slugs)
 
         const [clientData, ticketsResult, messagesResult, surveysResult] = await Promise.all([
           payload.findByID({
@@ -94,8 +93,10 @@ export function createExportDataEndpoint(slugs: CollectionSlugs): Endpoint {
             'Content-Disposition': `attachment; filename="support-export-${req.user.id}-${new Date().toISOString().slice(0, 10)}.json"`,
           },
         })
-      } catch (err) {
-        console.error('[export-data] Error:', err)
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[export-data] Error:', error)
         return Response.json({ error: 'Erreur interne' }, { status: 500 })
       }
     },

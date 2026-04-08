@@ -26,8 +26,8 @@ export function CloseTicketButton({ ticketId }: { ticketId: number | string }) {
       if (res.ok) {
         router.refresh()
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn('[CloseTicketButton] Failed to close ticket:', err)
     } finally {
       setLoading(false)
       setConfirming(false)

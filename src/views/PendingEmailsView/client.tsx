@@ -41,7 +41,7 @@ function EmailCard({ email, onProcess, processing }: { email: PendingEmail; onPr
       try {
         const res = await fetch(`/api/tickets?where[or][0][ticketNumber][contains]=${encodeURIComponent(linkSearch)}&where[or][1][subject][contains]=${encodeURIComponent(linkSearch)}&limit=10&sort=-updatedAt&depth=0`)
         if (res.ok) { const data = await res.json(); setLinkResults(data.docs.map((d: Record<string, unknown>) => ({ id: d.id, ticketNumber: d.ticketNumber, subject: d.subject }))) }
-      } catch {}
+      } catch (err) { console.warn('[support] ticket search error:', err) }
     }, 300)
     return () => clearTimeout(timer)
   }, [linkSearch])

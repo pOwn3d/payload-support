@@ -1,5 +1,9 @@
 import type { Endpoint, Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
+
+const PAGE_SIZE = 500
+const MAX_PAGES = 50
 
 /**
  * GET /api/support/billing?from=...&to=...&projectId=...
@@ -13,9 +17,7 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const url = new URL(req.url!)
         const from = url.searchParams.get('from')
@@ -32,30 +34,52 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
           ...(projectId ? { project: { equals: Number(projectId) } } : {}),
         }
 
-        const tickets = await payload.find({
-          collection: slugs.tickets as any,
-          where: ticketWhere,
-          limit: 0,
-          depth: 2,
-          overrideAccess: true,
-        })
+        // Paginate tickets instead of limit:0
+        const allTickets: Array<Record<string, unknown>> = []
+        let ticketPage = 1
+        let ticketHasMore = true
 
-        const entries = await payload.find({
-          collection: slugs.timeEntries as any,
-          where: {
-            and: [
-              { date: { greater_than_equal: from } },
-              { date: { less_than_equal: to } },
-            ],
-          },
-          limit: 0,
-          depth: 0,
-          overrideAccess: true,
-        })
+        while (ticketHasMore && ticketPage <= MAX_PAGES) {
+          const batch = await payload.find({
+            collection: slugs.tickets as any,
+            where: ticketWhere,
+            limit: PAGE_SIZE,
+            page: ticketPage,
+            depth: 2,
+            overrideAccess: true,
+          })
+          allTickets.push(...batch.docs as any[])
+          ticketHasMore = batch.hasNextPage ?? false
+          ticketPage++
+        }
+
+        // Paginate time entries instead of limit:0
+        const allEntries: Array<Record<string, unknown>> = []
+        let entryPage = 1
+        let entryHasMore = true
+
+        while (entryHasMore && entryPage <= MAX_PAGES) {
+          const batch = await payload.find({
+            collection: slugs.timeEntries as any,
+            where: {
+              and: [
+                { date: { greater_than_equal: from } },
+                { date: { less_than_equal: to } },
+              ],
+            },
+            limit: PAGE_SIZE,
+            page: entryPage,
+            depth: 0,
+            overrideAccess: true,
+          })
+          allEntries.push(...batch.docs as any[])
+          entryHasMore = batch.hasNextPage ?? false
+          entryPage++
+        }
 
         // Index entries by ticket ID
         const entriesByTicket = new Map<number, Array<{ duration: number; description: string; date: string }>>()
-        for (const entry of entries.docs) {
+        for (const entry of allEntries) {
           const e = entry as any
           const ticketId = typeof e.ticket === 'object' ? e.ticket.id : e.ticket
           if (!entriesByTicket.has(ticketId)) entriesByTicket.set(ticketId, [])
@@ -75,7 +99,7 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
           totalBilledAmount: number
         }>()
 
-        for (const ticket of tickets.docs) {
+        for (const ticket of allTickets) {
           const t = ticket as any
           const ticketEntries = entriesByTicket.get(t.id)
           if (!ticketEntries || ticketEntries.length === 0) continue
@@ -133,6 +157,8 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
           },
         })
       } catch (err) {
+        const authResponse = handleAuthError(err)
+        if (authResponse) return authResponse
         console.error('[billing] Error:', err)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
       }

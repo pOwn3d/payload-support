@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 const KB_ARTICLES = [
   {
@@ -88,9 +89,7 @@ export function createSeedKbEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         let created = 0
         let skipped = 0
@@ -144,6 +143,8 @@ export function createSeedKbEndpoint(slugs: CollectionSlugs): Endpoint {
 
         return Response.json({ created, skipped, total: KB_ARTICLES.length })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[seed-kb] Error:', error)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
       }

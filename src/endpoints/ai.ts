@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 // Fallback model if nothing configured
 const FALLBACK_MODEL = 'claude-haiku-4-5-20251001'
@@ -71,9 +72,7 @@ export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const aiSettings = await readAiSettings(payload)
         let body: Record<string, unknown>
@@ -230,6 +229,8 @@ ${text}`
 
         return Response.json({ error: 'Invalid action' }, { status: 400 })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[support/ai] Error:', error)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
       }

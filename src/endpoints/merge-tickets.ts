@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 /**
  * POST /api/support/merge-tickets
@@ -13,9 +14,7 @@ export function createMergeTicketsEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const { sourceTicketId, targetTicketId } = await req.json!()
 
@@ -128,6 +127,8 @@ export function createMergeTicketsEndpoint(slugs: CollectionSlugs): Endpoint {
           targetTicket: (target as any).ticketNumber || `#${targetTicketId}`,
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[merge-tickets] Error:', error)
         return Response.json({ error: 'Erreur interne' }, { status: 500 })
       }

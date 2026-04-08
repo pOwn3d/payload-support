@@ -403,7 +403,7 @@ function showNewMessageNotification(ticketNumber: string, preview: string) {
       icon: '/favicon.ico',
       tag: `ticket-${ticketNumber}`,
     })
-  } catch {
-    // Notification constructor can fail in some contexts
+  } catch (err) {
+    console.warn('[SupportHeader] Notification failed:', err)
   }
 }

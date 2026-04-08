@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { RateLimiter } from '../utils/rateLimiter'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 const adminChatLimiter = new RateLimiter(60_000, 30) // 30 per minute
 
@@ -17,9 +18,7 @@ export function createAdminChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const url = new URL(req.url!)
         const session = url.searchParams.get('session')
@@ -46,11 +45,11 @@ export function createAdminChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
           })
         }
 
-        // List all sessions
-        const allMessages = await payload.find({
+        // List recent sessions: fetch only recent messages, limit to 50
+        const recentMessages = await payload.find({
           collection: slugs.chatMessages as any,
           sort: '-createdAt',
-          limit: 500,
+          limit: 50,
           depth: 1,
           overrideAccess: true,
         })
@@ -66,7 +65,7 @@ export function createAdminChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
           unreadCount: number
         }>()
 
-        for (const msg of allMessages.docs) {
+        for (const msg of recentMessages.docs) {
           const m = msg as any
           const sid = m.session
           if (!sessionsMap.has(sid)) {
@@ -100,6 +99,8 @@ export function createAdminChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
           },
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[admin-chat] GET Error:', error)
         return Response.json({ error: 'Erreur interne du serveur' }, { status: 500 })
       }
@@ -119,9 +120,7 @@ export function createAdminChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         let body: { action?: string; session?: string; message?: string }
         try {
@@ -254,6 +253,8 @@ export function createAdminChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         return Response.json({ error: 'Action invalide' }, { status: 400 })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[admin-chat] POST Error:', error)
         return Response.json({ error: 'Erreur interne du serveur' }, { status: 500 })
       }

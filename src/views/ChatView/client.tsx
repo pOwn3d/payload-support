@@ -33,6 +33,8 @@ export const ChatViewClient: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastFetchRef = useRef<string | null>(null)
   const [sessionExpired, setSessionExpired] = useState(false)
+  const sessionsESRef = useRef<EventSource | null>(null)
+  const messagesESRef = useRef<EventSource | null>(null)
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -46,9 +48,42 @@ export const ChatViewClient: React.FC = () => {
     setLoading(false)
   }, [])
 
+  // SSE for session list with polling fallback
   useEffect(() => {
-    fetchSessions()
     if (sessionExpired) return
+
+    // Always fetch once for initial data
+    fetchSessions()
+
+    if (typeof EventSource !== 'undefined') {
+      const es = new EventSource('/api/support/admin-chat-stream')
+      sessionsESRef.current = es
+
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data)
+          if (parsed.type === 'sessions' && parsed.data) {
+            setSessions({ active: parsed.data.active || [], closed: parsed.data.closed || [] })
+            setLoading(false)
+          }
+        } catch { /* ignore parse errors */ }
+      }
+
+      es.onerror = () => {
+        // SSE failed, fall back to polling
+        es.close()
+        sessionsESRef.current = null
+        const iv = setInterval(fetchSessions, 5000)
+        return () => clearInterval(iv)
+      }
+
+      return () => {
+        es.close()
+        sessionsESRef.current = null
+      }
+    }
+
+    // Fallback: polling
     const iv = setInterval(fetchSessions, 5000)
     return () => clearInterval(iv)
   }, [fetchSessions, sessionExpired])
@@ -60,8 +95,10 @@ export const ChatViewClient: React.FC = () => {
       .catch(() => {})
   }, [])
 
+  // SSE for messages in selected session with polling fallback
   useEffect(() => {
     if (!selectedSession) return
+
     const fetchMessages = async () => {
       try {
         const after = lastFetchRef.current || ''
@@ -84,8 +121,46 @@ export const ChatViewClient: React.FC = () => {
         }
       } catch { /* ignore */ }
     }
+
+    // Always load initial messages via REST
     lastFetchRef.current = null
     fetchMessages()
+
+    // Then try SSE for real-time updates
+    if (typeof EventSource !== 'undefined') {
+      const es = new EventSource(`/api/support/admin-chat-stream?session=${selectedSession}`)
+      messagesESRef.current = es
+
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data)
+          if (parsed.type === 'messages' && parsed.data?.length > 0) {
+            setMessages((prev) => {
+              const ids = new Set(prev.map((m) => m.id))
+              const newMsgs = parsed.data.filter((m: ChatMessage) => !ids.has(m.id))
+              return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev
+            })
+          }
+        } catch { /* ignore parse errors */ }
+      }
+
+      es.onerror = () => {
+        // SSE failed, fall back to polling
+        es.close()
+        messagesESRef.current = null
+        const iv = setInterval(fetchMessages, 3000)
+        // Store interval for cleanup — use a local ref
+        ;(fetchMessages as any)._fallbackIv = iv
+      }
+
+      return () => {
+        es.close()
+        messagesESRef.current = null
+        if ((fetchMessages as any)._fallbackIv) clearInterval((fetchMessages as any)._fallbackIv)
+      }
+    }
+
+    // Fallback: polling
     const iv = setInterval(fetchMessages, 3000)
     return () => clearInterval(iv)
   }, [selectedSession])

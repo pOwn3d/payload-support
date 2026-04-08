@@ -27,13 +27,13 @@ export const EmailTrackingClient: React.FC = () => {
   const [hasMore, setHasMore] = useState(false)
   const [totalDocs, setTotalDocs] = useState(0)
 
-  const fetchStats = useCallback(async () => { try { const r = await fetch(`/api/support/email-stats?days=${dateRange}`); if (r.ok) setStats(await r.json()) } catch {} }, [dateRange])
+  const fetchStats = useCallback(async () => { try { const r = await fetch(`/api/support/email-stats?days=${dateRange}`); if (r.ok) setStats(await r.json()) } catch (err) { console.warn('[support] fetchStats error:', err) } }, [dateRange])
   const fetchLogs = useCallback(async () => {
     const cutoff = new Date(Date.now() - dateRange * 86400000).toISOString()
     const where = [`where[createdAt][greater_than]=${cutoff}`]
     if (tab !== 'all') where.push(`where[status][equals]=${tab}`)
     if (search.trim()) { where.push(`where[or][0][recipientEmail][contains]=${encodeURIComponent(search)}`, `where[or][1][subject][contains]=${encodeURIComponent(search)}`) }
-    try { const r = await fetch(`/api/email-logs?${where.join('&')}&sort=-createdAt&limit=30&page=${page}&depth=0`); if (r.ok) { const d = await r.json(); setLogs(d.docs); setHasMore(d.hasNextPage); setTotalDocs(d.totalDocs) } } catch {}
+    try { const r = await fetch(`/api/email-logs?${where.join('&')}&sort=-createdAt&limit=30&page=${page}&depth=0`); if (r.ok) { const d = await r.json(); setLogs(d.docs); setHasMore(d.hasNextPage); setTotalDocs(d.totalDocs) } } catch (err) { console.warn('[support] fetchLogs error:', err) }
     setLoading(false)
   }, [dateRange, tab, search, page])
 

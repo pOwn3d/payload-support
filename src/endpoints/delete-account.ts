@@ -1,10 +1,12 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireClient, handleAuthError } from '../utils/auth'
 
 /**
  * POST /api/support/delete-account
  * RGPD — Right to erasure (Article 17).
  * Allows a support client to request permanent deletion of their account.
+ * Uses batch deletes via `where` clauses instead of sequential per-document deletion.
  */
 export function createDeleteAccountEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -14,9 +16,7 @@ export function createDeleteAccountEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.supportClients) {
-          return Response.json({ error: 'Non autorisé' }, { status: 401 })
-        }
+        requireClient(req, slugs)
 
         const body = await req.json!()
         const { confirmPassword } = body
@@ -41,88 +41,66 @@ export function createDeleteAccountEndpoint(slugs: CollectionSlugs): Endpoint {
           )
         }
 
-        // 1. Find all tickets
+        const clientId = req.user.id
+
+        // 1. Find all ticket IDs for this client
         const tickets = await payload.find({
           collection: slugs.tickets as any,
-          where: { client: { equals: req.user.id } },
+          where: { client: { equals: clientId } },
           limit: 10000,
           depth: 0,
           overrideAccess: true,
+          select: { id: true },
         })
 
         const ticketIds = tickets.docs.map((t) => t.id)
 
-        // 2. Delete ticket messages
+        // 2. Batch delete related data using where clauses
         if (ticketIds.length > 0) {
-          const messages = await payload.find({
+          await payload.delete({
             collection: slugs.ticketMessages as any,
             where: { ticket: { in: ticketIds } },
-            limit: 50000,
-            depth: 0,
             overrideAccess: true,
           })
-          for (const msg of messages.docs) {
-            await payload.delete({ collection: slugs.ticketMessages as any, id: msg.id, overrideAccess: true })
-          }
 
-          // 3. Delete activity logs
-          const logs = await payload.find({
+          await payload.delete({
             collection: slugs.ticketActivityLog as any,
             where: { ticket: { in: ticketIds } },
-            limit: 50000,
-            depth: 0,
             overrideAccess: true,
           })
-          for (const log of logs.docs) {
-            await payload.delete({ collection: slugs.ticketActivityLog as any, id: log.id, overrideAccess: true })
-          }
 
-          // 4. Delete time entries
-          const timeEntries = await payload.find({
+          await payload.delete({
             collection: slugs.timeEntries as any,
             where: { ticket: { in: ticketIds } },
-            limit: 50000,
-            depth: 0,
             overrideAccess: true,
           })
-          for (const entry of timeEntries.docs) {
-            await payload.delete({ collection: slugs.timeEntries as any, id: entry.id, overrideAccess: true })
-          }
 
-          // 5. Delete satisfaction surveys
-          const surveys = await payload.find({
-            collection: slugs.satisfactionSurveys as any,
-            where: { client: { equals: req.user.id } },
-            limit: 10000,
-            depth: 0,
+          // Delete all tickets
+          await payload.delete({
+            collection: slugs.tickets as any,
+            where: { client: { equals: clientId } },
             overrideAccess: true,
           })
-          for (const survey of surveys.docs) {
-            await payload.delete({ collection: slugs.satisfactionSurveys as any, id: survey.id, overrideAccess: true })
-          }
-
-          // 6. Delete all tickets
-          for (const ticketId of ticketIds) {
-            await payload.delete({ collection: slugs.tickets as any, id: ticketId, overrideAccess: true })
-          }
         }
 
-        // 7. Delete chat messages
-        const chatMessages = await payload.find({
-          collection: slugs.chatMessages as any,
-          where: { client: { equals: req.user.id } },
-          limit: 50000,
-          depth: 0,
+        // 3. Batch delete satisfaction surveys
+        await payload.delete({
+          collection: slugs.satisfactionSurveys as any,
+          where: { client: { equals: clientId } },
           overrideAccess: true,
         })
-        for (const msg of chatMessages.docs) {
-          await payload.delete({ collection: slugs.chatMessages as any, id: msg.id, overrideAccess: true })
-        }
 
-        // 8. Delete the client account
+        // 4. Batch delete chat messages
+        await payload.delete({
+          collection: slugs.chatMessages as any,
+          where: { client: { equals: clientId } },
+          overrideAccess: true,
+        })
+
+        // 5. Delete the client account
         await payload.delete({
           collection: slugs.supportClients as any,
-          id: req.user.id,
+          id: clientId,
           overrideAccess: true,
         })
 
@@ -141,6 +119,8 @@ export function createDeleteAccountEndpoint(slugs: CollectionSlugs): Endpoint {
           { status: 200, headers },
         )
       } catch (err) {
+        const authResponse = handleAuthError(err)
+        if (authResponse) return authResponse
         console.error('[delete-account] Error:', err)
         return Response.json({ error: 'Erreur interne' }, { status: 500 })
       }

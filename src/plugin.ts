@@ -66,30 +66,29 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
 
     // ─── Collections ─────────────────────────────────────
 
+    // Core collections (always present)
     const supportCollections = [
       createTicketsCollection(slugs),
       createTicketMessagesCollection(slugs),
       createSupportClientsCollection(slugs),
-      createTimeEntriesCollection(slugs),
       createCannedResponsesCollection(slugs),
       createTicketActivityLogCollection(slugs),
       createSatisfactionSurveysCollection(slugs),
       createKnowledgeBaseCollection(slugs),
-      createEmailLogsCollection(slugs),
-      createAuthLogsCollection(slugs),
-      createWebhookEndpointsCollection(slugs),
-      createSlaPoliciesCollection(slugs),
-      createMacrosCollection(slugs),
-      createTicketStatusesCollection(slugs),
     ]
 
-    // Conditional collections based on features
-    if (features.chat) {
-      supportCollections.push(createChatMessagesCollection(slugs))
-    }
-    if (features.pendingEmails) {
-      supportCollections.push(createPendingEmailsCollection(slugs))
-    }
+    // Auth logs (conditional)
+    if (features.authLogs !== false) supportCollections.push(createAuthLogsCollection(slugs))
+
+    // Conditional collections based on feature flags
+    if (features.timeTracking !== false) supportCollections.push(createTimeEntriesCollection(slugs))
+    if (features.emailTracking !== false) supportCollections.push(createEmailLogsCollection(slugs))
+    if (features.webhooks !== false) supportCollections.push(createWebhookEndpointsCollection(slugs))
+    if (features.sla !== false) supportCollections.push(createSlaPoliciesCollection(slugs))
+    if (features.macros !== false) supportCollections.push(createMacrosCollection(slugs))
+    if (features.customStatuses !== false) supportCollections.push(createTicketStatusesCollection(slugs))
+    if (features.chat) supportCollections.push(createChatMessagesCollection(slugs))
+    if (features.pendingEmails) supportCollections.push(createPendingEmailsCollection(slugs))
 
     // ─── Admin Views ─────────────────────────────────────
 
@@ -124,6 +123,7 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     const existingEndpoints = incomingConfig.endpoints || []
     const supportEndpoints = createSupportEndpoints(slugs, {
       oauth: { allowedEmailDomains: config?.allowedEmailDomains },
+      features,
     })
 
     return {

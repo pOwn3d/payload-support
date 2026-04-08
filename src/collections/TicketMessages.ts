@@ -1,6 +1,7 @@
 import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
+import { fireWebhooks } from '../utils/fireWebhooks'
 
 function createAssignAuthor(slugs: CollectionSlugs): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
@@ -89,6 +90,26 @@ function createTrackFirstResponse(slugs: CollectionSlugs): CollectionAfterChange
   }
 }
 
+function createFireMessageWebhooks(slugs: CollectionSlugs): CollectionAfterChangeHook {
+  return async ({ doc, operation, req }) => {
+    if (operation !== 'create') return doc
+    // Don't fire for scheduled messages that haven't been sent yet
+    if (doc.scheduledAt && !doc.scheduledSent) return doc
+    // Don't fire for internal notes
+    if (doc.isInternal) return doc
+
+    const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
+    fireWebhooks(req.payload, slugs, 'ticket_replied', {
+      ticketId,
+      messageId: doc.id,
+      authorType: doc.authorType,
+      body: doc.body?.length > 500 ? doc.body.slice(0, 500) + '...' : doc.body,
+    })
+
+    return doc
+  }
+}
+
 export function createTicketMessagesCollection(slugs: CollectionSlugs): CollectionConfig {
   return {
     slug: slugs.ticketMessages,
@@ -133,7 +154,7 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs): Collecti
     ],
     hooks: {
       beforeChange: [createAssignAuthor(slugs)],
-      afterChange: [createAutoUpdateStatus(slugs), createNotifyClient(slugs), createTrackFirstResponse(slugs)],
+      afterChange: [createAutoUpdateStatus(slugs), createNotifyClient(slugs), createTrackFirstResponse(slugs), createFireMessageWebhooks(slugs)],
     },
     access: {
       create: ({ req }) => req.user?.collection === slugs.users || req.user?.collection === slugs.supportClients,

@@ -6,25 +6,50 @@ import type {
 } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
+import { fireWebhooks } from '../utils/fireWebhooks'
 
 // ─── Hooks ───────────────────────────────────────────────
 
 function createAssignTicketNumber(slugs: CollectionSlugs): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
     if (operation === 'create') {
-      const existing = await req.payload.find({
-        collection: slugs.tickets,
-        sort: '-ticketNumber',
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      })
-      let nextNumber = 1
-      if (existing.docs.length > 0 && existing.docs[0]?.ticketNumber) {
-        const match = (existing.docs[0].ticketNumber as string).match(/TK-(\d+)/)
-        if (match) nextNumber = parseInt(match[1], 10) + 1
+      // Retry loop to handle unique constraint collisions (e.g. concurrent inserts in SQLite).
+      let retries = 3
+      while (retries > 0) {
+        try {
+          const countResult = await req.payload.count({
+            collection: slugs.tickets,
+            overrideAccess: true,
+          })
+          const baseNumber = countResult.totalDocs + 1
+          data.ticketNumber = `TK-${String(baseNumber).padStart(4, '0')}`
+
+          // Double-check: if this number already exists, append a timestamp suffix
+          const existing = await req.payload.find({
+            collection: slugs.tickets,
+            where: { ticketNumber: { equals: data.ticketNumber } },
+            limit: 1,
+            depth: 0,
+            overrideAccess: true,
+          })
+          if (existing.docs.length > 0) {
+            const suffix = Date.now() % 10000
+            data.ticketNumber = `TK-${String(baseNumber + suffix).padStart(4, '0')}`
+          }
+          break
+        } catch (error: any) {
+          if (
+            retries > 1 &&
+            (error?.message?.includes('UNIQUE') ||
+              error?.message?.includes('unique') ||
+              error?.code === 'SQLITE_CONSTRAINT')
+          ) {
+            retries--
+            continue
+          }
+          throw error
+        }
       }
-      data.ticketNumber = `TK-${String(nextNumber).padStart(4, '0')}`
     }
     return data
   }
@@ -76,7 +101,7 @@ function createAutoAssignAdmin(slugs: CollectionSlugs): CollectionBeforeChangeHo
         if (prefs.docs.length > 0) {
           roundRobinEnabled = (prefs.docs[0].value as { enabled?: boolean })?.enabled === true
         }
-      } catch { /* fallback */ }
+      } catch (err) { console.warn('[support] Failed to read round-robin preferences:', err) }
 
       const admins = await payload.find({
         collection: slugs.users,
@@ -218,6 +243,109 @@ function createNotifyClientOnResolve(slugs: CollectionSlugs): CollectionAfterCha
     } catch (err) {
       console.error('[support] Failed to notify client on resolve:', err)
     }
+    return doc
+  }
+}
+
+function createAutoCalculateSLA(slugs: CollectionSlugs): CollectionAfterChangeHook {
+  return async ({ doc, operation, req }) => {
+    if (operation !== 'create') return doc
+    try {
+      const { payload } = req
+      const ticketPriority = doc.priority || 'normal'
+
+      // Try to find a SLA policy matching the ticket's priority first
+      let policy: any = null
+      const byPriority = await payload.find({
+        collection: slugs.slaPolicies as any,
+        where: { priority: { equals: ticketPriority } },
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      })
+      if (byPriority.docs.length > 0) {
+        policy = byPriority.docs[0]
+      } else {
+        // Fall back to the default policy
+        const defaults = await payload.find({
+          collection: slugs.slaPolicies as any,
+          where: { isDefault: { equals: true } },
+          limit: 1,
+          depth: 0,
+          overrideAccess: true,
+        })
+        if (defaults.docs.length > 0) {
+          policy = defaults.docs[0]
+        }
+      }
+
+      if (!policy) return doc
+
+      // SLA fields are in minutes (firstResponseTime, resolutionTime)
+      const now = new Date()
+      const firstResponseMinutes = policy.firstResponseTime || 240 // default 4h
+      const resolutionMinutes = policy.resolutionTime || 1440 // default 24h
+      const firstResponseDue = new Date(now.getTime() + firstResponseMinutes * 60000)
+      const resolutionDue = new Date(now.getTime() + resolutionMinutes * 60000)
+
+      await payload.update({
+        collection: slugs.tickets as any,
+        id: doc.id,
+        data: {
+          slaPolicy: policy.id,
+          slaFirstResponseDue: firstResponseDue.toISOString(),
+          slaResolutionDue: resolutionDue.toISOString(),
+        },
+        overrideAccess: true,
+      })
+    } catch (err) {
+      console.error('[support] Failed to auto-calculate SLA:', err)
+    }
+    return doc
+  }
+}
+
+function createFireTicketWebhooks(slugs: CollectionSlugs): CollectionAfterChangeHook {
+  return async ({ doc, previousDoc, operation, req }) => {
+    const { payload } = req
+
+    if (operation === 'create') {
+      // ticket_created
+      fireWebhooks(payload, slugs, 'ticket_created', {
+        id: doc.id,
+        ticketNumber: doc.ticketNumber,
+        subject: doc.subject,
+        status: doc.status,
+        priority: doc.priority,
+        category: doc.category,
+      })
+      return doc
+    }
+
+    if (operation === 'update' && previousDoc) {
+      // ticket_resolved
+      if (previousDoc.status !== doc.status && doc.status === 'resolved') {
+        fireWebhooks(payload, slugs, 'ticket_resolved', {
+          id: doc.id,
+          ticketNumber: doc.ticketNumber,
+          subject: doc.subject,
+          previousStatus: previousDoc.status,
+        })
+      }
+
+      // ticket_assigned
+      const oldAssigned = typeof previousDoc.assignedTo === 'object' ? previousDoc.assignedTo?.id : previousDoc.assignedTo
+      const newAssigned = typeof doc.assignedTo === 'object' ? doc.assignedTo?.id : doc.assignedTo
+      if (newAssigned && oldAssigned !== newAssigned) {
+        fireWebhooks(payload, slugs, 'ticket_assigned', {
+          id: doc.id,
+          ticketNumber: doc.ticketNumber,
+          subject: doc.subject,
+          assignedTo: newAssigned,
+        })
+      }
+    }
+
     return doc
   }
 }
@@ -379,9 +507,11 @@ export function createTicketsCollection(slugs: CollectionSlugs): CollectionConfi
       ],
       afterChange: [
         createTrackSLA(slugs),
+        createAutoCalculateSLA(slugs),
         createLogTicketActivity(slugs),
         createNotifyOnAssignment(slugs),
         createNotifyClientOnResolve(slugs),
+        createFireTicketWebhooks(slugs),
       ],
       beforeDelete: [createCascadeDelete(slugs)],
     },

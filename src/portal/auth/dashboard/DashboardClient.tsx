@@ -108,8 +108,8 @@ export function DashboardClient({ tickets }: { tickets: TicketData[] }) {
           setSearchMatchedIds(matchedIds)
           setMessageSearchCount(matchedIds.size)
         }
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.warn('[DashboardClient] Message search failed:', err)
       } finally {
         setMessageSearchLoading(false)
       }

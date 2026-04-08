@@ -26,10 +26,67 @@ export function ChatWidget() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  // Poll for new messages (stops on session expiry)
+  // Receive messages via SSE (with polling fallback)
   const [pollExpired, setPollExpired] = useState(false)
+  const eventSourceRef = useRef<EventSource | null>(null)
+  const usingSSE = useRef(false)
+
   useEffect(() => {
     if (!session || closed || pollExpired) return
+
+    // Helper to merge new messages into state
+    const mergeMessages = (newMsgs: ChatMessage[]) => {
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id))
+        const filtered = newMsgs.filter((m) => !existingIds.has(m.id))
+        if (filtered.length === 0) return prev
+        return [...prev, ...filtered]
+      })
+      if (newMsgs.length > 0) {
+        lastFetchRef.current = newMsgs[newMsgs.length - 1].createdAt
+        // Check if session was closed by agent
+        const lastMsg = newMsgs[newMsgs.length - 1]
+        if (lastMsg.senderType === 'system' && lastMsg.message.includes('terminé')) {
+          setClosed(true)
+        }
+      }
+    }
+
+    // Try SSE first
+    if (typeof EventSource !== 'undefined') {
+      const es = new EventSource(`/api/support/chat-stream?session=${session}`)
+      eventSourceRef.current = es
+      usingSSE.current = true
+
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data)
+          if (parsed.type === 'messages' && parsed.data?.length > 0) {
+            mergeMessages(parsed.data)
+          } else if (parsed.type === 'closed') {
+            setClosed(true)
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+
+      es.onerror = () => {
+        // SSE connection lost — close and fall back to polling
+        es.close()
+        eventSourceRef.current = null
+        usingSSE.current = false
+      }
+
+      return () => {
+        es.close()
+        eventSourceRef.current = null
+        usingSSE.current = false
+      }
+    }
+
+    // Fallback: adaptive polling (same as before)
+    usingSSE.current = false
 
     const poll = async () => {
       let hadNewMessages = false
@@ -41,24 +98,12 @@ export function ChatWidget() {
         if (res.ok) {
           const data = await res.json()
           if (data.messages?.length > 0) {
-            setMessages((prev) => {
-              const existingIds = new Set(prev.map((m) => m.id))
-              const newMsgs = data.messages.filter((m: ChatMessage) => !existingIds.has(m.id))
-              if (newMsgs.length === 0) return prev
-              return [...prev, ...newMsgs]
-            })
-            lastFetchRef.current = data.messages[data.messages.length - 1].createdAt
+            mergeMessages(data.messages)
             hadNewMessages = true
-
-            // Check if session was closed by agent
-            const lastMsg = data.messages[data.messages.length - 1]
-            if (lastMsg.senderType === 'system' && lastMsg.message.includes('terminé')) {
-              setClosed(true)
-            }
           }
         }
-      } catch {
-        // Ignore polling errors
+      } catch (err) {
+        console.warn('[ChatWidget] Polling error:', err)
       }
       if (hadNewMessages) {
         pollInterval.current = 3000
@@ -72,6 +117,7 @@ export function ChatWidget() {
 
     const schedulePoll = () => {
       pollTimeout.current = setTimeout(async () => {
+        if (usingSSE.current) return // SSE reconnected, stop polling
         await poll()
         schedulePoll()
       }, pollInterval.current)
@@ -100,8 +146,8 @@ export function ChatWidget() {
         lastFetchRef.current = data.messages?.[data.messages.length - 1]?.createdAt || null
         setClosed(false)
       }
-    } catch {
-      // Error starting chat
+    } catch (err) {
+      console.warn('[ChatWidget] Error starting chat:', err)
     }
   }
 
@@ -123,8 +169,8 @@ export function ChatWidget() {
         lastFetchRef.current = data.message.createdAt
         setInput('')
       }
-    } catch {
-      // Error sending message
+    } catch (err) {
+      console.warn('[ChatWidget] Error sending message:', err)
     } finally {
       setSending(false)
     }
@@ -139,8 +185,8 @@ export function ChatWidget() {
         credentials: 'include',
         body: JSON.stringify({ action: 'close', session }),
       })
-    } catch {
-      // Ignore
+    } catch (err) {
+      console.warn('[ChatWidget] Error closing chat:', err)
     }
     setClosed(true)
   }

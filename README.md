@@ -8,7 +8,7 @@
   <br><br>
 
   <!-- Badges -->
-  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=for-the-badge" alt="version">
+  <img src="https://img.shields.io/badge/version-0.2.0-blue?style=for-the-badge" alt="version">
   <img src="https://img.shields.io/badge/Payload%20CMS-3.x-0F172A?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMkw0IDdWMTdMMTIgMjJMMjAgMTdWN0wxMiAyWiIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=&logoColor=white" alt="Payload CMS 3">
   <img src="https://img.shields.io/badge/AI-Anthropic%20%7C%20OpenAI%20%7C%20Ollama-10B981?style=for-the-badge" alt="AI">
   <img src="https://img.shields.io/badge/i18n-FR%20%7C%20EN-F59E0B?style=for-the-badge&logo=translate&logoColor=white" alt="i18n FR | EN">
@@ -17,7 +17,30 @@
 
 </div>
 
+<p align="center">
+  <a href="https://buymeacoffee.com/pown3d">
+    <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-☕-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy me a coffee" />
+  </a>
+</p>
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
+
+> [!IMPORTANT]
+> ## ⚠️ Next.js 16 + Turbopack — Known Issue
+>
+> If you're using **Next.js 16** with Turbopack (default bundler), you may encounter a `createContext is not a function` error during `next build`. This is a **known Payload CMS issue** ([#15429](https://github.com/payloadcms/payload/issues/15429), [#14330](https://github.com/payloadcms/payload/discussions/14330)) — not specific to this plugin.
+>
+> **Workaround** — Add this to your admin page (`src/app/(payload)/admin/[[...segments]]/page.tsx`):
+> ```ts
+> export const dynamic = 'force-dynamic'
+> ```
+>
+> And ensure all `@consilioweb/*` packages are in `transpilePackages` in your `next.config.ts`:
+> ```ts
+> transpilePackages: ['@consilioweb/seo-analyzer', '@consilioweb/admin-nav', /* ...other @consilioweb packages */],
+> ```
+>
+> ✅ **Next.js 15** works without any workaround.
 
 ## About
 
@@ -83,7 +106,8 @@
 - Facturable toggle per ticket
 
 ### Live Chat
-- Real-time chat sessions
+- Real-time chat sessions via **Server-Sent Events (SSE)** (v0.2.0)
+- Automatic **SSE to polling fallback** when EventSource unavailable (v0.2.0)
 - Typing indicators
 - Chat-to-ticket conversion
 - Agent presence/collision detection
@@ -107,8 +131,18 @@
 - Auto-close inactive tickets
 - Canned responses with template variables
 - Macros (multi-action shortcuts)
-- Webhooks (HMAC-SHA256 signed)
+- Webhooks (HMAC-SHA256 signed) with dispatch on ticket events (v0.2.0)
+- **Scheduled replies** processing endpoint (v0.2.0)
 - Activity log (full audit trail)
+
+### Security (v0.2.0)
+- **XSS prevention** — escapeHtml on all email template dynamic fields
+- **2FA codes** hashed with HMAC-SHA256 before storage
+- **Tracking pixels** signed with HMAC
+- **OAuth Google** — `allowedEmailDomains` option for domain restriction
+- **Rate limiting** — unified RateLimiter class on all public endpoints
+- **Collection injection protection** — validates collection parameters against whitelist
+- **Password generation** — uses crypto.randomBytes (not Math.random)
 
 ### Internationalization
 - Full FR/EN support
@@ -150,6 +184,8 @@
 | **Email** | pending-emails/process, resend-notification, track-open, email-stats |
 | **Config** | settings, signature, round-robin-config, statuses, sla-check, auto-close |
 | **Auth** | login, 2fa, oauth/google, delete-account |
+| **SSE** | client-stream, admin-stream (v0.2.0) |
+| **Scheduled** | process-scheduled (v0.2.0) |
 | **Misc** | apply-macro, purge-logs, seed-kb, admin-stats, billing, import-conversation, merge-clients, satisfaction |
 
 ### Admin Views (12)
@@ -315,6 +351,16 @@ supportPlugin({
     ticketMessages: 'my-messages',
     // ...
   },
+
+  // v0.2.0 — Webhook dispatch
+  webhooks: {
+    url: 'https://hooks.slack.com/services/...',
+    secret: process.env.WEBHOOK_SECRET,
+    events: ['ticket.created', 'ticket.resolved', 'ticket.assigned', 'ticket.replied'],
+  },
+
+  // v0.2.0 — OAuth restrictions
+  allowedEmailDomains: ['mycompany.com', 'partner.com'],
 })
 ```
 
@@ -351,6 +397,7 @@ All features are **enabled by default** except `roundRobin` and `customStatuses`
 | `commandPalette` | `true` | ⌘K search |
 | `knowledgeBase` | `true` | FAQ / knowledge base |
 | `pendingEmails` | `true` | Inbound email queue |
+| `authLogs` | `true` | Authentication audit logs (v0.2.0) |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
 
@@ -431,6 +478,13 @@ import { /* views */ } from '@consilioweb/payload-support/views'
 - [x] Next.js 14/15/16 support
 - [x] Client portal (30 files: login, register, dashboard, tickets, FAQ, profile, chat widgets, FR/EN)
 - [x] Configurable email template system (`createEmailTemplateFactory()`, brand/colors/logo)
+- [x] Server-Sent Events (SSE) for live chat
+- [x] Webhook dispatch on ticket events
+- [x] SLA auto-calculation
+- [x] Scheduled replies processing
+- [x] Unified RateLimiter class
+- [x] Security hardening (XSS, HMAC, SSRF, collection injection)
+- [x] Conditional collection/endpoint creation via feature flags
 - [ ] npm publish to registry
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
@@ -443,6 +497,14 @@ import { /* views */ } from '@consilioweb/payload-support/views'
 - **Database**: Any Payload-supported adapter (SQLite, PostgreSQL, MongoDB)
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
+
+## ☕ Support
+
+If this plugin saves you time, consider buying me a coffee!
+
+<a href="https://buymeacoffee.com/pown3d">
+  <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=pown3d&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" />
+</a>
 
 ## License
 

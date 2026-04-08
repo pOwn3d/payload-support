@@ -325,8 +325,8 @@ export function LiveChat() {
         setMessages([])
         lastFetchRef.current = null
       }
-    } catch {
-      // Ignore — user can retry
+    } catch (err) {
+      console.warn('[LiveChat] Error starting chat:', err)
     }
   }
 
@@ -372,8 +372,8 @@ export function LiveChat() {
           }),
         })
       }
-    } catch {
-      // Ignore — close locally regardless
+    } catch (err) {
+      console.warn('[LiveChat] Error closing chat:', err)
     }
 
     setRatingSubmitted(true)
@@ -404,8 +404,8 @@ export function LiveChat() {
             clientToken: session.clientToken,
           }),
         })
-      } catch {
-        // Ignore
+      } catch (err) {
+        console.warn('[LiveChat] Error closing session:', err)
       }
     }
 

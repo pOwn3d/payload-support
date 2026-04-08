@@ -27,10 +27,11 @@ export function createEmailStatsEndpoint(slugs: CollectionSlugs): Endpoint {
           action?: string | null
           createdAt: string
         }> = []
+        const MAX_PAGES = 50
         let page = 1
         let hasMore = true
 
-        while (hasMore) {
+        while (hasMore && page <= MAX_PAGES) {
           const result = await payload.find({
             collection: slugs.emailLogs as any,
             where: { createdAt: { greater_than: cutoff } },

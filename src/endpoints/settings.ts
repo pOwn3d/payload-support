@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 const PREF_KEY = 'support-settings'
 
@@ -64,9 +65,7 @@ export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const prefs = await payload.find({
           collection: 'payload-preferences' as any,
@@ -89,7 +88,10 @@ export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         return Response.json(settings)
-      } catch {
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.warn('[support/settings] GET error:', error)
         return Response.json({ error: 'Error' }, { status: 500 })
       }
     },
@@ -107,9 +109,7 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const body = (await req.json!()) as Partial<SupportSettings>
 
@@ -149,8 +149,10 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         return Response.json(merged)
-      } catch (err) {
-        console.error('[support/settings] Error saving settings:', err)
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[support/settings] Error saving settings:', error)
         return Response.json({ error: 'Error' }, { status: 500 })
       }
     },

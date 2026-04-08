@@ -26,7 +26,7 @@ export const BillingClient: React.FC = () => {
 
   const loadProjects = useCallback(async () => {
     if (projectsLoaded) return
-    try { const res = await fetch('/api/projects?limit=100&depth=0&sort=name'); if (res.ok) { const json = await res.json(); setProjects(json.docs?.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })) || []) } } catch {}
+    try { const res = await fetch('/api/projects?limit=100&depth=0&sort=name'); if (res.ok) { const json = await res.json(); setProjects(json.docs?.map((p: { id: number; name: string }) => ({ id: p.id, name: p.name })) || []) } } catch (err) { console.warn('[support] loadProjects error:', err) }
     setProjectsLoaded(true)
   }, [projectsLoaded])
 
@@ -34,7 +34,7 @@ export const BillingClient: React.FC = () => {
 
   const fetchBilling = useCallback(async () => {
     setLoading(true)
-    try { const params = new URLSearchParams({ from, to }); if (projectId) params.set('projectId', projectId); const res = await fetch(`/api/support/billing?${params}`); if (res.ok) setData(await res.json()) } catch {}
+    try { const params = new URLSearchParams({ from, to }); if (projectId) params.set('projectId', projectId); const res = await fetch(`/api/support/billing?${params}`); if (res.ok) setData(await res.json()) } catch (err) { console.warn('[support] fetchBilling error:', err) }
     setLoading(false)
   }, [from, to, projectId])
 

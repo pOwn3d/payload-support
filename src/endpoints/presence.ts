@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 // In-memory presence state: ticketId -> Map<userId, { name, email, timestamp }>
 const presenceState = new Map<string, Map<string | number, { name: string; email: string; ts: number }>>()
@@ -27,9 +28,7 @@ export function createPresencePostEndpoint(slugs: CollectionSlugs): Endpoint {
     method: 'post',
     handler: async (req) => {
       try {
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const { ticketId, action } = (await req.json!()) as { ticketId: number; action: 'join' | 'leave' }
         if (!ticketId || !action) {
@@ -53,7 +52,10 @@ export function createPresencePostEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         return Response.json({ ok: true })
-      } catch {
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.warn('[presence] POST error:', error)
         return Response.json({ error: 'Error' }, { status: 500 })
       }
     },
@@ -69,9 +71,7 @@ export function createPresenceGetEndpoint(slugs: CollectionSlugs): Endpoint {
     method: 'get',
     handler: async (req) => {
       try {
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const url = new URL(req.url!)
         const ticketId = url.searchParams.get('ticketId')
@@ -94,7 +94,9 @@ export function createPresenceGetEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         return Response.json({ viewers: result })
-      } catch {
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         return Response.json({ viewers: [] })
       }
     },

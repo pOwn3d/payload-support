@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 const PREF_KEY = 'support-round-robin'
 
@@ -14,9 +15,7 @@ export function createRoundRobinConfigGetEndpoint(slugs: CollectionSlugs): Endpo
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const prefs = await payload.find({
           collection: 'payload-preferences' as any,
@@ -31,7 +30,10 @@ export function createRoundRobinConfigGetEndpoint(slugs: CollectionSlugs): Endpo
           : false
 
         return Response.json({ enabled })
-      } catch {
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.warn('[round-robin-config] GET error:', error)
         return Response.json({ error: 'Error' }, { status: 500 })
       }
     },
@@ -49,9 +51,7 @@ export function createRoundRobinConfigPostEndpoint(slugs: CollectionSlugs): Endp
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const { enabled } = (await req.json!()) as { enabled: boolean }
 
@@ -83,8 +83,10 @@ export function createRoundRobinConfigPostEndpoint(slugs: CollectionSlugs): Endp
         }
 
         return Response.json({ enabled: !!enabled })
-      } catch (err) {
-        console.error('[round-robin-config] Error:', err)
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[round-robin-config] POST error:', error)
         return Response.json({ error: 'Error' }, { status: 500 })
       }
     },

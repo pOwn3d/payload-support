@@ -3,6 +3,7 @@ import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto from 'crypto'
 import { RateLimiter } from '../utils/rateLimiter'
+import { requireClient, handleAuthError } from '../utils/auth'
 
 const chatSessionLimiter = new RateLimiter(3_600_000, 5) // 5 sessions per hour
 const chatMessageLimiter = new RateLimiter(60_000, 15) // 15 messages per minute
@@ -19,9 +20,7 @@ export function createChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.supportClients) {
-          return Response.json({ error: 'Non autorisé' }, { status: 401 })
-        }
+        requireClient(req, slugs)
 
         const url = new URL(req.url!)
         const session = url.searchParams.get('session')
@@ -56,6 +55,8 @@ export function createChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
           },
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[support/chat] GET Error:', error)
         return Response.json({ error: 'Erreur interne du serveur' }, { status: 500 })
       }
@@ -75,9 +76,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.supportClients) {
-          return Response.json({ error: 'Non autorisé' }, { status: 401 })
-        }
+        requireClient(req, slugs)
 
         let body: { action?: string; session?: string; message?: string }
         try {
@@ -179,6 +178,8 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         return Response.json({ error: 'Action invalide' }, { status: 400 })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[support/chat] POST Error:', error)
         return Response.json({ error: 'Erreur interne du serveur' }, { status: 500 })
       }

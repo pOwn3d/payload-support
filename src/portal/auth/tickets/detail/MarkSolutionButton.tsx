@@ -23,8 +23,8 @@ export function MarkSolutionButton({
         body: JSON.stringify({ isSolution: !isSolution }),
       })
       router.refresh()
-    } catch {
-      // Silent fail
+    } catch (err) {
+      console.warn('[MarkSolutionButton] Failed to toggle solution:', err)
     } finally {
       setLoading(false)
     }

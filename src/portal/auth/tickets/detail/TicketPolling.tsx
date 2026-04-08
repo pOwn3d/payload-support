@@ -45,8 +45,8 @@ export function TicketPolling({
           lastCount.current = data.totalDocs
           router.refresh()
         }
-      } catch {
-        // Silent fail — don't interrupt the user
+      } catch (err) {
+        console.warn('[TicketPolling] Poll failed:', err)
       }
     }, POLL_INTERVAL)
 

@@ -57,6 +57,8 @@ export interface SupportFeatures {
   knowledgeBase?: boolean
   /** Pending email queue */
   pendingEmails?: boolean
+  /** Authentication audit logs */
+  authLogs?: boolean
 }
 
 // ─── AI provider ─────────────────────────────────────────
@@ -230,4 +232,5 @@ export const DEFAULT_FEATURES: Required<SupportFeatures> = {
   commandPalette: true,
   knowledgeBase: true,
   pendingEmails: true,
+  authLogs: true,
 }

@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireClient, handleAuthError } from '../utils/auth'
 
 /**
  * POST /api/support/satisfaction
@@ -13,9 +14,7 @@ export function createSatisfactionEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.supportClients) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireClient(req, slugs)
 
         const body = await req.json!()
         const { ticketId, rating, comment } = body
@@ -84,6 +83,8 @@ export function createSatisfactionEndpoint(slugs: CollectionSlugs): Endpoint {
 
         return Response.json({ success: true, survey })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[satisfaction] Error:', error)
         return Response.json({ error: 'Erreur interne.' }, { status: 500 })
       }

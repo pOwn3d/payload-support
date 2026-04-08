@@ -208,11 +208,11 @@ const TicketConversation: React.FC = () => {
               return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
             })
           }
-        } catch {
-          // Ignore chat fetch errors
+        } catch (err) {
+          console.warn('[TicketConversation] Chat fetch error:', err)
         }
       }
-    } catch { /* ignore */ } finally {
+    } catch (err) { console.warn('[TicketConversation] Fetch error:', err) } finally {
       setLoading(false)
     }
   }, [id])

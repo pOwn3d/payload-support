@@ -26,8 +26,8 @@ export function ReopenTicketButton({ ticketId }: { ticketId: number | string }) 
       if (res.ok) {
         router.refresh()
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn('[ReopenTicketButton] Failed to reopen ticket:', err)
     } finally {
       setLoading(false)
       setConfirming(false)

@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 /**
  * GET /api/support/sla-check
@@ -13,9 +14,7 @@ export function createSlaCheckEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const now = new Date()
         const nowISO = now.toISOString()
@@ -115,6 +114,8 @@ export function createSlaCheckEndpoint(slugs: CollectionSlugs): Endpoint {
           },
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[sla-check] Error:', error)
         return Response.json({ error: 'Internal error' }, { status: 500 })
       }

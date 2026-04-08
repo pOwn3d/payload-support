@@ -45,7 +45,7 @@ export const NewTicketClient: React.FC = () => {
       try {
         const res = await fetch(`/api/support-clients?where[or][0][email][contains]=${encodeURIComponent(clientSearch)}&where[or][1][firstName][contains]=${encodeURIComponent(clientSearch)}&where[or][2][company][contains]=${encodeURIComponent(clientSearch)}&limit=8&depth=0`, { credentials: 'include' })
         if (res.ok) { const d = await res.json(); setClientResults(d.docs || []) }
-      } catch {}
+      } catch (err) { console.warn('[support] client search error:', err) }
     }, 300)
     return () => clearTimeout(timer)
   }, [clientSearch])

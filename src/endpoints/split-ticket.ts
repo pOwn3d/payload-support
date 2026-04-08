@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 /**
  * POST /api/support/split-ticket
@@ -13,9 +14,7 @@ export function createSplitTicketEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const { messageId, subject } = (await req.json!()) as { messageId: number; subject?: string }
         if (!messageId) {
@@ -122,6 +121,8 @@ export function createSplitTicketEndpoint(slugs: CollectionSlugs): Endpoint {
           ticketNumber: newTicket.ticketNumber,
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[split-ticket] Error:', error)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
       }

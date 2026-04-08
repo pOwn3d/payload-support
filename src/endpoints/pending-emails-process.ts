@@ -1,6 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 /**
  * POST /api/support/pending-emails/:id/process
@@ -14,9 +15,7 @@ export function createPendingEmailsProcessEndpoint(slugs: CollectionSlugs): Endp
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const id = req.routeParams?.id as string
         const body = await req.json!()
@@ -213,6 +212,8 @@ export function createPendingEmailsProcessEndpoint(slugs: CollectionSlugs): Endp
 
         return Response.json({ error: 'Invalid action' }, { status: 400 })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[pending-email-process] Error:', error)
         return Response.json({ error: 'Internal server error' }, { status: 500 })
       }

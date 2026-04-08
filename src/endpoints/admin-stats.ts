@@ -1,9 +1,11 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 /**
  * GET /api/support/admin-stats
  * Admin-only endpoint returning support analytics.
+ * Uses count queries and paginated aggregation to avoid loading all tickets in memory.
  */
 export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -13,16 +15,82 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
-        // Fetch tickets in batches
-        const PAGE_SIZE = 500
+        // ── Status counts via individual count queries ──
+        const statuses = ['open', 'waiting_client', 'resolved'] as const
+        const statusCounts = await Promise.all(
+          statuses.map(async (status) => {
+            const result = await payload.count({
+              collection: slugs.tickets as any,
+              where: { status: { equals: status } },
+              overrideAccess: true,
+            })
+            return [status, result.totalDocs] as const
+          }),
+        )
+        const byStatus: Record<string, number> = Object.fromEntries(statusCounts)
+        const total = statusCounts.reduce((sum, [, count]) => sum + count, 0)
+
+        // ── Priority counts ──
+        const priorities = ['low', 'normal', 'high', 'urgent'] as const
+        const priorityCounts = await Promise.all(
+          priorities.map(async (priority) => {
+            const result = await payload.count({
+              collection: slugs.tickets as any,
+              where: { priority: { equals: priority } },
+              overrideAccess: true,
+            })
+            return [priority, result.totalDocs] as const
+          }),
+        )
+        const byPriority: Record<string, number> = Object.fromEntries(priorityCounts)
+
+        // ── Category counts ──
+        const categories = ['bug', 'content', 'feature', 'question', 'hosting'] as const
+        const categoryCounts = await Promise.all(
+          categories.map(async (category) => {
+            const result = await payload.count({
+              collection: slugs.tickets as any,
+              where: { category: { equals: category } },
+              overrideAccess: true,
+            })
+            return [category, result.totalDocs] as const
+          }),
+        )
+        const byCategory: Record<string, number> = Object.fromEntries(
+          categoryCounts.filter(([, count]) => count > 0),
+        )
+
+        // ── Time-based counts ──
+        const now = new Date()
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+        const [created7, created30] = await Promise.all([
+          payload.count({
+            collection: slugs.tickets as any,
+            where: { createdAt: { greater_than_equal: sevenDaysAgo.toISOString() } },
+            overrideAccess: true,
+          }),
+          payload.count({
+            collection: slugs.tickets as any,
+            where: { createdAt: { greater_than_equal: thirtyDaysAgo.toISOString() } },
+            overrideAccess: true,
+          }),
+        ])
+
+        // ── Averages: paginate with limit:100, only fetch needed fields ──
+        const PAGE_SIZE = 100
         const MAX_PAGES = 50
+        let totalResponseTimeMs = 0
+        let responseTimeCount = 0
+        let totalResolutionTimeMs = 0
+        let resolutionTimeCount = 0
+        let totalTimeMinutes = 0
+
         let page = 1
         let hasMore = true
-        const tickets: Array<Record<string, unknown>> = []
 
         while (hasMore && page <= MAX_PAGES) {
           const batch = await payload.find({
@@ -32,98 +100,78 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
             depth: 0,
             overrideAccess: true,
             select: {
-              status: true,
-              priority: true,
-              category: true,
               firstResponseAt: true,
               resolvedAt: true,
               createdAt: true,
               totalTimeMinutes: true,
             },
           })
-          tickets.push(...batch.docs)
+
+          for (const t of batch.docs) {
+            const doc = t as Record<string, unknown>
+            if (doc.firstResponseAt && doc.createdAt) {
+              const responseTime = new Date(String(doc.firstResponseAt)).getTime() - new Date(String(doc.createdAt)).getTime()
+              if (responseTime > 0) { totalResponseTimeMs += responseTime; responseTimeCount++ }
+            }
+            if (doc.resolvedAt && doc.createdAt) {
+              const resolutionTime = new Date(String(doc.resolvedAt)).getTime() - new Date(String(doc.createdAt)).getTime()
+              if (resolutionTime > 0) { totalResolutionTimeMs += resolutionTime; resolutionTimeCount++ }
+            }
+            totalTimeMinutes += (doc.totalTimeMinutes as number) || 0
+          }
+
           hasMore = batch.hasNextPage ?? false
           page++
         }
 
-        const byStatus: Record<string, number> = {}
-        const byPriority: Record<string, number> = {}
-        const byCategory: Record<string, number> = {}
-        let totalResponseTimeMs = 0
-        let responseTimeCount = 0
-        let totalResolutionTimeMs = 0
-        let resolutionTimeCount = 0
-
-        const now = new Date()
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        let createdLast7Days = 0
-        let createdLast30Days = 0
-        let totalTimeMinutes = 0
-
-        for (const t of tickets) {
-          const status = String(t.status || 'open')
-          byStatus[status] = (byStatus[status] || 0) + 1
-
-          const priority = String(t.priority || 'normal')
-          byPriority[priority] = (byPriority[priority] || 0) + 1
-
-          if (t.category) {
-            const cat = String(t.category)
-            byCategory[cat] = (byCategory[cat] || 0) + 1
-          }
-
-          if (t.firstResponseAt && t.createdAt) {
-            const responseTime = new Date(String(t.firstResponseAt)).getTime() - new Date(String(t.createdAt)).getTime()
-            if (responseTime > 0) { totalResponseTimeMs += responseTime; responseTimeCount++ }
-          }
-
-          if (t.resolvedAt && t.createdAt) {
-            const resolutionTime = new Date(String(t.resolvedAt)).getTime() - new Date(String(t.createdAt)).getTime()
-            if (resolutionTime > 0) { totalResolutionTimeMs += resolutionTime; resolutionTimeCount++ }
-          }
-
-          const createdAt = t.createdAt ? new Date(String(t.createdAt)) : null
-          if (createdAt) {
-            if (createdAt >= sevenDaysAgo) createdLast7Days++
-            if (createdAt >= thirtyDaysAgo) createdLast30Days++
-          }
-
-          totalTimeMinutes += (t.totalTimeMinutes as number) || 0
-        }
-
-        // Satisfaction
-        const surveys = await payload.find({
+        // ── Satisfaction: use count + paginated average ──
+        const surveyCount = await payload.count({
           collection: slugs.satisfactionSurveys as any,
-          limit: 0,
-          depth: 0,
           overrideAccess: true,
         })
 
         let satisfactionAvg = 0
-        if (surveys.docs.length > 0) {
-          const totalRating = surveys.docs.reduce((sum: number, s: any) => sum + (s.rating || 0), 0)
-          satisfactionAvg = Math.round((totalRating / surveys.docs.length) * 10) / 10
+        if (surveyCount.totalDocs > 0) {
+          let totalRating = 0
+          let surveyPage = 1
+          let surveyHasMore = true
+          while (surveyHasMore && surveyPage <= MAX_PAGES) {
+            const batch = await payload.find({
+              collection: slugs.satisfactionSurveys as any,
+              limit: PAGE_SIZE,
+              page: surveyPage,
+              depth: 0,
+              overrideAccess: true,
+              select: { rating: true },
+            })
+            for (const s of batch.docs) {
+              totalRating += ((s as any).rating || 0)
+            }
+            surveyHasMore = batch.hasNextPage ?? false
+            surveyPage++
+          }
+          satisfactionAvg = Math.round((totalRating / surveyCount.totalDocs) * 10) / 10
         }
 
-        const clientCount = await payload.count({
-          collection: slugs.supportClients as any,
-          overrideAccess: true,
-        })
-
-        const pendingEmailsCount = await payload.count({
-          collection: slugs.pendingEmails as any,
-          where: { status: { equals: 'pending' } },
-          overrideAccess: true,
-        })
+        const [clientCount, pendingEmailsCount] = await Promise.all([
+          payload.count({
+            collection: slugs.supportClients as any,
+            overrideAccess: true,
+          }),
+          payload.count({
+            collection: slugs.pendingEmails as any,
+            where: { status: { equals: 'pending' } },
+            overrideAccess: true,
+          }),
+        ])
 
         return new Response(JSON.stringify({
-          total: tickets.length,
+          total,
           byStatus,
           byPriority,
           byCategory,
-          createdLast7Days,
-          createdLast30Days,
+          createdLast7Days: created7.totalDocs,
+          createdLast30Days: created30.totalDocs,
           avgResponseTimeHours: responseTimeCount > 0
             ? Math.round((totalResponseTimeMs / responseTimeCount / (1000 * 60 * 60)) * 10) / 10
             : null,
@@ -132,7 +180,7 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
             : null,
           totalTimeMinutes,
           satisfactionAvg,
-          satisfactionCount: surveys.docs.length,
+          satisfactionCount: surveyCount.totalDocs,
           clientCount: clientCount.totalDocs,
           pendingEmailsCount: pendingEmailsCount.totalDocs,
         }), {
@@ -142,6 +190,8 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
           },
         })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[admin-stats] Error:', error)
         return Response.json({ error: 'Internal error' }, { status: 500 })
       }

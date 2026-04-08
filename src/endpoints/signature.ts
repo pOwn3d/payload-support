@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 
 const PREF_KEY = 'email-signature'
 
@@ -14,9 +15,7 @@ export function createSignatureGetEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const prefs = await payload.find({
           collection: 'payload-preferences' as any,
@@ -31,8 +30,10 @@ export function createSignatureGetEndpoint(slugs: CollectionSlugs): Endpoint {
           : ''
 
         return Response.json({ signature })
-      } catch (err) {
-        console.error('[signature] GET error:', err)
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[signature] GET error:', error)
         return Response.json({ signature: '' })
       }
     },
@@ -50,9 +51,7 @@ export function createSignaturePostEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         const { signature } = (await req.json!()) as { signature: string }
         const key = `${PREF_KEY}-${req.user.id}`
@@ -85,8 +84,10 @@ export function createSignaturePostEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         return Response.json({ signature: signature || '' })
-      } catch (err) {
-        console.error('[signature] POST error:', err)
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[signature] POST error:', error)
         return Response.json({ error: 'Error saving signature' }, { status: 500 })
       }
     },

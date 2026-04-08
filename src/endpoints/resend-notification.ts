@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
 import { RateLimiter } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
 
@@ -17,9 +18,7 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
       try {
         const payload = req.payload
 
-        if (!req.user || req.user.collection !== slugs.users) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+        requireAdmin(req, slugs)
 
         if (resendLimiter.check(String(req.user.id))) {
           return Response.json(
@@ -88,6 +87,8 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
 
         return Response.json({ success: true })
       } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
         console.error('[resend-notification] Error:', error)
         return Response.json({ error: 'Erreur interne' }, { status: 500 })
       }

@@ -147,7 +147,7 @@ export const TicketDetailClient: React.FC = () => {
   useEffect(() => {
     if (!ticketId) return
     const iv = setInterval(async () => {
-      try { const r = await fetch(`/api/support/typing?ticketId=${ticketId}`, { credentials: 'include' }); if (r.ok) { const d = await r.json(); setClientTyping(d.typing) } } catch {}
+      try { const r = await fetch(`/api/support/typing?ticketId=${ticketId}`, { credentials: 'include' }); if (r.ok) { const d = await r.json(); setClientTyping(d.typing) } } catch (err) { console.warn('[support] typing poll error:', err) }
     }, 2000)
     return () => clearInterval(iv)
   }, [ticketId])
@@ -286,12 +286,12 @@ export const TicketDetailClient: React.FC = () => {
       const res = await fetch('/api/ticket-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ ticket: Number(ticketId), body: finalBody, authorType: 'admin', isInternal, skipNotification: isInternal || !notifyClient }) })
       if (res.ok) { setReplyBody(''); setIsInternal(false); setPendingFiles([]); fetchAll() }
-    } catch {} finally { setSending(false) }
+    } catch (err) { console.warn('[support] send reply error:', err) } finally { setSending(false) }
   }
 
   const handleStatusChange = async (v: string) => {
     if (!ticketId) return; setStatusUpdating(true)
-    try { await fetch(`/api/tickets/${ticketId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status: v }) }); fetchAll() } catch {} finally { setStatusUpdating(false) }
+    try { await fetch(`/api/tickets/${ticketId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ status: v }) }); fetchAll() } catch (err) { console.warn('[support] status change error:', err) } finally { setStatusUpdating(false) }
   }
 
   const handleFieldPatch = async (field: string, value: string) => {
@@ -335,7 +335,7 @@ export const TicketDetailClient: React.FC = () => {
       const r = await fetch('/api/support/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ action: 'suggest_reply', messages: messages.slice(-10).map((m) => ({ authorType: m.authorType, body: m.body })), clientName: `${client?.firstName || ''} ${client?.lastName || ''}`.trim(), clientCompany: client?.company }) })
       if (r.ok) { const d = await r.json(); if (d.reply) { setReplyBody(d.reply) } }
-    } catch {} finally { setAiReplying(false) }
+    } catch (err) { console.warn('[support] AI suggest error:', err) } finally { setAiReplying(false) }
   }
 
   const handleAiRewrite = async () => {
@@ -343,12 +343,12 @@ export const TicketDetailClient: React.FC = () => {
     try {
       const r = await fetch('/api/support/ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'rewrite', text: replyBody }) })
       if (r.ok) { const d = await r.json(); if (d.rewritten) { setReplyBody(d.rewritten) } }
-    } catch {} finally { setAiRewriting(false) }
+    } catch (err) { console.warn('[support] AI rewrite error:', err) } finally { setAiRewriting(false) }
   }
 
   const handleTimerSave = async () => {
     if (!ticketId || timerSeconds < 60) return
-    try { await fetch('/api/time-entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ticket: Number(ticketId), duration: Math.round(timerSeconds / 60), date: new Date().toISOString(), description: 'Timer' }) }); setTimerSeconds(0); setTimerRunning(false); fetchAll() } catch {}
+    try { await fetch('/api/time-entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ticket: Number(ticketId), duration: Math.round(timerSeconds / 60), date: new Date().toISOString(), description: 'Timer' }) }); setTimerSeconds(0); setTimerRunning(false); fetchAll() } catch (err) { console.warn('[support] timer save error:', err) }
   }
 
   const handleApplyMacro = async (macroId: number) => {
@@ -360,7 +360,7 @@ export const TicketDetailClient: React.FC = () => {
         body: JSON.stringify({ macroId, ticketId: Number(ticketId) }),
       })
       if (r.ok) { fetchAll() }
-    } catch { /* silent */ } finally { setApplyingMacro(false) }
+    } catch (err) { console.warn('[support] apply macro error:', err) } finally { setApplyingMacro(false) }
   }
 
   const handleFileSelect = (files: FileList | null) => {
@@ -701,7 +701,7 @@ export const TicketDetailClient: React.FC = () => {
                     await fetch('/api/time-entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ticket: Number(ticketId), duration: mins, date: new Date().toISOString(), description: 'Saisie manuelle' }) })
                     if (input) input.value = ''
                     fetchAll()
-                  } catch {}
+                  } catch (err) { console.warn('[support] manual time entry error:', err) }
                 }}>+ Ajouter</button>
               </div>
               {timeEntries.length > 0 && (

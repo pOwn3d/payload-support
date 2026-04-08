@@ -10,18 +10,29 @@ function createRecalculateTicketTime(slugs: CollectionSlugs): CollectionAfterCha
     const { payload } = req
     const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
 
-    // Sum all time entries for this ticket
-    const entries = await payload.find({
-      collection: slugs.timeEntries,
-      where: { ticket: { equals: ticketId } },
-      limit: 0, // all entries
-      depth: 0,
-      overrideAccess: true,
-    })
+    // Sum all time entries for this ticket, paginating to avoid loading all at once
+    let totalMinutes = 0
+    let page = 1
+    let hasMore = true
 
-    const totalMinutes = entries.docs.reduce((sum, entry) => {
-      return sum + ((entry.duration as number) || 0)
-    }, 0)
+    while (hasMore) {
+      const entries = await payload.find({
+        collection: slugs.timeEntries,
+        where: { ticket: { equals: ticketId } },
+        limit: 100,
+        page,
+        depth: 0,
+        overrideAccess: true,
+        select: { duration: true },
+      })
+
+      for (const entry of entries.docs) {
+        totalMinutes += ((entry.duration as number) || 0)
+      }
+
+      hasMore = entries.hasNextPage ?? false
+      page++
+    }
 
     await payload.update({
       collection: slugs.tickets,

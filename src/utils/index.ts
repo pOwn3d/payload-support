@@ -1,6 +1,8 @@
 export { resolveSlugs, DEFAULT_SLUGS } from './slugs'
 export type { CollectionSlugs } from './slugs'
 export { RateLimiter } from './rateLimiter'
+export { AuthError, requireAdmin, requireClient, handleAuthError } from './auth'
+export { fireWebhooks } from './fireWebhooks'
 
 export {
   escapeHtml,
