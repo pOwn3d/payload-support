@@ -1,6 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { RateLimiter } from '../utils/rateLimiter'
+import { readSupportSettings } from '../utils/readSettings'
 import crypto from 'crypto'
 
 interface ParsedConversation {
@@ -206,8 +207,9 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoi
           return Response.json({ error: 'Invalid client email extracted' }, { status: 422 })
         }
 
+        const settings = await readSupportSettings(payload)
         const adminEmail = (process.env.CONTACT_EMAIL || '').toLowerCase()
-        const blockedEmails = [adminEmail, process.env.SUPPORT_REPLY_TO || ''].filter(Boolean)
+        const blockedEmails = [adminEmail, settings.email.replyToAddress || process.env.SUPPORT_REPLY_TO || ''].filter(Boolean)
         if (blockedEmails.includes(conversation.client.email)) {
           return Response.json({ error: 'Cannot create ticket from system email address' }, { status: 400 })
         }

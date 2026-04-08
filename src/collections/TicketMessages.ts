@@ -4,6 +4,7 @@ import { escapeHtml, emailWrapper, emailButton, emailQuote, emailParagraph, emai
 import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
 import { dispatchWebhook } from '../utils/webhookDispatcher'
+import { readSupportSettings } from '../utils/readSettings'
 import { createCheckSlaOnReply } from '../hooks/checkSLA'
 
 function createAssignAuthor(slugs: CollectionSlugs): CollectionBeforeChangeHook {
@@ -59,10 +60,11 @@ function createNotifyClient(slugs: CollectionSlugs): CollectionAfterChangeHook {
       // Respect client notification preferences
       if (client.notifyOnReply === false) return doc
 
+      const settings = await readSupportSettings(req.payload)
       const ticketNumber = (ticket.ticketNumber as string) || 'TK-????'
       const subject = (ticket.subject as string) || 'Support'
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
-      const supportEmail = process.env.SUPPORT_EMAIL || ''
+      const supportEmail = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
       const portalUrl = `${baseUrl}/support/tickets/${ticketId}`
 
       // Use rich HTML content if available, otherwise plain text preview
@@ -177,11 +179,12 @@ function createNotifyAdminOnClientMessage(slugs: CollectionSlugs, notificationSl
       if (!ticket) return doc
 
       const client = typeof ticket.client === 'object' ? ticket.client : null
+      const settings = await readSupportSettings(payload)
       const clientName = client?.firstName || 'Client'
       const clientEmail = client?.email || 'inconnu'
       const ticketNumber = ticket.ticketNumber || 'TK-????'
       const subject = ticket.subject || 'Support'
-      const supportEmail = process.env.SUPPORT_EMAIL || ''
+      const supportEmail = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
       const contactEmail = process.env.CONTACT_EMAIL || supportEmail
       const assignedAdmin = typeof ticket.assignedTo === 'object' ? ticket.assignedTo : null
       const assignedEmail = assignedAdmin?.email

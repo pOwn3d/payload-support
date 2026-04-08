@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
 import { fireWebhooks } from '../utils/fireWebhooks'
+import { readSupportSettings } from '../utils/readSettings'
 
 /**
  * POST /api/support/process-scheduled
@@ -23,6 +24,8 @@ export function createProcessScheduledEndpoint(slugs: CollectionSlugs): Endpoint
       try {
         const payload = req.payload
         const now = new Date()
+        const settings = await readSupportSettings(payload)
+        const replyTo = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
         const results = { processed: 0, errors: 0 }
 
         // Find all messages where scheduledAt is in the past and scheduledSent is not true
@@ -75,6 +78,7 @@ export function createProcessScheduledEndpoint(slugs: CollectionSlugs): Endpoint
 
               await payload.sendEmail({
                 to: client.email,
+                ...(replyTo ? { replyTo } : {}),
                 subject: `Re: [${ticketNumber}] ${subject}`,
                 html: `<p>Bonjour ${escapeHtml(client.firstName || '')},</p><p>Notre équipe a répondu à votre ticket <strong>${escapeHtml(ticketNumber)}</strong>.</p><blockquote style="border-left:4px solid #2563eb;padding:12px;margin:16px 0;background:#f8fafc;">${escapeHtml(preview)}</blockquote><p><a href="${baseUrl}/support/tickets/${ticketId}">Consulter le ticket</a></p>`,
               })

@@ -1,48 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-
-// Fallback model if nothing configured
-const FALLBACK_MODEL = 'claude-haiku-4-5-20251001'
-
-interface SupportSettings {
-  ai: {
-    provider: 'anthropic' | 'openai' | 'gemini' | 'ollama'
-    model: string
-    enableSentiment: boolean
-    enableSynthesis: boolean
-    enableSuggestion: boolean
-    enableRewrite: boolean
-  }
-}
-
-const DEFAULT_AI_SETTINGS: SupportSettings['ai'] = {
-  provider: 'anthropic',
-  model: FALLBACK_MODEL,
-  enableSentiment: true,
-  enableSynthesis: true,
-  enableSuggestion: true,
-  enableRewrite: true,
-}
-
-async function readAiSettings(payload: any): Promise<SupportSettings['ai']> {
-  try {
-    const prefs = await payload.find({
-      collection: 'payload-preferences',
-      where: { key: { equals: 'support-settings' } },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    })
-    if (prefs.docs.length > 0) {
-      const stored = prefs.docs[0].value as Partial<SupportSettings>
-      return { ...DEFAULT_AI_SETTINGS, ...stored.ai }
-    }
-  } catch {
-    // fall through
-  }
-  return { ...DEFAULT_AI_SETTINGS }
-}
+import { readSupportSettings, type SupportSettings } from '../utils/readSettings'
 
 function getClient(aiSettings: SupportSettings['ai']) {
   // Dynamic import to avoid hard dependency
@@ -55,7 +14,7 @@ function getClient(aiSettings: SupportSettings['ai']) {
 }
 
 function getModel(aiSettings: SupportSettings['ai']): string {
-  return aiSettings.model || FALLBACK_MODEL
+  return aiSettings.model || 'claude-haiku-4-5-20251001'
 }
 
 type AiAction = 'sentiment' | 'synthesis' | 'suggest_reply' | 'rewrite'
@@ -74,7 +33,8 @@ export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
 
         requireAdmin(req, slugs)
 
-        const aiSettings = await readAiSettings(payload)
+        const settings = await readSupportSettings(payload)
+        const aiSettings = settings.ai
         let body: Record<string, unknown>
         try {
           body = await req.json!()

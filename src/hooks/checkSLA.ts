@@ -2,6 +2,7 @@ import type { CollectionAfterChangeHook, Payload } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { createAdminNotification } from '../utils/adminNotification'
 import { emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
+import { readSupportSettings } from '../utils/readSettings'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDoc = any
@@ -250,7 +251,8 @@ async function handleSlaBreach(
 
     const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
     const adminUrl = `${baseUrl}/admin/collections/${slugs.tickets}/${ticket.id}`
-    const supportEmail = process.env.SUPPORT_EMAIL || ''
+    const settings = await readSupportSettings(payload)
+    const supportEmail = settings.email.replyToAddress || settings.sla.escalationEmail || process.env.SUPPORT_EMAIL || ''
 
     await payload.sendEmail({
       to: escalateUser.email as string,

@@ -1,6 +1,7 @@
 import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
+import { readSupportSettings } from '../utils/readSettings'
 
 // ─── Hooks ───────────────────────────────────────────────
 
@@ -13,6 +14,7 @@ function createSendInvitationOnCreate(slugs: CollectionSlugs): CollectionAfterCh
 
     try {
       const { payload } = req
+      const settings = await readSupportSettings(payload)
 
       // Generate reset token without sending the default forgotPassword email
       const token = await payload.forgotPassword({
@@ -24,8 +26,10 @@ function createSendInvitationOnCreate(slugs: CollectionSlugs): CollectionAfterCh
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
       const resetUrl = `${baseUrl}/support/reset-password?token=${token}`
 
+      const replyTo = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
       await payload.sendEmail({
         to: doc.email,
+        ...(replyTo ? { replyTo } : {}),
         subject: 'Activez votre compte support',
         html: emailWrapper('Bienvenue sur votre espace support', [
           emailParagraph(`Bonjour <strong>${escapeHtml(doc.firstName || '')}</strong>,`),

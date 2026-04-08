@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
 import { requireAdmin, handleAuthError } from '../utils/auth'
+import { readSupportSettings } from '../utils/readSettings'
 
 /**
  * POST /api/support/pending-emails/:id/process
@@ -63,6 +64,7 @@ export function createPendingEmailsProcessEndpoint(slugs: CollectionSlugs): Endp
           })
         }
 
+        const settings = await readSupportSettings(payload)
         const clientEmail = clientDoc?.email || pendingEmail.senderEmail || ''
         const clientName = clientDoc?.firstName || pendingEmail.senderName || clientEmail
         const portalUrl = `${process.env.NEXT_PUBLIC_SERVER_URL || ''}/support/dashboard`
@@ -120,7 +122,7 @@ export function createPendingEmailsProcessEndpoint(slugs: CollectionSlugs): Endp
           try {
             await payload.sendEmail({
               to: clientEmail,
-              replyTo: process.env.SUPPORT_REPLY_TO || '',
+              replyTo: settings.email.replyToAddress || process.env.SUPPORT_REPLY_TO || '',
               subject: `[${newTicket.ticketNumber}] ${pendingEmail.subject}`,
               html: `<div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                 <p>Bonjour <strong>${escapeHtml(clientName)}</strong>,</p>

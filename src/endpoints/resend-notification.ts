@@ -3,6 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { RateLimiter } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
+import { readSupportSettings } from '../utils/readSettings'
 
 const resendLimiter = new RateLimiter(60 * 60 * 1000, 10) // 10 per hour
 
@@ -67,6 +68,7 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
           return Response.json({ error: 'Client sans email' }, { status: 400 })
         }
 
+        const settings = await readSupportSettings(payload)
         const ticketNumber = ticket.ticketNumber || 'TK-????'
         const subject = ticket.subject || 'Support'
         const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
@@ -75,7 +77,7 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
 
         await payload.sendEmail({
           to: client.email,
-          replyTo: process.env.SUPPORT_REPLY_TO || '',
+          replyTo: settings.email.replyToAddress || process.env.SUPPORT_REPLY_TO || '',
           subject: `Re: [${ticketNumber}] ${subject}`,
           html: `<div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
             <p>Bonjour <strong>${escapeHtml(client.firstName || '')}</strong>,</p>

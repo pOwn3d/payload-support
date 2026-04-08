@@ -1,6 +1,7 @@
 import type { CollectionAfterChangeHook } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { emailWrapper, emailButton, emailParagraph, escapeHtml } from '../utils/emailTemplate'
+import { readSupportSettings } from '../utils/readSettings'
 
 /**
  * Status labels in French — maps status value to display label
@@ -66,8 +67,9 @@ async function resolveClient(
 export function createTicketStatusEmail(slugs: CollectionSlugs): CollectionAfterChangeHook {
   return async ({ doc, previousDoc, operation, req }) => {
     const { payload } = req
+    const settings = await readSupportSettings(payload)
     const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
-    const supportEmail = process.env.SUPPORT_EMAIL || ''
+    const supportEmail = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
 
     // --- Ticket creation: send confirmation email ---
     if (operation === 'create') {

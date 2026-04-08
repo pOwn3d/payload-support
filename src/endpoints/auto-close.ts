@@ -1,8 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
-
-const DEFAULT_CLOSE_AFTER_REMIND_DAYS = 2
+import { readSupportSettings } from '../utils/readSettings'
 
 /**
  * GET /api/support/auto-close
@@ -24,12 +23,17 @@ export function createAutoCloseEndpoint(slugs: CollectionSlugs): Endpoint {
         const payload = req.payload
         const now = new Date()
         const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
+        const settings = await readSupportSettings(payload)
+
+        if (!settings.autoClose.enabled) {
+          return Response.json({ success: true, skipped: true, reason: 'auto-close disabled in settings' })
+        }
 
         const url = new URL(req.url!)
         const totalDaysParam = url.searchParams.get('days')
-        const totalDays = totalDaysParam ? parseInt(totalDaysParam, 10) : 7
-        const REMIND_AFTER_DAYS = Math.max(1, totalDays - DEFAULT_CLOSE_AFTER_REMIND_DAYS)
-        const CLOSE_AFTER_REMIND_DAYS = DEFAULT_CLOSE_AFTER_REMIND_DAYS
+        const totalDays = totalDaysParam ? parseInt(totalDaysParam, 10) : settings.autoClose.daysBeforeClose
+        const REMIND_AFTER_DAYS = Math.max(1, totalDays - settings.autoClose.reminderDaysBefore)
+        const CLOSE_AFTER_REMIND_DAYS = settings.autoClose.reminderDaysBefore
 
         const results = { reminded: 0, closed: 0, errors: 0 }
 
@@ -62,7 +66,7 @@ export function createAutoCloseEndpoint(slugs: CollectionSlugs): Endpoint {
 
             await payload.sendEmail({
               to: client.email,
-              replyTo: process.env.SUPPORT_REPLY_TO || '',
+              replyTo: settings.email.replyToAddress || process.env.SUPPORT_REPLY_TO || '',
               subject: `Rappel : [${ticketNumber}] ${subject} — En attente de votre réponse`,
               html: `<div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                 <p>Bonjour <strong>${escapeHtml(client.firstName || '')}</strong>,</p>
@@ -139,7 +143,7 @@ export function createAutoCloseEndpoint(slugs: CollectionSlugs): Endpoint {
               const portalUrl = `${baseUrl}/support/tickets/${t.id}`
               await payload.sendEmail({
                 to: client.email,
-                replyTo: process.env.SUPPORT_REPLY_TO || '',
+                replyTo: settings.email.replyToAddress || process.env.SUPPORT_REPLY_TO || '',
                 subject: `[${ticketNumber}] Ticket résolu — ${subject}`,
                 html: `<div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
                   <p>Bonjour <strong>${escapeHtml(client.firstName || '')}</strong>,</p>

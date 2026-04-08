@@ -10,6 +10,7 @@ import { escapeHtml } from '../utils/emailTemplate'
 import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
 import { dispatchWebhook } from '../utils/webhookDispatcher'
+import { readSupportSettings } from '../utils/readSettings'
 import { createTicketStatusEmail } from '../hooks/ticketStatusEmail'
 import { createAssignSlaDeadlines, createCheckSlaOnResolve } from '../hooks/checkSLA'
 
@@ -209,11 +210,14 @@ function createNotifyOnAssignment(slugs: CollectionSlugs): CollectionAfterChange
         ? doc.assignedTo
         : await req.payload.findByID({ collection: slugs.users, id: newAssigned, depth: 0, overrideAccess: true })
       if (!assignee?.email) return doc
+      const settings = await readSupportSettings(req.payload)
       const ticketNumber = doc.ticketNumber || 'TK-????'
       const subject = doc.subject || 'Support'
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
+      const replyTo = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
       await req.payload.sendEmail({
         to: assignee.email,
+        ...(replyTo ? { replyTo } : {}),
         subject: `Ticket assigne : [${ticketNumber}] ${subject}`,
         html: `<p>Le ticket <strong>${escapeHtml(ticketNumber)}</strong> — <em>${escapeHtml(subject)}</em> — vous a ete assigne.</p><p><a href="${baseUrl}/admin/collections/${slugs.tickets}/${doc.id}">Ouvrir le ticket</a></p>`,
       })
@@ -238,10 +242,13 @@ function createNotifyClientOnResolve(slugs: CollectionSlugs): CollectionAfterCha
         overrideAccess: true,
       }) : null)
       if (!clientData?.email || clientData.notifyOnStatusChange === false) return doc
+      const settings = await readSupportSettings(req.payload)
       const ticketNumber = doc.ticketNumber || 'TK-????'
       const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || ''
+      const replyTo = settings.email.replyToAddress || process.env.SUPPORT_EMAIL || ''
       await req.payload.sendEmail({
         to: clientData.email,
+        ...(replyTo ? { replyTo } : {}),
         subject: `[${ticketNumber}] Ticket resolu`,
         html: `<p>Bonjour ${escapeHtml(clientData.firstName || '')},</p><p>Votre ticket <strong>${escapeHtml(ticketNumber)}</strong> a ete resolu.</p><p><a href="${baseUrl}/support/tickets/${doc.id}">Consulter le ticket</a></p>`,
       })
