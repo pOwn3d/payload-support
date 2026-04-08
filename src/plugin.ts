@@ -128,22 +128,19 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
 
     return {
       ...incomingConfig,
-      collections: [
-        ...existingCollections,
-        ...supportCollections,
-      ],
-      endpoints: [
-        ...existingEndpoints,
-        ...supportEndpoints,
-      ],
+      collections: config?.skipCollections
+        ? existingCollections
+        : [...existingCollections, ...supportCollections],
+      endpoints: config?.skipEndpoints
+        ? existingEndpoints
+        : [...existingEndpoints, ...supportEndpoints],
       admin: {
         ...incomingConfig.admin,
         components: {
           ...incomingConfig.admin?.components,
-          views: {
-            ...existingViews,
-            ...supportViews,
-          },
+          views: config?.skipViews
+            ? existingViews
+            : { ...existingViews, ...supportViews },
         },
       },
     }

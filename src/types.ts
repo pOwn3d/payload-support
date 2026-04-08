@@ -108,6 +108,15 @@ export interface SupportPluginConfig {
    */
   allowedEmailDomains?: string[]
 
+  /** Skip injecting collections (use your own custom collections) */
+  skipCollections?: boolean
+
+  /** Skip injecting admin views (use your own custom views) */
+  skipViews?: boolean
+
+  /** Skip injecting endpoints (use your own custom API routes) */
+  skipEndpoints?: boolean
+
   /** Collection slug overrides */
   collectionSlugs?: {
     tickets?: string
