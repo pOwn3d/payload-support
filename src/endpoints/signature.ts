@@ -64,24 +64,22 @@ export function createSignaturePostEndpoint(slugs: CollectionSlugs): Endpoint {
           overrideAccess: true,
         })
 
-        if (existing.docs.length > 0) {
-          await payload.update({
-            collection: 'payload-preferences' as any,
-            id: existing.docs[0].id,
-            data: { value: { signature: signature || '' } },
-            overrideAccess: true,
-          })
-        } else {
-          await (payload as any).create({
-            collection: 'payload-preferences',
-            data: {
-              key,
-              value: { signature: signature || '' },
-            },
-            overrideAccess: true,
-            req,
-          })
-        }
+        await payload.db.upsert({
+          collection: 'payload-preferences',
+          data: {
+            key,
+            user: { relationTo: req.user!.collection, value: req.user!.id },
+            value: { signature: signature || '' },
+          },
+          req: { payload, user: req.user } as any,
+          where: {
+            and: [
+              { key: { equals: key } },
+              { 'user.value': { equals: req.user!.id } },
+              { 'user.relationTo': { equals: req.user!.collection } },
+            ],
+          },
+        })
 
         return Response.json({ signature: signature || '' })
       } catch (error) {

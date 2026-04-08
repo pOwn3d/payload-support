@@ -129,24 +129,22 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
           overrideAccess: true,
         })
 
-        if (existing.docs.length > 0) {
-          await payload.update({
-            collection: 'payload-preferences' as any,
-            id: existing.docs[0].id,
-            data: { value: merged as unknown as Record<string, unknown> },
-            overrideAccess: true,
-          })
-        } else {
-          await (payload as any).create({
-            collection: 'payload-preferences',
-            data: {
-              key: PREF_KEY,
-              value: merged as unknown as Record<string, unknown>,
-            },
-            overrideAccess: true,
-            req,
-          })
-        }
+        await payload.db.upsert({
+          collection: 'payload-preferences',
+          data: {
+            key: PREF_KEY,
+            user: { relationTo: req.user!.collection, value: req.user!.id },
+            value: merged as unknown as Record<string, unknown>,
+          },
+          req: { payload, user: req.user } as any,
+          where: {
+            and: [
+              { key: { equals: PREF_KEY } },
+              { 'user.value': { equals: req.user!.id } },
+              { 'user.relationTo': { equals: req.user!.collection } },
+            ],
+          },
+        })
 
         return Response.json(merged)
       } catch (error) {

@@ -63,24 +63,22 @@ export function createRoundRobinConfigPostEndpoint(slugs: CollectionSlugs): Endp
           overrideAccess: true,
         })
 
-        if (existing.docs.length > 0) {
-          await payload.update({
-            collection: 'payload-preferences' as any,
-            id: existing.docs[0].id,
-            data: { value: { enabled: !!enabled } },
-            overrideAccess: true,
-          })
-        } else {
-          await (payload as any).create({
-            collection: 'payload-preferences',
-            data: {
-              key: PREF_KEY,
-              value: { enabled: !!enabled },
-            },
-            overrideAccess: true,
-            req,
-          })
-        }
+        await payload.db.upsert({
+          collection: 'payload-preferences',
+          data: {
+            key: PREF_KEY,
+            user: { relationTo: req.user!.collection, value: req.user!.id },
+            value: { enabled: !!enabled },
+          },
+          req: { payload, user: req.user } as any,
+          where: {
+            and: [
+              { key: { equals: PREF_KEY } },
+              { 'user.value': { equals: req.user!.id } },
+              { 'user.relationTo': { equals: req.user!.collection } },
+            ],
+          },
+        })
 
         return Response.json({ enabled: !!enabled })
       } catch (error) {
