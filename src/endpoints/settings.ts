@@ -29,9 +29,6 @@ interface SupportSettings {
     daysBeforeClose: number
     reminderDaysBefore: number
   }
-  locale: {
-    language: 'fr' | 'en'
-  }
 }
 
 const DEFAULT_SUPPORT_SETTINGS: SupportSettings = {
@@ -51,7 +48,6 @@ const DEFAULT_SUPPORT_SETTINGS: SupportSettings = {
     escalationEmail: '',
   },
   autoClose: { enabled: true, daysBeforeClose: 7, reminderDaysBefore: 2 },
-  locale: { language: 'fr' },
 }
 
 /**
@@ -83,7 +79,6 @@ export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
             ai: { ...DEFAULT_SUPPORT_SETTINGS.ai, ...stored.ai },
             sla: { ...DEFAULT_SUPPORT_SETTINGS.sla, ...stored.sla },
             autoClose: { ...DEFAULT_SUPPORT_SETTINGS.autoClose, ...stored.autoClose },
-            locale: { ...DEFAULT_SUPPORT_SETTINGS.locale, ...stored.locale },
           }
         }
 
@@ -118,16 +113,7 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
           ai: { ...DEFAULT_SUPPORT_SETTINGS.ai, ...body.ai },
           sla: { ...DEFAULT_SUPPORT_SETTINGS.sla, ...body.sla },
           autoClose: { ...DEFAULT_SUPPORT_SETTINGS.autoClose, ...body.autoClose },
-          locale: { ...DEFAULT_SUPPORT_SETTINGS.locale, ...body.locale },
         }
-
-        const existing = await payload.find({
-          collection: 'payload-preferences' as any,
-          where: { key: { equals: PREF_KEY } },
-          limit: 1,
-          depth: 0,
-          overrideAccess: true,
-        })
 
         await payload.db.upsert({
           collection: 'payload-preferences',

@@ -39,6 +39,7 @@ import { createDeleteAccountEndpoint } from './delete-account'
 import { createMergeClientsEndpoint } from './merge-clients'
 import { createImportConversationEndpoint } from './import-conversation'
 import { createProcessScheduledEndpoint } from './process-scheduled'
+import { createUserPrefsGetEndpoint, createUserPrefsPostEndpoint } from './user-prefs'
 
 // Re-export all individual endpoint creators
 export { createAiEndpoint } from './ai'
@@ -78,6 +79,8 @@ export { createDeleteAccountEndpoint } from './delete-account'
 export { createMergeClientsEndpoint } from './merge-clients'
 export { createImportConversationEndpoint } from './import-conversation'
 export { createProcessScheduledEndpoint } from './process-scheduled'
+export { createUserPrefsGetEndpoint, createUserPrefsPostEndpoint } from './user-prefs'
+export type { UserPrefs } from './user-prefs'
 
 export interface SupportEndpointOptions {
   oauth?: OAuthGoogleOptions
@@ -109,6 +112,8 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
     createImportConversationEndpoint(slugs),
     createPurgeLogsEndpoint(slugs),
     createResendNotificationEndpoint(slugs),
+    createUserPrefsGetEndpoint(slugs),
+    createUserPrefsPostEndpoint(slugs),
   ]
 
   // Conditional endpoints based on feature flags

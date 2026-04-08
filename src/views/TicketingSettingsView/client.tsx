@@ -19,18 +19,22 @@ interface EmailSettings { fromAddress: string; fromName: string; replyToAddress:
 interface AISettings { provider: 'anthropic' | 'openai' | 'gemini' | 'ollama'; apiKey: string; model: string; enableSentiment: boolean; enableSynthesis: boolean; enableSuggestion: boolean; enableRewrite: boolean }
 interface SLASettings { firstResponseMinutes: number; resolutionMinutes: number; businessHoursOnly: boolean; escalationEmail: string }
 interface AutoCloseSettings { enabled: boolean; daysBeforeClose: number; reminderDaysBefore: number }
-interface LocaleSettings { language: 'fr' | 'en' }
-interface AllSettings { email: EmailSettings; ai: AISettings; sla: SLASettings; autoClose: AutoCloseSettings; locale: LocaleSettings }
+interface GlobalSettings { email: EmailSettings; ai: AISettings; sla: SLASettings; autoClose: AutoCloseSettings }
+interface UserPrefs { locale: 'fr' | 'en'; signature: string }
 
-const DEFAULT_SETTINGS: AllSettings = {
+const DEFAULT_SETTINGS: GlobalSettings = {
   email: { fromAddress: '', fromName: 'Support', replyToAddress: '' },
   ai: { provider: 'ollama', apiKey: '', model: 'qwen2.5:32b', enableSentiment: true, enableSynthesis: true, enableSuggestion: true, enableRewrite: true },
   sla: { firstResponseMinutes: 120, resolutionMinutes: 1440, businessHoursOnly: true, escalationEmail: '' },
   autoClose: { enabled: true, daysBeforeClose: 7, reminderDaysBefore: 2 },
-  locale: { language: 'fr' },
 }
 
-async function fetchSettingsFromAPI(): Promise<AllSettings> {
+const DEFAULT_USER_PREFS: UserPrefs = {
+  locale: 'fr',
+  signature: '',
+}
+
+async function fetchSettingsFromAPI(): Promise<GlobalSettings> {
   try {
     const res = await fetch('/api/support/settings', { credentials: 'include' })
     if (res.ok) {
@@ -40,14 +44,13 @@ async function fetchSettingsFromAPI(): Promise<AllSettings> {
         ai: { ...DEFAULT_SETTINGS.ai, apiKey: '', ...data.ai },
         sla: { ...DEFAULT_SETTINGS.sla, ...data.sla },
         autoClose: { ...DEFAULT_SETTINGS.autoClose, ...data.autoClose },
-        locale: { ...DEFAULT_SETTINGS.locale, ...data.locale },
       }
     }
   } catch { /* ignore */ }
   return DEFAULT_SETTINGS
 }
 
-async function saveSettingsToAPI(settings: AllSettings): Promise<boolean> {
+async function saveSettingsToAPI(settings: GlobalSettings): Promise<boolean> {
   try {
     const toSave = { ...settings, ai: { ...settings.ai, apiKey: undefined } }
     const res = await fetch('/api/support/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(toSave) })
@@ -55,17 +58,23 @@ async function saveSettingsToAPI(settings: AllSettings): Promise<boolean> {
   } catch { return false }
 }
 
-async function fetchSignature(): Promise<string> {
+async function fetchUserPrefs(): Promise<UserPrefs> {
   try {
-    const res = await fetch('/api/support/signature', { credentials: 'include' })
-    if (res.ok) { const data = await res.json(); return data.signature || '' }
+    const res = await fetch('/api/support/user-prefs', { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      return {
+        locale: data.locale || DEFAULT_USER_PREFS.locale,
+        signature: data.signature ?? DEFAULT_USER_PREFS.signature,
+      }
+    }
   } catch { /* ignore */ }
-  return ''
+  return { ...DEFAULT_USER_PREFS }
 }
 
-async function saveSignatureToAPI(signature: string): Promise<boolean> {
+async function saveUserPrefsToAPI(prefs: UserPrefs): Promise<boolean> {
   try {
-    const res = await fetch('/api/support/signature', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ signature }) })
+    const res = await fetch('/api/support/user-prefs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(prefs) })
     return res.ok
   } catch { return false }
 }
@@ -108,20 +117,29 @@ const Toggle: React.FC<{ checked: boolean; onChange: () => void; color?: string 
   </div>
 )
 
+// ---- Section divider ----
+
+const SectionTitle: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
+  <div style={{ marginBottom: 16, paddingBottom: 8, borderBottom: '2px solid var(--theme-elevation-200)' }}>
+    <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--theme-text)', margin: 0 }}>{title}</h2>
+    {subtitle && <p style={{ fontSize: 12, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>{subtitle}</p>}
+  </div>
+)
+
 // ---- Main Component ----
 
 export const TicketingSettingsClient: React.FC = () => {
   const [features, setFeatures] = useState<TicketingFeatures>(() => getFeatures())
-  const [settings, setSettings] = useState<AllSettings>(DEFAULT_SETTINGS)
-  const [signature, setSignature] = useState('')
+  const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS)
+  const [userPrefs, setUserPrefs] = useState<UserPrefs>(DEFAULT_USER_PREFS)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([fetchSettingsFromAPI(), fetchSignature()]).then(([s, sig]) => {
-      if (!cancelled) { setSettings(s); setSignature(sig) }
+    Promise.all([fetchSettingsFromAPI(), fetchUserPrefs()]).then(([s, prefs]) => {
+      if (!cancelled) { setSettings(s); setUserPrefs(prefs) }
     })
     return () => { cancelled = true }
   }, [])
@@ -147,18 +165,23 @@ export const TicketingSettingsClient: React.FC = () => {
     setSaved(false)
   }
 
+  const updateUserPrefs = <K extends keyof UserPrefs>(field: K, value: UserPrefs[K]) => {
+    setUserPrefs((prev) => ({ ...prev, [field]: value }))
+    setSaved(false)
+  }
+
   const handleSave = async () => {
     setSaving(true)
     saveFeatures(features)
-    const [settingsOk, signatureOk] = await Promise.all([saveSettingsToAPI(settings), saveSignatureToAPI(signature)])
+    const [settingsOk, prefsOk] = await Promise.all([saveSettingsToAPI(settings), saveUserPrefsToAPI(userPrefs)])
     setSaving(false)
-    if (settingsOk && signatureOk) { setSaved(true); setTimeout(() => setSaved(false), 3000) }
+    if (settingsOk && prefsOk) { setSaved(true); setTimeout(() => setSaved(false), 3000) }
   }
 
   const handleReset = () => {
     setFeatures({ ...DEFAULT_FEATURES })
     setSettings({ ...DEFAULT_SETTINGS })
-    setSignature('')
+    setUserPrefs({ ...DEFAULT_USER_PREFS })
     setSaved(false)
   }
 
@@ -188,6 +211,9 @@ export const TicketingSettingsClient: React.FC = () => {
       <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', marginBottom: 24 }}>
         Configurez le module de support : fonctionnalites, email, IA, SLA et fermeture automatique.
       </p>
+
+      {/* ============ GLOBAL SETTINGS ============ */}
+      <SectionTitle title="Parametres globaux" subtitle="Ces parametres s'appliquent a tous les utilisateurs" />
 
       {/* Feature Flags */}
       <div style={{ marginBottom: 24 }}>
@@ -292,10 +318,22 @@ export const TicketingSettingsClient: React.FC = () => {
         )}
       </div>
 
+      {/* ============ USER PREFERENCES ============ */}
+      <SectionTitle title="Mes preferences" subtitle="Ces parametres sont propres a votre compte" />
+
+      {/* Locale */}
+      <div style={{ marginBottom: 24, padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-200)' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--theme-text)' }}>Langue de l'interface</h2>
+        <select value={userPrefs.locale} onChange={(e) => updateUserPrefs('locale', e.target.value as 'fr' | 'en')} style={selectStyle}>
+          <option value="fr">Francais</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+
       {/* Email Signature */}
       <div style={{ marginBottom: 24, padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-200)' }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--theme-text)' }}>Signature email</h2>
-        <textarea value={signature} onChange={(e) => { setSignature(e.target.value); setSaved(false) }} placeholder="Cordialement,&#10;L'equipe Support" rows={6} style={{ ...inputStyle, minHeight: 120, fontFamily: 'inherit', resize: 'vertical' as const }} />
+        <textarea value={userPrefs.signature} onChange={(e) => updateUserPrefs('signature', e.target.value)} placeholder="Cordialement,&#10;L'equipe Support" rows={6} style={{ ...inputStyle, minHeight: 120, fontFamily: 'inherit', resize: 'vertical' as const }} />
       </div>
 
       {/* Bottom save bar */}

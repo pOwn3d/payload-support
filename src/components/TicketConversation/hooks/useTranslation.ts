@@ -75,7 +75,19 @@ export function useTranslation() {
     return DEFAULT_LOCALE
   })
 
-  // Sync locale to localStorage
+  // Fetch locale from user prefs API on mount
+  useEffect(() => {
+    fetch('/api/support/user-prefs', { credentials: 'include' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.locale && (data.locale === 'fr' || data.locale === 'en')) {
+          setLocaleState(data.locale)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Sync locale to localStorage as fallback
   useEffect(() => {
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, locale)
