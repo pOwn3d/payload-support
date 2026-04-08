@@ -1,5 +1,3 @@
-import type { Plugin } from 'payload'
-
 // ─── Feature flags ───────────────────────────────────────
 
 export interface SupportFeatures {

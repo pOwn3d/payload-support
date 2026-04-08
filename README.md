@@ -465,27 +465,17 @@ import { /* views */ } from '@consilioweb/payload-support/views'
 
 ## Roadmap
 
-- [x] Project scaffold & plugin structure
-- [x] Full type system & feature flags (25+)
-- [x] AI provider abstraction (Anthropic, OpenAI, Ollama)
-- [x] Extract 16 collections with factory functions & dynamic slugs
-- [x] Extract 13 admin views as standalone components
-- [x] Extract 34 API endpoints as Payload plugin endpoints
-- [x] CSS Modules design system with Payload theme vars (17 files)
-- [x] TicketConversation module (10 components, 6 hooks, FR/EN locales)
-- [x] Plugin settings UI (admin page with feature toggles)
-- [x] `transpilePackages` documentation for Next.js
-- [x] Next.js 14/15/16 support
-- [x] Client portal (30 files: login, register, dashboard, tickets, FAQ, profile, chat widgets, FR/EN)
-- [x] Configurable email template system (`createEmailTemplateFactory()`, brand/colors/logo)
-- [x] Server-Sent Events (SSE) for live chat
-- [x] Webhook dispatch on ticket events
-- [x] SLA auto-calculation
-- [x] Scheduled replies processing
-- [x] Unified RateLimiter class
-- [x] Security hardening (XSS, HMAC, SSRF, collection injection)
-- [x] Conditional collection/endpoint creation via feature flags
-- [ ] npm publish to registry
+- Custom ticket statuses — dynamic workflow states instead of hardcoded open/waiting/resolved
+- Snooze tickets — hide from inbox until a specified date
+- Billing & invoicing — time-based billing, invoice PDF generation
+- Knowledge base search — client portal FAQ with full-text search
+- Email inbound processing — parse email replies into ticket messages
+- Real-time typing indicators via SSE
+- Canned responses / macros UI — quick reply templates in admin
+- Dashboard analytics — charts, trends, response times, SLA compliance
+- Multi-language client portal — full i18n beyond FR/EN
+- File attachments on ticket messages
+- Ticket tags & custom fields
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
 

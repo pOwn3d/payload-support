@@ -230,21 +230,21 @@ const TicketConversation: React.FC = () => {
     }).catch(() => {})
   }, [id, messages.length]) // re-mark on new messages
 
-  // Typing indicator: poll for client typing
+  // Typing indicator: poll for client typing (circuit breaker after 3 fails)
+  const typingFailCount = useRef(0)
   useEffect(() => {
     if (!id) return
+    typingFailCount.current = 0
     const poll = async () => {
+      if (typingFailCount.current >= 3) return
       try {
         const res = await fetch(`/api/support/typing?ticketId=${id}`, { credentials: 'include' })
-        if (res.ok) {
-          const data = await res.json()
-          setClientTyping(data.typing)
-          setClientTypingName(data.name || '')
-        }
-      } catch { /* silent */ }
+        if (res.ok) { typingFailCount.current = 0; const data = await res.json(); setClientTyping(data.typing); setClientTypingName(data.name || '') }
+        else { typingFailCount.current++ }
+      } catch { typingFailCount.current++ }
     }
     poll()
-    const interval = setInterval(poll, 2000)
+    const interval = setInterval(poll, 3000)
     return () => clearInterval(interval)
   }, [id])
 

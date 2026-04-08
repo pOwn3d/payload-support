@@ -43,7 +43,7 @@ function createSendInvitationOnCreate(slugs: CollectionSlugs): CollectionAfterCh
 </div>`,
       })
 
-      console.log(`[support-clients] Invitation email sent to ${doc.email}`)
+      // Invitation email sent successfully
     } catch (err) {
       console.error('[support-clients] Failed to send invitation email:', err)
     }
