@@ -1,5 +1,8 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { RateLimiter } from '../utils/rateLimiter'
+
+const chatbotLimiter = new RateLimiter(60_000, 10) // 10 requests per minute per IP
 
 /**
  * POST /api/support/chatbot
@@ -12,7 +15,18 @@ export function createChatbotEndpoint(slugs: CollectionSlugs): Endpoint {
     method: 'post',
     handler: async (req) => {
       try {
-        const { question } = (await req.json!()) as { question: string }
+        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
+        if (chatbotLimiter.check(ip)) {
+          return Response.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
+        }
+
+        let body: { question?: string }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
+        const { question } = body
 
         if (!question?.trim() || question.trim().length < 5) {
           return Response.json({ error: 'Question too short' }, { status: 400 })

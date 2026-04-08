@@ -16,10 +16,10 @@ export function createAuthLogsCollection(slugs: CollectionSlugs): CollectionConf
       useAsTitle: 'email',
     },
     access: {
-      read: ({ req: { user } }) => Boolean(user),
+      read: ({ req }) => req.user?.collection === slugs.users,
       create: () => false, // Logs are system-generated (server-side uses overrideAccess)
       update: () => false,
-      delete: ({ req: { user } }) => Boolean(user),
+      delete: ({ req }) => req.user?.collection === slugs.users,
     },
     fields: [
       {

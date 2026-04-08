@@ -2,22 +2,10 @@ import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto from 'crypto'
+import { RateLimiter } from '../utils/rateLimiter'
 
-// Simple in-memory rate limiters
-const rateLimitStores = new Map<string, Map<string, { count: number; resetAt: number }>>()
-
-function isLimited(storeName: string, key: string, maxRequests: number, windowMs: number): boolean {
-  if (!rateLimitStores.has(storeName)) rateLimitStores.set(storeName, new Map())
-  const store = rateLimitStores.get(storeName)!
-  const now = Date.now()
-  const entry = store.get(key)
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs })
-    return false
-  }
-  entry.count++
-  return entry.count > maxRequests
-}
+const chatSessionLimiter = new RateLimiter(3_600_000, 5) // 5 sessions per hour
+const chatMessageLimiter = new RateLimiter(60_000, 15) // 15 messages per minute
 
 /**
  * GET /api/support/chat?session=xxx&after=timestamp
@@ -91,13 +79,18 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
 
-        const body = await req.json!()
+        let body: { action?: string; session?: string; message?: string }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
         const { action, session, message } = body
         const userId = String(req.user.id)
 
         // Start a new session
         if (action === 'start') {
-          if (isLimited('chat-session', userId, 5, 3_600_000)) {
+          if (chatSessionLimiter.check(userId)) {
             return Response.json({ error: 'Trop de sessions créées. Réessayez plus tard.' }, { status: 429 })
           }
 
@@ -120,7 +113,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Send a message
         if (action === 'send' && session && message) {
-          if (isLimited('chat-message', userId, 15, 60_000)) {
+          if (chatMessageLimiter.check(userId)) {
             return Response.json({ error: 'Trop de messages. Attendez un moment.' }, { status: 429 })
           }
 

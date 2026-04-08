@@ -1,0 +1,374 @@
+{
+  "common": {
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "loading": "Chargement...",
+    "search": "Rechercher",
+    "send": "Envoyer",
+    "back": "Retour",
+    "error": "Erreur",
+    "success": "Succès",
+    "networkError": "Erreur de connexion. Veuillez réessayer.",
+    "required": "obligatoire",
+    "optional": "optionnel",
+    "or": "OU",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "justNow": "A l'instant",
+    "agoMinutes": "il y a {{count}}min",
+    "agoHours": "il y a {{count}}h",
+    "agoDays": "il y a {{count}}j"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion à votre espace",
+      "subtitle": "Portail client -- Support et suivi de projets",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@entreprise.fr",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "........",
+      "submitButton": "Se connecter",
+      "submitting": "Connexion...",
+      "forgotPassword": "Mot de passe oublié ?",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte",
+      "backToSite": "Retour àu site",
+      "continueWithGoogle": "Continuer avec Google",
+      "errorInvalidCredentials": "Email ou mot de passe incorrect.",
+      "errorConnection": "Erreur de connexion. Veuillez réessayer.",
+      "alreadyHaveAccount": "Vous avez déjà un compte. Connectez-vous pour accéder à votre espace support."
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez votre espace support en quelques secondes",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "companyLabel": "Entreprise",
+      "phoneLabel": "Téléphone",
+      "emailLabel": "Email",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Min. 8 caracteres",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "confirmPasswordPlaceholder": "Retapez votre mot de passe",
+      "submitButton": "Créer mon compte",
+      "submitting": "Création du compte...",
+      "signUpWithGoogle": "S'inscrire avec Google",
+      "alreadyHaveAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "errorPasswordLength": "Le mot de passe doit contenir au moins 8 caracteres.",
+      "errorPasswordMismatch": "Les mots de passe ne correspondent pas.",
+      "errorCreation": "Erreur lors de la création du compte."
+    },
+    "twoFactor": {
+      "title": "Vérification en deux étapes",
+      "codeSent": "Un code a été envoyé à",
+      "codeLabel": "Code de vérification",
+      "codePlaceholder": "000000",
+      "verifyButton": "Vérifier",
+      "verifying": "Vérification...",
+      "resendCode": "Renvoyer le code",
+      "resending": "Envoi...",
+      "back": "Retour",
+      "errorSendCode": "Erreur lors de l'envoi du code de vérification.",
+      "errorResendCode": "Erreur lors du renvoi du code.",
+      "errorInvalidCode": "Code incorrect.",
+      "errorAfterVerify": "Erreur de connexion après vérification."
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation.",
+      "emailLabel": "Email",
+      "submitButton": "Envoyer le lien",
+      "submitting": "Envoi...",
+      "successMessage": "Si un compte existe avec cet email, vous recevrez un lien de reinitialisation.",
+      "backToLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "newPasswordLabel": "Nouveau mot de passe",
+      "confirmPasswordLabel": "Confirmer le mot de passe",
+      "submitButton": "Réinitialiser",
+      "submitting": "Réinitialisation...",
+      "successMessage": "Mot de passe reinitialise avec succes.",
+      "loginLink": "Se connecter"
+    }
+  },
+  "landing": {
+    "assistanceAvailable": "Assistance disponible",
+    "heroTitle": "Espace Support Client",
+    "heroSubtitle": "Suivez vos projets, signalez un probleme ou posez une question. Notre equipe vous repond sous 24h.",
+    "accessSpace": "Accéder à mon espace",
+    "createAccount": "Créer un compte",
+    "howItWorks": "Comment ça fonctionne ?",
+    "howItWorksSubtitle": "Trois étapes pour obtenir de l'aide rapidement.",
+    "simpleAndEfficient": "Simple et efficace",
+    "step1Title": "Créez un ticket",
+    "step1Description": "Décrivez votre besoin ou problème. Ajoutez une catégorie et une priorité pour un traitement rapide.",
+    "step2Title": "Échangez avec nous",
+    "step2Description": "Discutez directement avec notre équipe. Chaque message est suivi et archivé dans votre espace.",
+    "step3Title": "Suivez l'avancement",
+    "step3Description": "Consultez le statut de vos tickets, le temps passé et l'historique complet de vos projets.",
+    "noAccount": "Pas encore de compte ?",
+    "noAccountDescription": "Créez votre compte en quelques secondes pour accéder à votre espace support, ou envoyez un email a",
+    "noAccountSuffix": "pour une creation automatique.",
+    "loginButton": "Se connecter"
+  },
+  "header": {
+    "myTickets": "Mes tickets",
+    "newTicket": "Nouveau ticket",
+    "faq": "FAQ",
+    "myProfile": "Mon profil",
+    "logout": "Déconnexion",
+    "impersonation": "Mode impersonation",
+    "quit": "Quitter",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "notificationsEnabled": "Notifications activées",
+    "notificationsBlocked": "Notifications bloquées (modifiez dans les paramètres du navigateur)",
+    "enableNotifications": "Activer les notifications",
+    "notificationsActivated": "Notifications activées",
+    "notificationsBody": "Vous recevrez une notification quand le support répond.",
+    "newMessage": "Nouveau message"
+  },
+  "dashboard": {
+    "title": "Mes tickets",
+    "tabs": {
+      "active": "Actifs",
+      "archived": "Archives"
+    },
+    "search": {
+      "placeholder": "Rechercher un ticket...",
+      "searchInMessages": "Rechercher dans les messages"
+    },
+    "filters": {
+      "status": "Statut",
+      "category": "Catégorie",
+      "project": "Projet",
+      "sort": "Trier par",
+      "allStatuses": "Tous les statuts",
+      "allCategories": "Toutes les catégories",
+      "allProjects": "Tous les projets"
+    },
+    "sort": {
+      "updatedAt": "Dernière mise à jour",
+      "createdAt": "Date de création",
+      "priority": "Priorité"
+    },
+    "empty": {
+      "noTickets": "Aucun ticket",
+      "noTicketsDescription": "Vous n'avez aucun ticket pour le moment.",
+      "createFirst": "Créer mon premier ticket"
+    },
+    "newMessage": "Nouveau message",
+    "status": {
+      "open": "Ouvert",
+      "waiting_client": "En attente",
+      "resolved": "Résolu"
+    },
+    "priority": {
+      "low": "Basse",
+      "normal": "Normale",
+      "high": "Haute",
+      "urgent": "Urgente"
+    },
+    "category": {
+      "bug": "Bug",
+      "content": "Contenu",
+      "feature": "Fonctionnalité",
+      "question": "Question",
+      "hosting": "Hébergement"
+    }
+  },
+  "ticketDetail": {
+    "backToTickets": "Retour àux tickets",
+    "status": {
+      "open": "Ouvert",
+      "waiting_client": "En attente",
+      "resolved": "Résolu"
+    },
+    "priority": {
+      "low": "Basse",
+      "normal": "Normale",
+      "high": "Haute",
+      "urgent": "Urgente"
+    },
+    "category": {
+      "bug": "Bug / Dysfonctionnement",
+      "content": "Modification de contenu",
+      "feature": "Nouvelle fonctionnalité",
+      "question": "Question / Aide",
+      "hosting": "Hébergement / Domaine"
+    },
+    "timeline": {
+      "open": "Ouvert",
+      "waiting_client": "En attente",
+      "resolved": "Résolu"
+    },
+    "details": {
+      "category": "Catégorie",
+      "priority": "Priorité",
+      "created": "Créé le",
+      "updated": "Mis a jour le"
+    },
+    "messages": {
+      "support": "Support",
+      "internal": "Note interne",
+      "solution": "Solution",
+      "edited": "Modifié",
+      "deleted": "Ce message a été supprimé."
+    },
+    "reply": {
+      "placeholder": "Écrivez votre réponse...",
+      "sendButton": "Envoyer",
+      "sending": "Envoi...",
+      "attachments": "Pièces jointes",
+      "attachmentsTooLarge": "Fichier(s) trop volumineux",
+      "dropFiles": "Déposez vos fichiers ici"
+    },
+    "actions": {
+      "closeTicket": "Fermer le ticket",
+      "reopenTicket": "Rouvrir le ticket",
+      "markSolution": "Marquer comme solution",
+      "unmarkSolution": "Retirer la solution",
+      "print": "Imprimer"
+    },
+    "satisfaction": {
+      "title": "Votre avis compte",
+      "subtitle": "Comment evaluez-vous la resolution de ce ticket ?",
+      "ratingLabel": "Note",
+      "commentLabel": "Commentaire",
+      "commentPlaceholder": "Votre retour nous aide a nous ameliorer...",
+      "submitButton": "Envoyer mon avis",
+      "thanks": "Merci pour votre avis !"
+    },
+    "typing": {
+      "isTyping": "est en train d'écrire..."
+    },
+    "readReceipt": {
+      "read": "Lu",
+      "sent": "Envoyé"
+    }
+  },
+  "newTicket": {
+    "title": "Nouveau ticket",
+    "badge": "Nouveau ticket",
+    "heading": "Comment pouvons-nous vous aider ?",
+    "subtitle": "Décrivez votre besoin en détail et nous vous répondrons dans les plus brefs délais.",
+    "backToTickets": "Retour àux tickets",
+    "subjectLabel": "Sujet",
+    "subjectPlaceholder": "Ex: Erreur 404 sur la page contact",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Décrivez votre problème en détail. Plus vous donnez d'informations, plus nous pourrons vous aider rapidement.",
+    "attachmentsLabel": "Pièces jointes",
+    "uploadButton": "Cliquez ou glissez-déposez vos fichiers",
+    "uploadHint": "Images, PDF, documents -- max {{maxSize}} par fichier",
+    "dropHere": "Déposez vos fichiers ici",
+    "fileTooLarge": "Fichier(s) trop volumineux (max {{maxSize}})",
+    "advancedOptions": "Options avancées",
+    "categoryLabel": "Catégorie",
+    "categorySelect": "Sélectionner",
+    "priorityLabel": "Priorité",
+    "projectLabel": "Projet",
+    "projectSelect": "Sélectionner",
+    "requiredFields": "Les champs marques d'un * sont obligatoires",
+    "submitButton": "Créer le ticket",
+    "submitting": "Envoi en cours...",
+    "errors": {
+      "subjectAndMessageRequired": "Le sujet et le message sont obligatoires.",
+      "creationError": "Erreur lors de la création du ticket.",
+      "messageError": "Le ticket a été créé mais le message n'a pas pu être envoyé.",
+      "networkError": "Erreur de connexion. Veuillez réessayer."
+    },
+    "templates": {
+      "bug": {
+        "message": "**Description du bug :**\n\n**Etapes pour reproduire :**\n1. \n2. \n3. \n\n**Resultat attendu :**\n\n**Resultat actuel :**\n\n**Navigateur / Appareil :**\n"
+      },
+      "feature": {
+        "message": "**Fonctionnalité souhaitée :**\n\n**Contexte / besoin :**\n\n**Comportement attendu :**\n\n**Priorite souhaitee :**\n"
+      },
+      "content": {
+        "message": "**Page concernee :**\n\n**Modification demandee :**\n\n**Nouveau contenu :**\n"
+      },
+      "hosting": {
+        "message": "**Nom de domaine :**\n\n**Description du probleme :**\n\n**Message d'erreur (si applicable) :**\n"
+      }
+    },
+    "categories": {
+      "bug": "Bug / Dysfonctionnement",
+      "content": "Modification de contenu",
+      "feature": "Nouvelle fonctionnalité",
+      "question": "Question / Aide",
+      "hosting": "Hébergement / Domaine"
+    },
+    "priorities": {
+      "low": "Basse",
+      "normal": "Normale",
+      "high": "Haute",
+      "urgent": "Urgente"
+    }
+  },
+  "profile": {
+    "title": "Mon profil",
+    "personalInfo": "Informations personnelles",
+    "firstNameLabel": "Prénom",
+    "lastNameLabel": "Nom",
+    "companyLabel": "Entreprise",
+    "phoneLabel": "Téléphone",
+    "emailLabel": "Email",
+    "emailReadonly": "L'email ne peut pas être modifié",
+    "saveProfile": "Sauvegarder",
+    "saving": "Sauvegarde...",
+    "profileUpdated": "Profil mis à jour avec succès.",
+    "loadError": "Impossible de charger le profil.",
+    "sessionExpired": "Session expirée. Veuillez vous reconnecter.",
+    "notifications": {
+      "title": "Notifications",
+      "onReply": "Recevoir un email quand le support repond",
+      "onStatusChange": "Recevoir un email lors d'un changement de statut"
+    },
+    "security": {
+      "title": "Sécurité",
+      "twoFactor": "Vérification en deux étapes (2FA)",
+      "twoFactorDescription": "Un code sera envoyé par email à chaque connexion",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "changeButton": "Changer le mot de passe",
+      "changing": "Changement...",
+      "passwordChanged": "Mot de passe modifie avec succes.",
+      "errorPasswordLength": "Le nouveau mot de passe doit contenir au moins 8 caracteres.",
+      "errorPasswordMismatch": "Les mots de passe ne correspondent pas.",
+      "errorCurrentPassword": "Mot de passe actuel incorrect."
+    },
+    "deleteAccount": {
+      "title": "Supprimer mon compte",
+      "warning": "Cette action est irréversible. Toutes vos données seront supprimées.",
+      "button": "Supprimer mon compte",
+      "confirmTitle": "Confirmer la suppression",
+      "confirmMessage": "Entrez votre mot de passe pour confirmer la suppression de votre compte.",
+      "passwordLabel": "Mot de passe",
+      "confirmButton": "Supprimer definitivement",
+      "deleting": "Suppression...",
+      "cancelButton": "Annuler"
+    }
+  },
+  "faq": {
+    "title": "Base de connaissances",
+    "subtitle": "Trouvez des réponses à vos questions",
+    "searchPlaceholder": "Rechercher un article...",
+    "noResults": "Aucun résultat pour votre recherche.",
+    "categories": {
+      "getting-started": "Premiers pas",
+      "tickets": "Tickets & Support",
+      "account": "Compte & Profil",
+      "billing": "Facturation",
+      "technical": "Technique",
+      "general": "Général"
+    }
+  }
+}

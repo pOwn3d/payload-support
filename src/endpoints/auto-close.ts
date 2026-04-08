@@ -1,16 +1,8 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { escapeHtml } from '../utils/emailTemplate'
 
 const DEFAULT_CLOSE_AFTER_REMIND_DAYS = 2
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
 
 /**
  * GET /api/support/auto-close

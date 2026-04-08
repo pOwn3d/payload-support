@@ -1,20 +1,9 @@
 import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { RateLimiter } from '../utils/rateLimiter'
 
-// Simple rate limiter
-const adminChatLimits = new Map<string, { count: number; resetAt: number }>()
-
-function isAdminChatLimited(userId: string): boolean {
-  const now = Date.now()
-  const entry = adminChatLimits.get(userId)
-  if (!entry || now > entry.resetAt) {
-    adminChatLimits.set(userId, { count: 1, resetAt: now + 60_000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 30
-}
+const adminChatLimiter = new RateLimiter(60_000, 30) // 30 per minute
 
 /**
  * GET /api/support/admin-chat?session=xxx&after=timestamp
@@ -134,7 +123,12 @@ export function createAdminChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const body = await req.json!()
+        let body: { action?: string; session?: string; message?: string }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
         const { action, session, message } = body
 
         if (!session) {
@@ -159,7 +153,7 @@ export function createAdminChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Agent sends a message
         if (action === 'send' && message) {
-          if (isAdminChatLimited(String(req.user.id))) {
+          if (adminChatLimiter.check(String(req.user.id))) {
             return Response.json({ error: 'Rate limit atteint.' }, { status: 429 })
           }
 

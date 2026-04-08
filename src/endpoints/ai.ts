@@ -76,7 +76,12 @@ export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
         }
 
         const aiSettings = await readAiSettings(payload)
-        const body = await req.json!()
+        let body: Record<string, unknown>
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
         const { action } = body as { action: AiAction }
 
         const anthropic = getClient(aiSettings)

@@ -1,41 +1,21 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import crypto from 'crypto'
+import crypto, { createHmac } from 'crypto'
+import { RateLimiter } from '../utils/rateLimiter'
+import { escapeHtml } from '../utils/emailTemplate'
 
-// Rate limiters
-const sendLimits = new Map<string, { count: number; resetAt: number }>()
-const verifyLimits = new Map<string, { count: number; resetAt: number }>()
-
-function isSendLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = sendLimits.get(key)
-  if (!entry || now > entry.resetAt) {
-    sendLimits.set(key, { count: 1, resetAt: now + 60 * 60 * 1000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 3
-}
-
-function isVerifyLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = verifyLimits.get(key)
-  if (!entry || now > entry.resetAt) {
-    verifyLimits.set(key, { count: 1, resetAt: now + 15 * 60 * 1000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 5
-}
-
-function resetVerifyLimit(key: string) {
-  verifyLimits.delete(key)
-}
+const sendLimiter = new RateLimiter(60 * 60 * 1000, 3) // 3 per hour
+const verifyLimiter = new RateLimiter(15 * 60 * 1000, 5) // 5 per 15 min
 
 function generateSecureCode(): string {
   const buf = crypto.randomBytes(4)
   const num = buf.readUInt32BE(0) % 900000 + 100000
   return String(num)
+}
+
+function hashCode(code: string): string {
+  const secret = process.env.PAYLOAD_SECRET || 'payload-support-2fa'
+  return createHmac('sha256', secret).update(code).digest('hex')
 }
 
 /**
@@ -49,7 +29,12 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
     handler: async (req) => {
       try {
         const payload = req.payload
-        const body = await req.json!()
+        let body: { action?: string; email?: string; code?: string }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
         const { action, email, code } = body
 
         if (!action || !email) {
@@ -59,7 +44,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
         const genericSendResponse = { success: true, message: 'Si un compte existe, un code a été envoyé.' }
 
         if (action === 'send') {
-          if (isSendLimited(email)) {
+          if (sendLimiter.check(email)) {
             return Response.json(genericSendResponse)
           }
 
@@ -76,7 +61,8 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
           }
 
           const client = clients.docs[0] as any
-          const twoFactorCode = generateSecureCode()
+          const plainCode = generateSecureCode()
+          const twoFactorCode = hashCode(plainCode)
           const twoFactorExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
           await payload.update({
@@ -90,11 +76,11 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
             to: email,
             subject: 'Code de vérification — Support',
             html: `<div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-              <p>Bonjour <strong>${client.firstName || ''}</strong>,</p>
+              <p>Bonjour <strong>${escapeHtml(client.firstName || '')}</strong>,</p>
               <p>Votre code de vérification :</p>
               <div style="text-align: center; margin: 24px 0;">
                 <span style="display: inline-block; font-size: 32px; font-weight: 900; letter-spacing: 8px; padding: 16px 32px; border: 3px solid #000; border-radius: 16px; background: #FFD600;">
-                  ${twoFactorCode}
+                  ${plainCode}
                 </span>
               </div>
               <p style="font-size: 13px; color: #6b7280;">Ce code est valable 10 minutes.</p>
@@ -109,7 +95,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
             return Response.json({ error: 'Code manquant' }, { status: 400 })
           }
 
-          if (isVerifyLimited(email)) {
+          if (verifyLimiter.check(email)) {
             return Response.json(
               { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
               { status: 429 },
@@ -146,11 +132,12 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
             return Response.json({ error: 'Code expiré. Veuillez en demander un nouveau.' }, { status: 400 })
           }
 
-          // Constant-time comparison
+          // Hash the submitted code and compare with stored hash (constant-time)
+          const submittedHash = hashCode(String(code).padStart(6, '0'))
           const enc = new TextEncoder()
-          const codeBuffer = enc.encode(String(code).padStart(6, '0'))
+          const submittedBuffer = enc.encode(submittedHash)
           const storedBuffer = enc.encode(storedCode)
-          if (codeBuffer.length !== storedBuffer.length || !crypto.timingSafeEqual(codeBuffer, storedBuffer)) {
+          if (submittedBuffer.length !== storedBuffer.length || !crypto.timingSafeEqual(submittedBuffer, storedBuffer)) {
             return Response.json({ error: 'Code incorrect' }, { status: 400 })
           }
 
@@ -161,7 +148,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
             overrideAccess: true,
           })
 
-          resetVerifyLimit(email)
+          verifyLimiter.reset(email)
 
           return Response.json({ success: true, verified: true })
         }

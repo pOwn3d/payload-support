@@ -1,5 +1,6 @@
 import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { escapeHtml } from '../utils/emailTemplate'
 
 function createAssignAuthor(slugs: CollectionSlugs): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
@@ -57,7 +58,7 @@ function createNotifyClient(slugs: CollectionSlugs): CollectionAfterChangeHook {
       await req.payload.sendEmail({
         to: client.email,
         subject: `Re: [${ticketNumber}] ${subject}`,
-        html: `<p>Bonjour ${client.firstName || ''},</p><p>Notre équipe a répondu à votre ticket <strong>${ticketNumber}</strong>.</p><blockquote style="border-left:4px solid #2563eb;padding:12px;margin:16px 0;background:#f8fafc;">${preview}</blockquote><p><a href="${baseUrl}/support/tickets/${ticketId}">Consulter le ticket</a></p>`,
+        html: `<p>Bonjour ${escapeHtml(client.firstName || '')},</p><p>Notre équipe a répondu à votre ticket <strong>${escapeHtml(ticketNumber)}</strong>.</p><blockquote style="border-left:4px solid #2563eb;padding:12px;margin:16px 0;background:#f8fafc;">${escapeHtml(preview)}</blockquote><p><a href="${baseUrl}/support/tickets/${ticketId}">Consulter le ticket</a></p>`,
       })
       await req.payload.update({
         collection: slugs.ticketMessages,
@@ -135,9 +136,9 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs): Collecti
       afterChange: [createAutoUpdateStatus(slugs), createNotifyClient(slugs), createTrackFirstResponse(slugs)],
     },
     access: {
-      create: ({ req }) => req.user?.collection === 'users' || req.user?.collection === slugs.supportClients,
+      create: ({ req }) => req.user?.collection === slugs.users || req.user?.collection === slugs.supportClients,
       read: ({ req }) => {
-        if (req.user?.collection === 'users') return true
+        if (req.user?.collection === slugs.users) return true
         if (req.user?.collection === slugs.supportClients) {
           return {
             and: [
@@ -150,13 +151,13 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs): Collecti
         return false
       },
       update: ({ req }) => {
-        if (req.user?.collection === 'users') return true
+        if (req.user?.collection === slugs.users) return true
         if (req.user?.collection === slugs.supportClients) {
           return { and: [{ authorClient: { equals: req.user.id } } as Where, { authorType: { equals: 'client' } } as Where] }
         }
         return false
       },
-      delete: ({ req }) => req.user?.collection === 'users',
+      delete: ({ req }) => req.user?.collection === slugs.users,
     },
     timestamps: true,
   }

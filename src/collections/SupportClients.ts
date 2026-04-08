@@ -1,5 +1,6 @@
 import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { escapeHtml } from '../utils/emailTemplate'
 
 // ─── Hooks ───────────────────────────────────────────────
 
@@ -28,7 +29,7 @@ function createSendInvitationOnCreate(slugs: CollectionSlugs): CollectionAfterCh
         subject: 'Activez votre compte support',
         html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
 <h2>Bienvenue sur votre espace support</h2>
-<p>Bonjour <strong>${doc.firstName || ''}</strong>,</p>
+<p>Bonjour <strong>${escapeHtml(doc.firstName || '')}</strong>,</p>
 <p>Un espace support a été créé pour vous. Vous pourrez y soumettre vos demandes, suivre vos tickets et échanger directement avec notre équipe.</p>
 <p>Pour activer votre compte, cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
 <p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Définir mon mot de passe</a></p>
@@ -79,7 +80,7 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
 
           return `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
 <h2>Réinitialisation de mot de passe</h2>
-<p>Bonjour${name ? ` <strong>${name}</strong>` : ''},</p>
+<p>Bonjour${name ? ` <strong>${escapeHtml(name)}</strong>` : ''},</p>
 <p>Vous avez demandé la réinitialisation de votre mot de passe pour votre espace support.</p>
 <p>Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :</p>
 <p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Définir mon mot de passe</a></p>

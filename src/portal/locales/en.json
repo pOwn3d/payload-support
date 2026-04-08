@@ -1,0 +1,374 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "open": "Open",
+    "loading": "Loading...",
+    "search": "Search",
+    "send": "Send",
+    "back": "Back",
+    "error": "Error",
+    "success": "Success",
+    "networkError": "Connection error. Please try again.",
+    "required": "required",
+    "optional": "optional",
+    "or": "OR",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "justNow": "Just now",
+    "agoMinutes": "{{count}}m ago",
+    "agoHours": "{{count}}h ago",
+    "agoDays": "{{count}}d ago"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to your space",
+      "subtitle": "Client portal -- Support and project tracking",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "........",
+      "submitButton": "Sign in",
+      "submitting": "Signing in...",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create an account",
+      "backToSite": "Back to site",
+      "continueWithGoogle": "Continue with Google",
+      "errorInvalidCredentials": "Invalid email or password.",
+      "errorConnection": "Connection error. Please try again.",
+      "alreadyHaveAccount": "You already have an account. Sign in to access your support space."
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Join your support space in seconds",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "companyLabel": "Company",
+      "phoneLabel": "Phone",
+      "emailLabel": "Email",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Retype your password",
+      "submitButton": "Create my account",
+      "submitting": "Creating account...",
+      "signUpWithGoogle": "Sign up with Google",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "errorPasswordLength": "Password must be at least 8 characters.",
+      "errorPasswordMismatch": "Passwords do not match.",
+      "errorCreation": "Error creating account."
+    },
+    "twoFactor": {
+      "title": "Two-step verification",
+      "codeSent": "A code has been sent to",
+      "codeLabel": "Verification code",
+      "codePlaceholder": "000000",
+      "verifyButton": "Verify",
+      "verifying": "Verifying...",
+      "resendCode": "Resend code",
+      "resending": "Sending...",
+      "back": "Back",
+      "errorSendCode": "Error sending verification code.",
+      "errorResendCode": "Error resending code.",
+      "errorInvalidCode": "Invalid code.",
+      "errorAfterVerify": "Connection error after verification."
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email to receive a reset link.",
+      "emailLabel": "Email",
+      "submitButton": "Send reset link",
+      "submitting": "Sending...",
+      "successMessage": "If an account exists with this email, you will receive a reset link.",
+      "backToLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "newPasswordLabel": "New password",
+      "confirmPasswordLabel": "Confirm password",
+      "submitButton": "Reset",
+      "submitting": "Resetting...",
+      "successMessage": "Password reset successfully.",
+      "loginLink": "Sign in"
+    }
+  },
+  "landing": {
+    "assistanceAvailable": "Assistance available",
+    "heroTitle": "Client Support Space",
+    "heroSubtitle": "Track your projects, report an issue or ask a question. Our team responds within 24 hours.",
+    "accessSpace": "Access my space",
+    "createAccount": "Create an account",
+    "howItWorks": "How does it work?",
+    "howItWorksSubtitle": "Three steps to get help quickly.",
+    "simpleAndEfficient": "Simple and effective",
+    "step1Title": "Create a ticket",
+    "step1Description": "Describe your need or issue. Add a category and priority for fast processing.",
+    "step2Title": "Chat with us",
+    "step2Description": "Discuss directly with our team. Every message is tracked and archived in your space.",
+    "step3Title": "Track progress",
+    "step3Description": "Check the status of your tickets, time spent and complete project history.",
+    "noAccount": "Don't have an account yet?",
+    "noAccountDescription": "Create your account in seconds to access your support space, or send an email to",
+    "noAccountSuffix": "for automatic creation.",
+    "loginButton": "Sign in"
+  },
+  "header": {
+    "myTickets": "My tickets",
+    "newTicket": "New ticket",
+    "faq": "FAQ",
+    "myProfile": "My profile",
+    "logout": "Log out",
+    "impersonation": "Impersonation mode",
+    "quit": "Quit",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "notificationsEnabled": "Notifications enabled",
+    "notificationsBlocked": "Notifications blocked (change in browser settings)",
+    "enableNotifications": "Enable notifications",
+    "notificationsActivated": "Notifications enabled",
+    "notificationsBody": "You will receive a notification when support responds.",
+    "newMessage": "New message"
+  },
+  "dashboard": {
+    "title": "My tickets",
+    "tabs": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "search": {
+      "placeholder": "Search a ticket...",
+      "searchInMessages": "Search in messages"
+    },
+    "filters": {
+      "status": "Status",
+      "category": "Category",
+      "project": "Project",
+      "sort": "Sort by",
+      "allStatuses": "All statuses",
+      "allCategories": "All categories",
+      "allProjects": "All projects"
+    },
+    "sort": {
+      "updatedAt": "Last updated",
+      "createdAt": "Creation date",
+      "priority": "Priority"
+    },
+    "empty": {
+      "noTickets": "No tickets",
+      "noTicketsDescription": "You don't have any tickets yet.",
+      "createFirst": "Create my first ticket"
+    },
+    "newMessage": "New message",
+    "status": {
+      "open": "Open",
+      "waiting_client": "Waiting",
+      "resolved": "Resolved"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "category": {
+      "bug": "Bug",
+      "content": "Content",
+      "feature": "Feature",
+      "question": "Question",
+      "hosting": "Hosting"
+    }
+  },
+  "ticketDetail": {
+    "backToTickets": "Back to tickets",
+    "status": {
+      "open": "Open",
+      "waiting_client": "Waiting",
+      "resolved": "Resolved"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "category": {
+      "bug": "Bug / Issue",
+      "content": "Content modification",
+      "feature": "New feature",
+      "question": "Question / Help",
+      "hosting": "Hosting / Domain"
+    },
+    "timeline": {
+      "open": "Open",
+      "waiting_client": "Waiting",
+      "resolved": "Resolved"
+    },
+    "details": {
+      "category": "Category",
+      "priority": "Priority",
+      "created": "Created on",
+      "updated": "Updated on"
+    },
+    "messages": {
+      "support": "Support",
+      "internal": "Internal note",
+      "solution": "Solution",
+      "edited": "Edited",
+      "deleted": "This message has been deleted."
+    },
+    "reply": {
+      "placeholder": "Write your reply...",
+      "sendButton": "Send",
+      "sending": "Sending...",
+      "attachments": "Attachments",
+      "attachmentsTooLarge": "File(s) too large",
+      "dropFiles": "Drop your files here"
+    },
+    "actions": {
+      "closeTicket": "Close ticket",
+      "reopenTicket": "Reopen ticket",
+      "markSolution": "Mark as solution",
+      "unmarkSolution": "Unmark solution",
+      "print": "Print"
+    },
+    "satisfaction": {
+      "title": "Your feedback matters",
+      "subtitle": "How would you rate the resolution of this ticket?",
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment",
+      "commentPlaceholder": "Your feedback helps us improve...",
+      "submitButton": "Submit feedback",
+      "thanks": "Thank you for your feedback!"
+    },
+    "typing": {
+      "isTyping": "is typing..."
+    },
+    "readReceipt": {
+      "read": "Read",
+      "sent": "Sent"
+    }
+  },
+  "newTicket": {
+    "title": "New ticket",
+    "badge": "New ticket",
+    "heading": "How can we help you?",
+    "subtitle": "Describe your need in detail and we'll get back to you as soon as possible.",
+    "backToTickets": "Back to tickets",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "E.g.: 404 error on contact page",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe your problem in detail. The more information you provide, the faster we can help.",
+    "attachmentsLabel": "Attachments",
+    "uploadButton": "Click or drag and drop your files",
+    "uploadHint": "Images, PDF, documents -- max {{maxSize}} per file",
+    "dropHere": "Drop your files here",
+    "fileTooLarge": "File(s) too large (max {{maxSize}})",
+    "advancedOptions": "Advanced options",
+    "categoryLabel": "Category",
+    "categorySelect": "Select",
+    "priorityLabel": "Priority",
+    "projectLabel": "Project",
+    "projectSelect": "Select",
+    "requiredFields": "Fields marked with * are required",
+    "submitButton": "Create ticket",
+    "submitting": "Submitting...",
+    "errors": {
+      "subjectAndMessageRequired": "Subject and message are required.",
+      "creationError": "Error creating ticket.",
+      "messageError": "Ticket was created but the message could not be sent.",
+      "networkError": "Connection error. Please try again."
+    },
+    "templates": {
+      "bug": {
+        "message": "**Bug description:**\n\n**Steps to reproduce:**\n1. \n2. \n3. \n\n**Expected result:**\n\n**Actual result:**\n\n**Browser / Device:**\n"
+      },
+      "feature": {
+        "message": "**Desired feature:**\n\n**Context / need:**\n\n**Expected behavior:**\n\n**Desired priority:**\n"
+      },
+      "content": {
+        "message": "**Page concerned:**\n\n**Requested modification:**\n\n**New content:**\n"
+      },
+      "hosting": {
+        "message": "**Domain name:**\n\n**Problem description:**\n\n**Error message (if applicable):**\n"
+      }
+    },
+    "categories": {
+      "bug": "Bug / Issue",
+      "content": "Content modification",
+      "feature": "New feature",
+      "question": "Question / Help",
+      "hosting": "Hosting / Domain"
+    },
+    "priorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    }
+  },
+  "profile": {
+    "title": "My profile",
+    "personalInfo": "Personal information",
+    "firstNameLabel": "First name",
+    "lastNameLabel": "Last name",
+    "companyLabel": "Company",
+    "phoneLabel": "Phone",
+    "emailLabel": "Email",
+    "emailReadonly": "Email cannot be modified",
+    "saveProfile": "Save",
+    "saving": "Saving...",
+    "profileUpdated": "Profile updated successfully.",
+    "loadError": "Unable to load profile.",
+    "sessionExpired": "Session expired. Please log in again.",
+    "notifications": {
+      "title": "Notifications",
+      "onReply": "Receive an email when support replies",
+      "onStatusChange": "Receive an email on status change"
+    },
+    "security": {
+      "title": "Security",
+      "twoFactor": "Two-step verification (2FA)",
+      "twoFactorDescription": "A code will be sent by email at each login",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "changeButton": "Change password",
+      "changing": "Changing...",
+      "passwordChanged": "Password changed successfully.",
+      "errorPasswordLength": "New password must be at least 8 characters.",
+      "errorPasswordMismatch": "Passwords do not match.",
+      "errorCurrentPassword": "Current password is incorrect."
+    },
+    "deleteAccount": {
+      "title": "Delete my account",
+      "warning": "This action is irreversible. All your data will be deleted.",
+      "button": "Delete my account",
+      "confirmTitle": "Confirm deletion",
+      "confirmMessage": "Enter your password to confirm account deletion.",
+      "passwordLabel": "Password",
+      "confirmButton": "Delete permanently",
+      "deleting": "Deleting...",
+      "cancelButton": "Cancel"
+    }
+  },
+  "faq": {
+    "title": "Knowledge Base",
+    "subtitle": "Find answers to your questions",
+    "searchPlaceholder": "Search an article...",
+    "noResults": "No results for your search.",
+    "categories": {
+      "getting-started": "Getting Started",
+      "tickets": "Tickets & Support",
+      "account": "Account & Profile",
+      "billing": "Billing",
+      "technical": "Technical",
+      "general": "General"
+    }
+  }
+}

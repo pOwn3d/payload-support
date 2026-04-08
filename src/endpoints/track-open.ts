@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { createHmac } from 'crypto'
 
 // 1x1 transparent GIF (43 bytes)
 const TRANSPARENT_GIF = Buffer.from(
@@ -8,8 +9,17 @@ const TRANSPARENT_GIF = Buffer.from(
 )
 
 /**
- * GET /api/support/track-open?t=<ticketId>&m=<messageId>
+ * Generate an HMAC signature for tracking pixel URLs.
+ * Use this when building tracking URLs in email templates.
+ */
+export function generateTrackingToken(ticketId: string, messageId: string, secret: string): string {
+  return createHmac('sha256', secret).update(`${ticketId}:${messageId}`).digest('hex').substring(0, 16)
+}
+
+/**
+ * GET /api/support/track-open?t=<ticketId>&m=<messageId>&sig=<hmac>
  * Tracking pixel for email open detection. No auth required.
+ * Validates HMAC signature to prevent enumeration attacks.
  */
 export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -19,9 +29,37 @@ export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
       const url = new URL(req.url!)
       const ticketId = url.searchParams.get('t')
       const messageId = url.searchParams.get('m')
+      const sig = url.searchParams.get('sig')
 
       const parsedId = ticketId ? Number(ticketId) : NaN
       const parsedMsgId = messageId ? Number(messageId) : NaN
+
+      // Validate HMAC signature
+      const secret = process.env.PAYLOAD_SECRET || ''
+      if (secret && ticketId && messageId && sig) {
+        const expected = generateTrackingToken(ticketId, messageId, secret)
+        if (sig !== expected) {
+          // Return transparent GIF silently (don't leak information)
+          return new Response(TRANSPARENT_GIF, {
+            status: 200,
+            headers: {
+              'Content-Type': 'image/gif',
+              'Content-Length': String(TRANSPARENT_GIF.length),
+              'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            },
+          })
+        }
+      } else if (secret && (!sig || !ticketId || !messageId)) {
+        // Missing signature param: return GIF but don't process
+        return new Response(TRANSPARENT_GIF, {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/gif',
+            'Content-Length': String(TRANSPARENT_GIF.length),
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        })
+      }
 
       if (ticketId && Number.isInteger(parsedId) && parsedId > 0) {
         try {

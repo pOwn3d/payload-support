@@ -16,7 +16,13 @@ export function createPendingEmailsCollection(slugs: CollectionSlugs): Collectio
       read: ({ req }) => Boolean(req.user?.collection === slugs.users),
       update: ({ req }) => Boolean(req.user?.collection === slugs.users),
       delete: ({ req }) => Boolean(req.user?.collection === slugs.users),
-      create: () => true, // Webhook access
+      create: ({ req }) => {
+        // Allow admin users or webhook calls with secret header
+        if (req.user?.collection === slugs.users) return true
+        const webhookSecret = req.headers.get('x-webhook-secret')
+        if (webhookSecret && process.env.SUPPORT_WEBHOOK_SECRET && webhookSecret === process.env.SUPPORT_WEBHOOK_SECRET) return true
+        return false
+      },
     },
     fields: [
       {

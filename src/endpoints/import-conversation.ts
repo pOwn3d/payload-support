@@ -1,5 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { RateLimiter } from '../utils/rateLimiter'
+import crypto from 'crypto'
 
 interface ParsedConversation {
   client: { email: string; name: string; company: string }
@@ -7,19 +9,7 @@ interface ParsedConversation {
   messages: { from: 'client' | 'admin'; name: string; date: string; content: string }[]
 }
 
-// Simple rate limiter
-const importLimits = new Map<string, { count: number; resetAt: number }>()
-
-function isImportLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = importLimits.get(key)
-  if (!entry || now > entry.resetAt) {
-    importLimits.set(key, { count: 1, resetAt: now + 3_600_000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 10
-}
+const importLimiter = new RateLimiter(3_600_000, 10) // 10 per hour
 
 function parseStructuredMarkdown(markdown: string): ParsedConversation | null {
   const clientMatch = markdown.match(
@@ -162,12 +152,17 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoi
         }
 
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-        if (isImportLimited(ip)) {
+        if (importLimiter.check(ip)) {
           return Response.json({ error: 'Rate limit exceeded. Maximum 10 imports per hour.' }, { status: 429 })
         }
 
-        const body = await req.json!()
-        const { markdown, previewOnly } = body as { markdown?: string; previewOnly?: boolean }
+        let body: { markdown?: string; previewOnly?: boolean }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
+        const { markdown, previewOnly } = body
 
         if (!markdown || typeof markdown !== 'string') {
           return Response.json({ error: 'markdown field is required (string)' }, { status: 400 })
@@ -231,7 +226,7 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoi
 
         if (!client) {
           const nameParts = conversation.client.name.split(' ')
-          const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2) + '!A1'
+          const randomPassword = crypto.randomBytes(48).toString('base64url')
 
           client = await payload.create({
             collection: slugs.supportClients as any,

@@ -1,31 +1,9 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { RateLimiter } from '../utils/rateLimiter'
+import { escapeHtml } from '../utils/emailTemplate'
 
-// Rate limiter: max 10 resends per admin per hour
-const resendLimitMap = new Map<string, { count: number; resetAt: number }>()
-
-function isResendLimited(userId: string): boolean {
-  const now = Date.now()
-  const entry = resendLimitMap.get(userId)
-
-  if (!entry || now > entry.resetAt) {
-    resendLimitMap.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 })
-    return false
-  }
-
-  if (entry.count >= 10) return true
-  entry.count++
-  return false
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
+const resendLimiter = new RateLimiter(60 * 60 * 1000, 10) // 10 per hour
 
 /**
  * POST /api/support/resend-notification
@@ -43,14 +21,20 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        if (isResendLimited(String(req.user.id))) {
+        if (resendLimiter.check(String(req.user.id))) {
           return Response.json(
             { error: 'Trop de renvois. Réessayez dans une heure.' },
             { status: 429 },
           )
         }
 
-        const { messageId } = await req.json!()
+        let body: { messageId?: string | number }
+        try {
+          body = await req.json!()
+        } catch {
+          return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+        }
+        const { messageId } = body
 
         if (!messageId) {
           return Response.json({ error: 'messageId requis' }, { status: 400 })

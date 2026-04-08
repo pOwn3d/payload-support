@@ -1,19 +1,8 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { RateLimiter } from '../utils/rateLimiter'
 
-// Simple in-memory rate limiter
-const loginLimits = new Map<string, { count: number; resetAt: number }>()
-
-function isLoginLimited(key: string): boolean {
-  const now = Date.now()
-  const entry = loginLimits.get(key)
-  if (!entry || now > entry.resetAt) {
-    loginLimits.set(key, { count: 1, resetAt: now + 15 * 60_000 })
-    return false
-  }
-  entry.count++
-  return entry.count > 10
-}
+const loginLimiter = new RateLimiter(15 * 60_000, 10) // 10 per 15 min
 
 /**
  * POST /api/support/login
@@ -26,7 +15,7 @@ export function createLoginEndpoint(slugs: CollectionSlugs): Endpoint {
     handler: async (req) => {
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
 
-      if (isLoginLimited(ip)) {
+      if (loginLimiter.check(ip)) {
         return Response.json(
           { error: 'Trop de tentatives. Réessayez dans quelques minutes.' },
           { status: 429 },
@@ -34,7 +23,13 @@ export function createLoginEndpoint(slugs: CollectionSlugs): Endpoint {
       }
 
       const payload = req.payload
-      const { email, password } = await req.json!()
+      let body: { email?: string; password?: string }
+      try {
+        body = await req.json!()
+      } catch {
+        return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+      }
+      const { email, password } = body
       const userAgent = req.headers.get('user-agent') || ''
 
       if (!email || !password) {

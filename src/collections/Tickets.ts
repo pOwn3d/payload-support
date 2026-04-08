@@ -5,6 +5,7 @@ import type {
   CollectionBeforeDeleteHook,
 } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { escapeHtml } from '../utils/emailTemplate'
 
 // ─── Hooks ───────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ function createNotifyOnAssignment(slugs: CollectionSlugs): CollectionAfterChange
       await req.payload.sendEmail({
         to: assignee.email,
         subject: `Ticket assigné : [${ticketNumber}] ${subject}`,
-        html: `<p>Le ticket <strong>${ticketNumber}</strong> — <em>${subject}</em> — vous a été assigné.</p><p><a href="${baseUrl}/admin/collections/${slugs.tickets}/${doc.id}">Ouvrir le ticket</a></p>`,
+        html: `<p>Le ticket <strong>${escapeHtml(ticketNumber)}</strong> — <em>${escapeHtml(subject)}</em> — vous a été assigné.</p><p><a href="${baseUrl}/admin/collections/${slugs.tickets}/${doc.id}">Ouvrir le ticket</a></p>`,
       })
     } catch (err) {
       console.error('[support] Failed to notify on assignment:', err)
@@ -212,7 +213,7 @@ function createNotifyClientOnResolve(slugs: CollectionSlugs): CollectionAfterCha
       await req.payload.sendEmail({
         to: clientData.email,
         subject: `[${ticketNumber}] Ticket résolu`,
-        html: `<p>Bonjour ${clientData.firstName || ''},</p><p>Votre ticket <strong>${ticketNumber}</strong> a été résolu.</p><p><a href="${baseUrl}/support/tickets/${doc.id}">Consulter le ticket</a></p>`,
+        html: `<p>Bonjour ${escapeHtml(clientData.firstName || '')},</p><p>Votre ticket <strong>${escapeHtml(ticketNumber)}</strong> a été résolu.</p><p><a href="${baseUrl}/support/tickets/${doc.id}">Consulter le ticket</a></p>`,
       })
     } catch (err) {
       console.error('[support] Failed to notify client on resolve:', err)
@@ -225,16 +226,11 @@ function createCascadeDelete(slugs: CollectionSlugs): CollectionBeforeDeleteHook
   return async ({ id, req }) => {
     const collections = [slugs.ticketMessages, slugs.ticketActivityLog, slugs.timeEntries, slugs.satisfactionSurveys]
     for (const slug of collections) {
-      const related = await req.payload.find({
-        collection: slug,
+      await req.payload.delete({
+        collection: slug as any,
         where: { ticket: { equals: id } },
-        limit: 0,
-        depth: 0,
         overrideAccess: true,
       })
-      for (const doc of related.docs) {
-        await req.payload.delete({ collection: slug, id: doc.id, overrideAccess: true })
-      }
     }
   }
 }
@@ -391,25 +387,25 @@ export function createTicketsCollection(slugs: CollectionSlugs): CollectionConfi
     },
     access: {
       create: ({ req }) => {
-        if (req.user?.collection === 'users') return true
+        if (req.user?.collection === slugs.users) return true
         if (req.user?.collection === slugs.supportClients) return true
         return false
       },
       read: ({ req }) => {
-        if (req.user?.collection === 'users') return true
+        if (req.user?.collection === slugs.users) return true
         if (req.user?.collection === slugs.supportClients) {
           return { client: { equals: req.user.id } }
         }
         return false
       },
       update: ({ req }) => {
-        if (req.user?.collection === 'users') return true
+        if (req.user?.collection === slugs.users) return true
         if (req.user?.collection === slugs.supportClients) {
           return { client: { equals: req.user.id } }
         }
         return false
       },
-      delete: ({ req }) => req.user?.collection === 'users',
+      delete: ({ req }) => req.user?.collection === slugs.users,
     },
     timestamps: true,
   }
