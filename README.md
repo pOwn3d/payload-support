@@ -191,7 +191,7 @@ yarn add @consilioweb/payload-support
 | `payload` | `^3.0.0` | **Yes** |
 | `@payloadcms/next` | `^3.0.0` | Optional (admin views) |
 | `@payloadcms/ui` | `^3.0.0` | Optional (admin UI) |
-| `next` | `^14.0.0 \|\| ^15.0.0` | Optional (admin UI) |
+| `next` | `^14.0.0 \|\| ^15.0.0 \|\| ^16.0.0` | Optional (admin UI) |
 | `react` | `^18.0.0 \|\| ^19.0.0` | Optional (admin UI) |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
@@ -232,7 +232,23 @@ export default buildConfig({
 })
 ```
 
-After installing, regenerate the import map:
+### Next.js Configuration
+
+Add the plugin to `transpilePackages` in your `next.config.mjs` so Next.js can resolve the view components:
+
+```js
+// next.config.mjs
+import { withPayload } from '@payloadcms/next/withPayload'
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ['@consilioweb/payload-support'],
+}
+
+export default withPayload(nextConfig)
+```
+
+Then regenerate the import map:
 
 ```bash
 pnpm generate:importmap
@@ -362,14 +378,18 @@ import { /* views */ } from '@consilioweb/payload-support/views'
 ## Roadmap
 
 - [x] Project scaffold & plugin structure
-- [x] Full type system & feature flags
-- [x] AI provider abstraction
-- [ ] Extract collections from ConsilioWEB
-- [ ] Extract admin views as standalone components
-- [ ] Extract API endpoints as plugin endpoints
-- [ ] CSS Modules design system with Payload theme vars
-- [ ] Client portal components (login, ticket list, chat)
-- [ ] Plugin settings UI (admin page)
+- [x] Full type system & feature flags (25+)
+- [x] AI provider abstraction (Anthropic, OpenAI, Ollama)
+- [x] Extract 16 collections with factory functions & dynamic slugs
+- [x] Extract 13 admin views as standalone components
+- [x] Extract 34 API endpoints as Payload plugin endpoints
+- [x] CSS Modules design system with Payload theme vars (17 files)
+- [x] TicketConversation module (10 components, 6 hooks, FR/EN locales)
+- [x] Plugin settings UI (admin page with feature toggles)
+- [x] `transpilePackages` documentation for Next.js
+- [x] Next.js 14/15/16 support
+- [ ] Client portal components (login, ticket list, chat widget)
+- [ ] Email template system (customizable HTML templates)
 - [ ] npm publish to registry
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
