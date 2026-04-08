@@ -7,7 +7,11 @@ import crypto from 'crypto'
  * Google OAuth — handles both login redirect and callback.
  * Body: { action: 'login' } or { code: string, state: string, cookieState: string }
  */
-export function createOAuthGoogleEndpoint(slugs: CollectionSlugs): Endpoint {
+export interface OAuthGoogleOptions {
+  allowedEmailDomains?: string[]
+}
+
+export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAuthGoogleOptions): Endpoint {
   return {
     path: '/support/oauth/google',
     method: 'post',
@@ -100,6 +104,20 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs): Endpoint {
 
           // Auto-create account if needed
           if (!clientDoc) {
+            // Domain restriction check for new accounts
+            const allowedDomains = options?.allowedEmailDomains
+            if (allowedDomains && allowedDomains.length > 0) {
+              const emailDomain = profile.email.split('@')[1]?.toLowerCase()
+              const isAllowed = allowedDomains.some(
+                (d: string) => d.toLowerCase() === emailDomain,
+              )
+              if (!isAllowed) {
+                return Response.json(
+                  { error: 'Inscription non autorisée pour ce domaine email.' },
+                  { status: 403 },
+                )
+              }
+            }
             const autoPassword = crypto.randomBytes(48).toString('base64url')
             const fullName = profile.name || profile.email.split('@')[0]
             const nameParts = fullName.split(' ')

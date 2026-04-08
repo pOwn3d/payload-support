@@ -122,7 +122,9 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     // ─── Endpoints ───────────────────────────────────────
 
     const existingEndpoints = incomingConfig.endpoints || []
-    const supportEndpoints = createSupportEndpoints(slugs)
+    const supportEndpoints = createSupportEndpoints(slugs, {
+      oauth: { allowedEmailDomains: config?.allowedEmailDomains },
+    })
 
     return {
       ...incomingConfig,

@@ -19,7 +19,7 @@ export function createChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || !('company' in req.user)) {
+        if (!req.user || req.user.collection !== slugs.supportClients) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
 
@@ -75,7 +75,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
       try {
         const payload = req.payload
 
-        if (!req.user || !('company' in req.user)) {
+        if (!req.user || req.user.collection !== slugs.supportClients) {
           return Response.json({ error: 'Non autorisé' }, { status: 401 })
         }
 

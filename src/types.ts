@@ -100,6 +100,14 @@ export interface SupportPluginConfig {
   /** User collection slug for agent relationships (default: 'users') */
   userCollectionSlug?: string
 
+  /**
+   * Restrict Google OAuth auto-registration to specific email domains.
+   * When set and non-empty, only emails matching one of these domains can
+   * create an account via OAuth. Existing accounts are unaffected.
+   * Example: ['acme.com', 'partner.org']
+   */
+  allowedEmailDomains?: string[]
+
   /** Collection slug overrides */
   collectionSlugs?: {
     tickets?: string

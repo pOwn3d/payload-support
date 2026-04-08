@@ -169,6 +169,47 @@
 | Logs | `/support/logs` | Email & auth audit logs |
 | Billing | `/support/billing` | Invoice management |
 
+### Client Portal (30 files)
+
+Full-featured client-facing support portal with its own auth system:
+
+| Page | Description |
+|------|-------------|
+| Login / Register | Email + password auth, Google OAuth |
+| Forgot / Reset password | Email-based password recovery |
+| Dashboard | Ticket stats, recent activity, quick actions |
+| Ticket List | Filterable, sortable ticket list |
+| Ticket Detail | Conversation thread, reply form, file attachments, satisfaction survey |
+| New Ticket | Category selection, priority, file upload |
+| FAQ | Knowledge base with search |
+| Profile | Edit name, company, email, password, notification prefs, 2FA, delete account |
+| Chat Widget | Real-time live chat with agent |
+| Chatbot | AI-powered self-service from knowledge base |
+
+### Email Template System
+
+Configurable, responsive HTML email templates:
+
+```ts
+import { createEmailTemplateFactory } from '@consilioweb/payload-support'
+
+const emails = createEmailTemplateFactory({
+  brandName: 'My Company',
+  brandColor: '#2563eb',
+  logoUrl: 'https://example.com/logo.png',
+  supportEmail: 'support@example.com',
+  websiteUrl: 'https://example.com',
+})
+
+// Use pre-configured functions
+const html = emails.wrapper('Welcome', [
+  emails.paragraph('Hello <strong>John</strong>,'),
+  emails.button('Open Dashboard', 'https://example.com/dashboard'),
+].join(''))
+```
+
+Available functions: `emailWrapper`, `emailButton`, `emailParagraph`, `emailQuote`, `emailInfoRow`, `emailRichContent`, `emailTrackingPixel`, `escapeHtml`
+
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">
 
 ## Installation
@@ -388,8 +429,8 @@ import { /* views */ } from '@consilioweb/payload-support/views'
 - [x] Plugin settings UI (admin page with feature toggles)
 - [x] `transpilePackages` documentation for Next.js
 - [x] Next.js 14/15/16 support
-- [ ] Client portal components (login, ticket list, chat widget)
-- [ ] Email template system (customizable HTML templates)
+- [x] Client portal (30 files: login, register, dashboard, tickets, FAQ, profile, chat widgets, FR/EN)
+- [x] Configurable email template system (`createEmailTemplateFactory()`, brand/colors/logo)
 - [ ] npm publish to registry
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" alt="line">

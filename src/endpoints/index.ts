@@ -31,7 +31,7 @@ import { createResendNotificationEndpoint } from './resend-notification'
 import { createSeedKbEndpoint } from './seed-kb'
 import { createLoginEndpoint } from './login'
 import { createAuth2faEndpoint } from './auth-2fa'
-import { createOAuthGoogleEndpoint } from './oauth-google'
+import { createOAuthGoogleEndpoint, type OAuthGoogleOptions } from './oauth-google'
 import { createDeleteAccountEndpoint } from './delete-account'
 import { createMergeClientsEndpoint } from './merge-clients'
 import { createImportConversationEndpoint } from './import-conversation'
@@ -72,11 +72,15 @@ export { createDeleteAccountEndpoint } from './delete-account'
 export { createMergeClientsEndpoint } from './merge-clients'
 export { createImportConversationEndpoint } from './import-conversation'
 
+export interface SupportEndpointOptions {
+  oauth?: OAuthGoogleOptions
+}
+
 /**
  * Create all support endpoints for the Payload plugin.
  * Returns an array of Endpoint objects to be registered via `endpoints` in the plugin config.
  */
-export function createSupportEndpoints(slugs: CollectionSlugs): Endpoint[] {
+export function createSupportEndpoints(slugs: CollectionSlugs, options?: SupportEndpointOptions): Endpoint[] {
   return [
     createAiEndpoint(slugs),
     createSearchEndpoint(slugs),
@@ -115,7 +119,7 @@ export function createSupportEndpoints(slugs: CollectionSlugs): Endpoint[] {
     createSeedKbEndpoint(slugs),
     createLoginEndpoint(slugs),
     createAuth2faEndpoint(slugs),
-    createOAuthGoogleEndpoint(slugs),
+    createOAuthGoogleEndpoint(slugs, options?.oauth),
     createDeleteAccountEndpoint(slugs),
     createMergeClientsEndpoint(slugs),
     createImportConversationEndpoint(slugs),
