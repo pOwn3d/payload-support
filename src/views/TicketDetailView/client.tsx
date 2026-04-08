@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFeatures } from '../shared/config'
+import s from '../../styles/TicketDetail.module.scss'
 
 interface Message {
   id: string | number; body: string; bodyHtml?: string; authorType: 'client' | 'admin' | 'email'

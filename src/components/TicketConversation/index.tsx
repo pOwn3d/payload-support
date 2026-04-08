@@ -22,6 +22,7 @@ import { useTicketActions } from './hooks/useTicketActions'
 import { useReply } from './hooks/useReply'
 import { useAI } from './hooks/useAI'
 import { getFeatures, type TicketingFeatures } from './config'
+import '../../styles/theme.css'
 
 // Inline skeleton replacement (no external dependency)
 function SkeletonText({ lines = 3 }: { lines?: number }) {

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+import s from '../../styles/BillingView.module.scss'
 
 interface BillingEntry { duration: number; description: string; date: string }
 interface BillingTicket { id: number; ticketNumber: string; subject: string; entries: BillingEntry[]; totalMinutes: number; billedAmount: number | null }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import s from '../../styles/Logs.module.scss'
 
 type LogType = 'email' | 'auth'
 

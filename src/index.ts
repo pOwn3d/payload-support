@@ -21,6 +21,12 @@ export { DEFAULT_FEATURES } from './types'
 // Utils
 export { resolveSlugs, DEFAULT_SLUGS } from './utils/slugs'
 export type { CollectionSlugs } from './utils/slugs'
+export { createAdminNotification } from './utils/adminNotification'
+export { dispatchWebhook } from './utils/webhookDispatcher'
+
+// Hooks
+export { createAssignSlaDeadlines, createCheckSlaOnResolve, createCheckSlaOnReply, calculateBusinessHoursDeadline } from './hooks/checkSLA'
+export { createTicketStatusEmail } from './hooks/ticketStatusEmail'
 
 // Collection factories (for advanced usage — standalone collection creation)
 export {

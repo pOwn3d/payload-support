@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import s from '../../styles/ChatView.module.scss'
 
 interface ChatSession {
   session: string

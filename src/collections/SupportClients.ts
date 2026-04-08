@@ -1,6 +1,6 @@
 import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { escapeHtml } from '../utils/emailTemplate'
+import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 
 // ─── Hooks ───────────────────────────────────────────────
 
@@ -27,20 +27,19 @@ function createSendInvitationOnCreate(slugs: CollectionSlugs): CollectionAfterCh
       await payload.sendEmail({
         to: doc.email,
         subject: 'Activez votre compte support',
-        html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-<h2>Bienvenue sur votre espace support</h2>
-<p>Bonjour <strong>${escapeHtml(doc.firstName || '')}</strong>,</p>
-<p>Un espace support a été créé pour vous. Vous pourrez y soumettre vos demandes, suivre vos tickets et échanger directement avec notre équipe.</p>
-<p>Pour activer votre compte, cliquez sur le lien ci-dessous pour définir votre mot de passe :</p>
-<p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Définir mon mot de passe</a></p>
-<ul>
-<li>Soumettre des demandes de support</li>
-<li>Suivre l'avancement de vos tickets en temps réel</li>
-<li>Joindre des fichiers et captures d'écran</li>
-<li>Consulter l'historique complet de vos échanges</li>
-</ul>
-<p style="font-size:13px;color:#6b7280;">Ce lien est valable 1 heure.</p>
-</div>`,
+        html: emailWrapper('Bienvenue sur votre espace support', [
+          emailParagraph(`Bonjour <strong>${escapeHtml(doc.firstName || '')}</strong>,`),
+          emailParagraph('Un espace support a ete cree pour vous. Vous pourrez y soumettre vos demandes, suivre vos tickets et echanger directement avec notre equipe.'),
+          emailParagraph('Pour activer votre compte, cliquez sur le bouton ci-dessous pour definir votre mot de passe :'),
+          emailButton('Definir mon mot de passe', resetUrl),
+          `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 20px 0;">
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #374151; line-height: 1.6;">&#8226; Soumettre des demandes de support</td></tr>
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #374151; line-height: 1.6;">&#8226; Suivre l'avancement de vos tickets en temps reel</td></tr>
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #374151; line-height: 1.6;">&#8226; Joindre des fichiers et captures d'ecran</td></tr>
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #374151; line-height: 1.6;">&#8226; Consulter l'historique complet de vos echanges</td></tr>
+          </table>`,
+          emailParagraph('<span style="font-size: 13px; color: #6b7280;">Ce lien est valable 1 heure.</span>'),
+        ].join('')),
       })
 
       // Invitation email sent successfully
@@ -70,7 +69,7 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
         sameSite: 'Lax',
       },
       forgotPassword: {
-        generateEmailSubject: () => 'Réinitialisation de votre mot de passe',
+        generateEmailSubject: () => 'Reinitialisation de votre mot de passe',
         generateEmailHTML: (args) => {
           const token = args?.token || ''
           const user = args?.user as { firstName?: string } | undefined
@@ -78,14 +77,13 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
           const resetUrl = `${baseUrl}/support/reset-password?token=${token}`
           const name = user?.firstName || ''
 
-          return `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
-<h2>Réinitialisation de mot de passe</h2>
-<p>Bonjour${name ? ` <strong>${escapeHtml(name)}</strong>` : ''},</p>
-<p>Vous avez demandé la réinitialisation de votre mot de passe pour votre espace support.</p>
-<p>Cliquez sur le lien ci-dessous pour définir un nouveau mot de passe :</p>
-<p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">Définir mon mot de passe</a></p>
-<p style="font-size:13px;color:#6b7280;">Ce lien est valable 1 heure. Si vous n'avez pas effectué cette demande, vous pouvez ignorer cet email.</p>
-</div>`
+          return emailWrapper('Reinitialisation de mot de passe', [
+            emailParagraph(`Bonjour${name ? ` <strong>${escapeHtml(name)}</strong>` : ''},`),
+            emailParagraph('Vous avez demande la reinitialisation de votre mot de passe pour votre espace support.'),
+            emailParagraph('Cliquez sur le bouton ci-dessous pour definir un nouveau mot de passe :'),
+            emailButton('Definir mon mot de passe', resetUrl),
+            emailParagraph('<span style="font-size: 13px; color: #6b7280;">Ce lien est valable 1 heure. Si vous n\'avez pas effectue cette demande, vous pouvez ignorer cet email.</span>'),
+          ].join(''))
         },
       },
     },
@@ -108,7 +106,7 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
           {
             name: 'phone',
             type: 'text',
-            label: 'Téléphone',
+            label: 'Telephone',
             admin: { width: '50%' },
           },
         ],
@@ -120,7 +118,7 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
             name: 'firstName',
             type: 'text',
             required: true,
-            label: 'Prénom',
+            label: 'Prenom',
             admin: { width: '50%' },
           },
           {
@@ -136,9 +134,9 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
         name: 'twoFactorEnabled',
         type: 'checkbox',
         defaultValue: false,
-        label: '2FA activé',
+        label: '2FA active',
         admin: {
-          description: 'Vérification par email à chaque connexion',
+          description: 'Verification par email a chaque connexion',
           position: 'sidebar',
         },
       },
@@ -156,9 +154,9 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
         name: 'notifyOnReply',
         type: 'checkbox',
         defaultValue: true,
-        label: 'Notifications réponses',
+        label: 'Notifications reponses',
         admin: {
-          description: 'Recevoir un email à chaque réponse du support',
+          description: 'Recevoir un email a chaque reponse du support',
           position: 'sidebar',
         },
       },

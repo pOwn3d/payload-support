@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import s from '../../styles/PendingEmails.module.scss'
 
 interface SuggestedTicket { id: number; ticketNumber: string; subject: string; score: number }
 interface PendingEmail {

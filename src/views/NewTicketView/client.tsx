@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import s from '../../styles/NewTicket.module.scss'
 
 interface ClientOption { id: number; firstName?: string; lastName?: string; company?: string; email?: string }
 interface ProjectOption { id: number; name: string }

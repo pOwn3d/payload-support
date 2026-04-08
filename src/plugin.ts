@@ -67,9 +67,18 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     // ─── Collections ─────────────────────────────────────
 
     // Core collections (always present)
+    const ticketOptions = {
+      conversationComponent: config?.conversationComponent,
+      projectCollectionSlug: config?.projectCollectionSlug,
+      documentsCollectionSlug: config?.documentsCollectionSlug,
+      notificationSlug: config?.notificationSlug,
+    }
+    const messageOptions = {
+      notificationSlug: config?.notificationSlug,
+    }
     const supportCollections = [
-      createTicketsCollection(slugs),
-      createTicketMessagesCollection(slugs),
+      createTicketsCollection(slugs, ticketOptions),
+      createTicketMessagesCollection(slugs, messageOptions),
       createSupportClientsCollection(slugs),
       createCannedResponsesCollection(slugs),
       createTicketActivityLogCollection(slugs),

@@ -136,6 +136,18 @@ export interface SupportPluginConfig {
     macros?: string
     ticketStatuses?: string
   }
+
+  /** Admin notification collection slug (default: 'admin-notifications') */
+  notificationSlug?: string
+
+  /** Custom component path for ticket conversation UI field */
+  conversationComponent?: string
+
+  /** Project collection slug — adds a project relationship to tickets (optional) */
+  projectCollectionSlug?: string
+
+  /** Documents upload collection slug — adds quote/invoice upload fields to tickets (optional) */
+  documentsCollectionSlug?: string
 }
 
 // ─── Ticket data types ───────────────────────────────────

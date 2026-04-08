@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import s from '../../styles/SupportDashboard.module.scss'
 
 // ---- Types ----
 

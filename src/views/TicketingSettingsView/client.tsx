@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
 import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../shared/config'
+import s from '../../styles/TicketingSettings.module.scss'
 
 // ---- Types ----
 

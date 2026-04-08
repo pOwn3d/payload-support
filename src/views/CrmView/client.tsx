@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import s from '../../styles/CrmView.module.scss'
 
 interface Client { id: number; company: string; firstName: string; lastName: string; email: string; phone?: string; notes?: string; createdAt: string }
 interface ClientDetail {

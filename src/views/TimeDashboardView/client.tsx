@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import s from '../../styles/TimeDashboard.module.scss'
 
 interface TimeEntry {
   id: number

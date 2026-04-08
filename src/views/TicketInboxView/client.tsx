@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import s from '../../styles/TicketInbox.module.scss'
 
 interface Ticket {
   id: number

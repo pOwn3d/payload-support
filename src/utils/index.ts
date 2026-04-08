@@ -3,6 +3,8 @@ export type { CollectionSlugs } from './slugs'
 export { RateLimiter } from './rateLimiter'
 export { AuthError, requireAdmin, requireClient, handleAuthError } from './auth'
 export { fireWebhooks } from './fireWebhooks'
+export { createAdminNotification } from './adminNotification'
+export { dispatchWebhook } from './webhookDispatcher'
 
 export {
   escapeHtml,

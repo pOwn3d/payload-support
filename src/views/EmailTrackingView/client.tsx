@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import s from '../../styles/EmailTracking.module.scss'
 
 interface EmailLog { id: number; status: 'success' | 'ignored' | 'error'; action?: string; subject?: string; recipientEmail?: string; ticketNumber?: string; errorMessage?: string; httpStatus?: number; processingTimeMs?: number; createdAt: string }
 interface Stats { total: number; success: number; errors: number; ignored: number; successRate: number; avgProcessingTime: number }

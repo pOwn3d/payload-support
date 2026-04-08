@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useRef } from 'react'
+import s from '../../styles/ImportConversation.module.scss'
 
 interface PreviewMessage { from: 'client' | 'admin'; name: string; date: string; preview: string }
 interface PreviewData { client: { email: string; name: string; company: string }; subject: string; messageCount: number; messages: PreviewMessage[]; parseMethod: string }
