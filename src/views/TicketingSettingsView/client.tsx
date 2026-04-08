@@ -745,8 +745,25 @@ export const TicketingSettingsClient: React.FC = () => {
         )}
       </CollapsibleSection>
 
+      {/* ────────────────────────────────────────
+       * MES PRÉFÉRENCES (per-user)
+       * ──────────────────────────────────────── */}
+      <div style={{
+        marginTop: 32,
+        marginBottom: 16,
+        padding: '12px 16px',
+        borderRadius: 8,
+        background: 'linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%)',
+        border: '1px solid #c7d2fe',
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>Mes preferences</div>
+        <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+          Ces reglages sont propres a votre compte et ne s&apos;appliquent qu&apos;a vous.
+        </div>
+      </div>
+
       {/* ========================================
-       * SECTION 6 — Locale
+       * SECTION 6 — Locale (per-user)
        * ======================================== */}
       <CollapsibleSection
         title="Langue et localisation"
