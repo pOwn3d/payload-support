@@ -76,10 +76,10 @@ export function createSignaturePostEndpoint(slugs: CollectionSlugs): Endpoint {
             collection: 'payload-preferences',
             data: {
               key,
-              user: { relationTo: slugs.users, value: req.user.id },
               value: { signature: signature || '' },
             },
             overrideAccess: true,
+            req,
           })
         }
 

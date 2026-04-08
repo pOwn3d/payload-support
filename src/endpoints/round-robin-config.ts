@@ -75,10 +75,10 @@ export function createRoundRobinConfigPostEndpoint(slugs: CollectionSlugs): Endp
             collection: 'payload-preferences',
             data: {
               key: PREF_KEY,
-              user: req.user.id,
               value: { enabled: !!enabled },
             },
             overrideAccess: true,
+            req,
           })
         }
 

@@ -141,10 +141,10 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
             collection: 'payload-preferences',
             data: {
               key: PREF_KEY,
-              user: { relationTo: slugs.users, value: req.user.id },
               value: merged as unknown as Record<string, unknown>,
             },
             overrideAccess: true,
+            req,
           })
         }
 
