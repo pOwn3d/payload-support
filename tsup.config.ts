@@ -74,9 +74,19 @@ export default defineConfig([
       console.log('✓ Prepended "use client" to client bundles')
     },
   },
-  // Views entry — server components
+  // Views entry — admin views (marked as client since they use hooks)
   {
     ...sharedConfig,
+    external: clientExternals,
     entry: { views: 'src/views.ts' },
+    onSuccess: async () => {
+      for (const file of ['dist/views.js', 'dist/views.cjs']) {
+        try {
+          const content = readFileSync(file, 'utf-8')
+          writeFileSync(file, CLIENT_BANNER + content)
+        } catch { /* ignore */ }
+      }
+      console.log('✓ Prepended "use client" to views bundles')
+    },
   },
 ])

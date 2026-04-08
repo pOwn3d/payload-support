@@ -54,7 +54,8 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
   }
 
   const bp = config?.basePath || '/support'
-  const pkg = '@consilioweb/payload-support/views'
+  // Views are referenced by source path so Next.js can resolve server/client boundaries
+  const viewsBase = '@consilioweb/payload-support/src/views'
   const slugs = resolveSlugs({
     ...config?.collectionSlugs,
     users: config?.userCollectionSlug || 'users',
@@ -96,26 +97,26 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       (incomingConfig.admin?.components?.views as Record<string, AdminViewConfig>) || {}
 
     const supportViews: Record<string, AdminViewConfig> = {
-      'support-inbox': viewConfig(`${pkg}#TicketInboxView`, `${bp}/inbox`),
-      'support-dashboard': viewConfig(`${pkg}#SupportDashboardView`, `${bp}/dashboard`),
-      'support-ticket': viewConfig(`${pkg}#TicketDetailView`, `${bp}/ticket`),
-      'support-new-ticket': viewConfig(`${pkg}#NewTicketView`, `${bp}/new-ticket`),
-      'support-settings': viewConfig(`${pkg}#TicketingSettingsView`, `${bp}/settings`),
-      'support-logs': viewConfig(`${pkg}#LogsView`, `${bp}/logs`),
-      'support-crm': viewConfig(`${pkg}#CrmView`, `${bp}/crm`),
+      'support-inbox': viewConfig(`${viewsBase}/TicketInboxView`, `${bp}/inbox`),
+      'support-dashboard': viewConfig(`${viewsBase}/SupportDashboardView`, `${bp}/dashboard`),
+      'support-ticket': viewConfig(`${viewsBase}/TicketDetailView`, `${bp}/ticket`),
+      'support-new-ticket': viewConfig(`${viewsBase}/NewTicketView`, `${bp}/new-ticket`),
+      'support-settings': viewConfig(`${viewsBase}/TicketingSettingsView`, `${bp}/settings`),
+      'support-logs': viewConfig(`${viewsBase}/LogsView`, `${bp}/logs`),
+      'support-crm': viewConfig(`${viewsBase}/CrmView`, `${bp}/crm`),
     }
 
     if (features.chat) {
-      supportViews['support-chat'] = viewConfig(`${pkg}#ChatView`, `${bp}/chat`)
+      supportViews['support-chat'] = viewConfig(`${viewsBase}/ChatView`, `${bp}/chat`)
     }
     if (features.pendingEmails) {
-      supportViews['support-emails'] = viewConfig(`${pkg}#PendingEmailsView`, `${bp}/emails`)
+      supportViews['support-emails'] = viewConfig(`${viewsBase}/PendingEmailsView`, `${bp}/emails`)
     }
     if (features.emailTracking) {
-      supportViews['support-tracking'] = viewConfig(`${pkg}#EmailTrackingView`, `${bp}/tracking`)
+      supportViews['support-tracking'] = viewConfig(`${viewsBase}/EmailTrackingView`, `${bp}/tracking`)
     }
     if (features.timeTracking) {
-      supportViews['support-time'] = viewConfig(`${pkg}#TimeDashboardView`, `${bp}/time`)
+      supportViews['support-time'] = viewConfig(`${viewsBase}/TimeDashboardView`, `${bp}/time`)
     }
 
     // ─── Endpoints ───────────────────────────────────────
