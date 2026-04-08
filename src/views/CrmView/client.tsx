@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/CrmView.module.scss'
 
 interface Client { id: number; company: string; firstName: string; lastName: string; email: string; phone?: string; notes?: string; createdAt: string }
@@ -11,13 +12,14 @@ interface ClientDetail {
   stats: { totalTickets: number; openTickets: number; resolvedTickets: number; totalTimeMinutes: number; lastActivity: string | null }
 }
 
-const statusLabels: Record<string, string> = { open: 'Ouvert', waiting_client: 'Attente', resolved: 'Resolu' }
+const statusLabelKeys: Record<string, string> = { open: 'ticket.status.open', waiting_client: 'ticket.status.waiting_client', resolved: 'ticket.status.resolved' }
 const statusColors: Record<string, string> = { open: '#3b82f6', waiting_client: '#f59e0b', resolved: '#22c55e' }
 
 function formatDuration(minutes: number): string { const h = Math.floor(minutes / 60); const m = minutes % 60; if (h === 0) return `${m}min`; if (m === 0) return `${h}h`; return `${h}h${m}m` }
 function timeAgo(dateStr: string): string { const diff = Date.now() - new Date(dateStr).getTime(); const days = Math.floor(diff / 86400000); if (days === 0) return "Aujourd'hui"; if (days === 1) return 'Hier'; if (days < 30) return `Il y a ${days}j`; return `Il y a ${Math.floor(days / 30)} mois` }
 
 export const CrmClient: React.FC = () => {
+  const { t } = useTranslation()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -107,16 +109,16 @@ export const CrmClient: React.FC = () => {
   return (
     <div style={S.page}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>CRM Clients</h1>
-        <div style={{ fontSize: 13, color: 'var(--theme-elevation-500)', marginTop: 4 }}>Fiche client complete avec historique tickets, projets et temps passe</div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('crm.title')}</h1>
+        <div style={{ fontSize: 13, color: 'var(--theme-elevation-500)', marginTop: 4 }}>{t('crm.subtitle')}</div>
       </div>
 
       <div style={S.grid}>
         <div style={S.sidebar}>
-          <input type="text" placeholder="Rechercher un client..." value={search} onChange={(e) => setSearch(e.target.value)} style={S.searchInput} />
+          <input type="text" placeholder={t('crm.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} style={S.searchInput} />
           <div>
-            {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
-              : clients.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Aucun client trouve</div>
+            {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
+              : clients.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('crm.noClientFound')}</div>
               : clients.map((c) => (
                 <div key={c.id} onClick={() => selectClient(c.id)} style={{ ...S.clientItem, ...(selectedId === c.id ? S.clientItemActive : {}) }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{c.company}</div>
@@ -128,8 +130,8 @@ export const CrmClient: React.FC = () => {
         </div>
 
         <div>
-          {!selectedId ? <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>Selectionnez un client pour voir sa fiche</div>
-            : detailLoading ? <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
+          {!selectedId ? <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>{t('crm.selectClient')}</div>
+            : detailLoading ? <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
             : detail ? (
               <div>
                 {/* Client header */}
@@ -141,8 +143,8 @@ export const CrmClient: React.FC = () => {
                     {detail.client.notes && <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)', marginTop: 4, fontStyle: 'italic' }}>{detail.client.notes}</div>}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <a href={`/admin/collections/support-clients/${detail.client.id}`} style={{ padding: '6px 14px', borderRadius: 6, background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Modifier</a>
-                    <button onClick={() => { setShowMerge(!showMerge); setMergeSearch(''); setMergeResults([]) }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #d97706', background: 'none', color: '#d97706', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Fusionner</button>
+                    <a href={`/admin/collections/support-clients/${detail.client.id}`} style={{ padding: '6px 14px', borderRadius: 6, background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>{t('crm.editButton')}</a>
+                    <button onClick={() => { setShowMerge(!showMerge); setMergeSearch(''); setMergeResults([]) }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #d97706', background: 'none', color: '#d97706', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t('crm.mergeButton')}</button>
                   </div>
                 </div>
 
@@ -150,8 +152,8 @@ export const CrmClient: React.FC = () => {
 
                 {showMerge && (
                   <div style={{ padding: 16, borderRadius: 8, border: '1px solid #fde68a', background: '#fefce8', marginBottom: 16 }}>
-                    <h4 style={{ margin: '0 0 8px', fontSize: 14 }}>Fusionner ce client dans un autre</h4>
-                    <input type="text" value={mergeSearch} onChange={(e) => setMergeSearch(e.target.value)} placeholder="Rechercher le client cible..." style={S.searchInput} />
+                    <h4 style={{ margin: '0 0 8px', fontSize: 14 }}>{t('crm.mergeTitle')}</h4>
+                    <input type="text" value={mergeSearch} onChange={(e) => setMergeSearch(e.target.value)} placeholder={t('crm.mergeSearchPlaceholder')} style={S.searchInput} />
                     {mergeResults.map((c) => (
                       <button key={c.id} onClick={() => handleMerge(c.id)} disabled={merging} style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid var(--theme-elevation-200)', borderRadius: 6, background: 'var(--theme-elevation-0)', cursor: 'pointer', textAlign: 'left', marginBottom: 4, fontSize: 13 }}>
                         <strong>{c.company}</strong> -- {c.firstName} {c.lastName} <span style={{ color: 'var(--theme-elevation-400)', fontSize: 11 }}>{c.email}</span>
@@ -163,11 +165,11 @@ export const CrmClient: React.FC = () => {
                 {/* Stats */}
                 <div style={S.statsGrid}>
                   {[
-                    { label: 'Total tickets', value: String(detail.stats.totalTickets) },
-                    { label: 'Ouverts', value: String(detail.stats.openTickets) },
-                    { label: 'Resolus', value: String(detail.stats.resolvedTickets) },
-                    { label: 'Temps passe', value: formatDuration(detail.stats.totalTimeMinutes) },
-                    { label: 'Derniere activite', value: detail.stats.lastActivity ? timeAgo(detail.stats.lastActivity) : '-' },
+                    { label: t('crm.stats.totalTickets'), value: String(detail.stats.totalTickets) },
+                    { label: t('crm.stats.openTickets'), value: String(detail.stats.openTickets) },
+                    { label: t('crm.stats.resolvedTickets'), value: String(detail.stats.resolvedTickets) },
+                    { label: t('crm.stats.timeSpent'), value: formatDuration(detail.stats.totalTimeMinutes) },
+                    { label: t('crm.stats.lastActivity'), value: detail.stats.lastActivity ? timeAgo(detail.stats.lastActivity) : '-' },
                   ].map((stat) => (
                     <div key={stat.label} style={S.statCard}>
                       <div style={{ fontSize: 11, color: 'var(--theme-elevation-500)', marginBottom: 2 }}>{stat.label}</div>
@@ -178,17 +180,17 @@ export const CrmClient: React.FC = () => {
 
                 {/* Tickets table */}
                 <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 8px' }}>Tickets ({detail.tickets.length})</h3>
-                  {detail.tickets.length === 0 ? <div style={{ color: '#94a3b8', fontSize: 13 }}>Aucun ticket</div> : (
+                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 8px' }}>{t('crm.sections.tickets')} ({detail.tickets.length})</h3>
+                  {detail.tickets.length === 0 ? <div style={{ color: '#94a3b8', fontSize: 13 }}>{t('crm.noTickets')}</div> : (
                     <table style={S.table}>
-                      <thead><tr><th style={S.th}>N&deg;</th><th style={S.th}>Sujet</th><th style={S.th}>Statut</th><th style={S.th}>Date</th></tr></thead>
+                      <thead><tr><th style={S.th}>{t('crm.tableHeaders.number')}</th><th style={S.th}>{t('crm.tableHeaders.subject')}</th><th style={S.th}>{t('crm.tableHeaders.status')}</th><th style={S.th}>{t('crm.tableHeaders.date')}</th></tr></thead>
                       <tbody>
-                        {detail.tickets.map((t) => (
-                          <tr key={t.id}>
-                            <td style={S.td}><a href={`/admin/support/ticket?id=${t.id}`} style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>{t.ticketNumber}</a></td>
-                            <td style={S.td}>{t.subject}</td>
-                            <td style={S.td}><span style={{ ...S.badge, background: `${statusColors[t.status] || '#94a3b8'}20`, color: statusColors[t.status] || '#94a3b8' }}>{statusLabels[t.status] || t.status}</span></td>
-                            <td style={{ ...S.td, fontSize: 12, color: 'var(--theme-elevation-400)' }}>{timeAgo(t.createdAt)}</td>
+                        {detail.tickets.map((tk) => (
+                          <tr key={tk.id}>
+                            <td style={S.td}><a href={`/admin/support/ticket?id=${tk.id}`} style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>{tk.ticketNumber}</a></td>
+                            <td style={S.td}>{tk.subject}</td>
+                            <td style={S.td}><span style={{ ...S.badge, background: `${statusColors[tk.status] || '#94a3b8'}20`, color: statusColors[tk.status] || '#94a3b8' }}>{statusLabelKeys[tk.status] ? t(statusLabelKeys[tk.status]) : tk.status}</span></td>
+                            <td style={{ ...S.td, fontSize: 12, color: 'var(--theme-elevation-400)' }}>{timeAgo(tk.createdAt)}</td>
                           </tr>
                         ))}
                       </tbody>

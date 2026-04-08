@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/PendingEmails.module.scss'
 
 interface SuggestedTicket { id: number; ticketNumber: string; subject: string; score: number }
@@ -27,7 +28,7 @@ function timeAgo(dateStr: string): string {
   return `il y a ${Math.floor(hours / 24)}j`
 }
 
-function EmailCard({ email, onProcess, processing }: { email: PendingEmail; onProcess: (action: 'create_ticket' | 'add_to_ticket' | 'ignore', ticketId?: number, clientId?: number) => void; processing: boolean }) {
+function EmailCard({ email, onProcess, processing, t }: { email: PendingEmail; onProcess: (action: 'create_ticket' | 'add_to_ticket' | 'ignore', ticketId?: number, clientId?: number) => void; processing: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const [expanded, setExpanded] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkSearch, setLinkSearch] = useState('')
@@ -82,26 +83,26 @@ function EmailCard({ email, onProcess, processing }: { email: PendingEmail; onPr
       )}
 
       <div style={S.body}>{expanded ? email.body : preview}</div>
-      {email.body.length > 200 && <button onClick={() => setExpanded(!expanded)} style={{ ...S.btn, fontSize: 11, padding: '2px 8px' }}>{expanded ? 'Reduire' : 'Voir tout'}</button>}
+      {email.body.length > 200 && <button onClick={() => setExpanded(!expanded)} style={{ ...S.btn, fontSize: 11, padding: '2px 8px' }}>{expanded ? t('pendingEmails.collapse') : t('pendingEmails.expand')}</button>}
 
       {isPending && (
         <div style={S.actions}>
           <button onClick={() => {
             const clientId = typeof email.client === 'object' && email.client ? email.client.id : undefined
             onProcess('create_ticket', undefined, clientId)
-          }} disabled={processing} style={{ ...S.btn, ...S.btnCreate }}>Creer un ticket</button>
-          <button onClick={() => setShowLinkModal(true)} disabled={processing} style={S.btn}>Rattacher</button>
-          <button onClick={() => onProcess('ignore')} disabled={processing} style={{ ...S.btn, ...S.btnIgnore }}>Ignorer</button>
+          }} disabled={processing} style={{ ...S.btn, ...S.btnCreate }}>{t('pendingEmails.actions.createTicket')}</button>
+          <button onClick={() => setShowLinkModal(true)} disabled={processing} style={S.btn}>{t('pendingEmails.actions.linkToTicket')}</button>
+          <button onClick={() => onProcess('ignore')} disabled={processing} style={{ ...S.btn, ...S.btnIgnore }}>{t('pendingEmails.actions.ignore')}</button>
         </div>
       )}
 
       {showLinkModal && (
         <div style={S.overlay} onClick={() => setShowLinkModal(false)}>
           <div style={S.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>Rattacher a un ticket</h3>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>{t('pendingEmails.linkModal.title')}</h3>
             {suggestions.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--theme-elevation-500)' }}>Suggestions</div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('pendingEmails.linkModal.suggestions')}</div>
                 {suggestions.map((s) => (
                   <button key={s.id} onClick={() => { setShowLinkModal(false); onProcess('add_to_ticket', s.id) }} style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid var(--theme-elevation-200)', borderRadius: 6, background: 'var(--theme-elevation-0)', cursor: 'pointer', textAlign: 'left', marginBottom: 4, fontSize: 13 }}>
                     <strong>{s.ticketNumber}</strong> {s.subject} <span style={{ fontSize: 11, color: '#16a34a' }}>{Math.round(s.score * 100)}%</span>
@@ -109,7 +110,7 @@ function EmailCard({ email, onProcess, processing }: { email: PendingEmail; onPr
                 ))}
               </div>
             )}
-            <input type="text" placeholder="Rechercher un ticket..." value={linkSearch} onChange={(e) => setLinkSearch(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 13, marginBottom: 8, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} />
+            <input type="text" placeholder={t('pendingEmails.linkModal.searchPlaceholder')} value={linkSearch} onChange={(e) => setLinkSearch(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 13, marginBottom: 8, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} />
             {linkResults.map((r) => (
               <button key={r.id} onClick={() => { setShowLinkModal(false); onProcess('add_to_ticket', r.id) }} style={{ display: 'block', width: '100%', padding: '8px 12px', border: '1px solid var(--theme-elevation-200)', borderRadius: 6, background: 'var(--theme-elevation-0)', cursor: 'pointer', textAlign: 'left', marginBottom: 4, fontSize: 13 }}>
                 <strong>{r.ticketNumber}</strong> {r.subject}
@@ -123,6 +124,7 @@ function EmailCard({ email, onProcess, processing }: { email: PendingEmail; onPr
 }
 
 export const PendingEmailsClient: React.FC = () => {
+  const { t } = useTranslation()
   const [emails, setEmails] = useState<PendingEmail[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('pending')
@@ -149,27 +151,27 @@ export const PendingEmailsClient: React.FC = () => {
     setProcessing(null)
   }
 
-  const tabs: { key: Tab; label: string }[] = [{ key: 'pending', label: 'En attente' }, { key: 'processed', label: 'Traites' }, { key: 'ignored', label: 'Ignores' }]
+  const tabs: { key: Tab; label: string }[] = [{ key: 'pending', label: t('pendingEmails.tabs.pending') }, { key: 'processed', label: t('pendingEmails.tabs.processed') }, { key: 'ignored', label: t('pendingEmails.tabs.ignored') }]
 
   return (
     <div style={{ padding: '20px 30px', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>Emails en attente</h1>
-          <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>File d&apos;attente des emails entrants -- Validez, rattachez ou ignorez</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('pendingEmails.title')}</h1>
+          <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>{t('pendingEmails.subtitle')}</p>
         </div>
-        {tab === 'pending' && emails.length > 0 && <span style={{ padding: '4px 10px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 700 }}>{emails.length} en attente</span>}
+        {tab === 'pending' && emails.length > 0 && <span style={{ padding: '4px 10px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 700 }}>{t('pendingEmails.pendingCount', { count: String(emails.length) })}</span>}
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: tab === t.key ? 'var(--theme-elevation-100)' : 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? 'var(--theme-text)' : 'var(--theme-elevation-500)' }}>{t.label}</button>
+        {tabs.map((tb) => (
+          <button key={tb.key} onClick={() => setTab(tb.key)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: tab === tb.key ? 'var(--theme-elevation-100)' : 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === tb.key ? 700 : 500, color: tab === tb.key ? 'var(--theme-text)' : 'var(--theme-elevation-500)' }}>{tb.label}</button>
         ))}
       </div>
 
-      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
-        : emails.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{tab === 'pending' ? 'Aucun email en attente' : 'Aucun email'}</div>
-        : emails.map((email) => <EmailCard key={email.id} email={email} onProcess={(action, ticketId, clientId) => handleProcess(email.id, action, ticketId, clientId)} processing={processing === email.id} />)}
+      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
+        : emails.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t(`pendingEmails.empty.${tab}`)}</div>
+        : emails.map((email) => <EmailCard key={email.id} email={email} onProcess={(action, ticketId, clientId) => handleProcess(email.id, action, ticketId, clientId)} processing={processing === email.id} t={t} />)}
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/Logs.module.scss'
 
 type LogType = 'email' | 'auth'
@@ -28,6 +29,7 @@ function fmtDate(d: string): string {
 }
 
 export const LogsClient: React.FC = () => {
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [logType, setLogType] = useState<LogType>(() => {
     const t = searchParams.get('type')
@@ -85,33 +87,33 @@ export const LogsClient: React.FC = () => {
   return (
     <div style={S.page}>
       <div style={S.header}>
-        <h1 style={S.title}>{logType === 'email' ? 'Journal des emails' : "Journal d'authentification"}</h1>
+        <h1 style={S.title}>{logType === 'email' ? t('logs.title') : t('logs.titleAuth')}</h1>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button style={S.purgeBtn} onClick={() => handlePurge(7)}>Purger +7j</button>
-          <button style={S.purgeBtn} onClick={() => handlePurge(30)}>Purger +30j</button>
-          <button style={{ ...S.purgeBtn, color: '#dc2626', borderColor: '#dc2626' }} onClick={() => handlePurge(0)}>Tout purger</button>
+          <button style={S.purgeBtn} onClick={() => handlePurge(7)}>{t('logs.purge7')}</button>
+          <button style={S.purgeBtn} onClick={() => handlePurge(30)}>{t('logs.purge30')}</button>
+          <button style={{ ...S.purgeBtn, color: '#dc2626', borderColor: '#dc2626' }} onClick={() => handlePurge(0)}>{t('logs.purgeAll')}</button>
         </div>
       </div>
 
       <div style={S.tabsRow}>
-        <button style={{ ...S.tab, ...(logType === 'email' ? S.tabActive : {}) }} onClick={() => setLogType('email')}>Emails ({logType === 'email' ? totalDocs : '...'})</button>
-        <button style={{ ...S.tab, ...(logType === 'auth' ? S.tabActive : {}) }} onClick={() => setLogType('auth')}>Authentification ({logType === 'auth' ? totalDocs : '...'})</button>
+        <button style={{ ...S.tab, ...(logType === 'email' ? S.tabActive : {}) }} onClick={() => setLogType('email')}>{t('logs.tabs.email')} ({logType === 'email' ? totalDocs : '...'})</button>
+        <button style={{ ...S.tab, ...(logType === 'auth' ? S.tabActive : {}) }} onClick={() => setLogType('auth')}>{t('logs.tabs.auth')} ({logType === 'auth' ? totalDocs : '...'})</button>
       </div>
 
       {purgeResult && <div style={{ padding: '8px 14px', borderRadius: 6, background: '#dcfce7', color: '#166534', fontSize: 13, marginBottom: 12 }}>{purgeResult}</div>}
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
+        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
       ) : logs.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Aucun log</div>
+        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('logs.noLogs')}</div>
       ) : logType === 'email' ? (
         <table style={S.table}>
-          <thead><tr><th style={S.th}>Date</th><th style={S.th}>Statut</th><th style={S.th}>Destinataire</th><th style={S.th}>Sujet</th><th style={S.th}>Action</th><th style={{ ...S.th, textAlign: 'right' }}>Temps</th></tr></thead>
+          <thead><tr><th style={S.th}>{t('logs.tableHeaders.date')}</th><th style={S.th}>{t('logs.tableHeaders.status')}</th><th style={S.th}>{t('logs.tableHeaders.recipient')}</th><th style={S.th}>{t('logs.tableHeaders.subject')}</th><th style={S.th}>{t('logs.tableHeaders.action')}</th><th style={{ ...S.th, textAlign: 'right' }}>{t('logs.tableHeaders.time')}</th></tr></thead>
           <tbody>
             {logs.map((log) => (
               <tr key={log.id}>
                 <td style={{ ...S.td, ...S.mono }}>{fmtDate(log.createdAt)}</td>
-                <td style={S.td}><span style={{ ...S.badge, background: log.status === 'success' ? '#dcfce7' : log.status === 'error' ? '#fef2f2' : '#f3f4f6', color: log.status === 'success' ? '#16a34a' : log.status === 'error' ? '#dc2626' : '#6b7280' }}>{log.status === 'success' ? 'Succes' : log.status === 'error' ? 'Erreur' : 'Ignore'}</span></td>
+                <td style={S.td}><span style={{ ...S.badge, background: log.status === 'success' ? '#dcfce7' : log.status === 'error' ? '#fef2f2' : '#f3f4f6', color: log.status === 'success' ? '#16a34a' : log.status === 'error' ? '#dc2626' : '#6b7280' }}>{log.status === 'success' ? t('logs.statusSuccess') : log.status === 'error' ? t('logs.statusError') : t('logs.statusIgnored')}</span></td>
                 <td style={{ ...S.td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.recipientEmail}>{log.recipientEmail || '--'}</td>
                 <td style={{ ...S.td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.subject}>{log.subject || '--'}</td>
                 <td style={{ ...S.td, fontSize: 12, color: 'var(--theme-elevation-500)' }}>{log.action || '--'}</td>
@@ -122,12 +124,12 @@ export const LogsClient: React.FC = () => {
         </table>
       ) : (
         <table style={S.table}>
-          <thead><tr><th style={S.th}>Date</th><th style={S.th}>Statut</th><th style={S.th}>Email</th><th style={S.th}>IP</th><th style={S.th}>User Agent</th></tr></thead>
+          <thead><tr><th style={S.th}>{t('logs.tableHeaders.date')}</th><th style={S.th}>{t('logs.tableHeaders.status')}</th><th style={S.th}>{t('logs.tableHeaders.email')}</th><th style={S.th}>{t('logs.tableHeaders.ip')}</th><th style={S.th}>{t('logs.tableHeaders.userAgent')}</th></tr></thead>
           <tbody>
             {logs.map((log) => (
               <tr key={log.id}>
                 <td style={{ ...S.td, ...S.mono }}>{fmtDate(log.createdAt)}</td>
-                <td style={S.td}><span style={{ ...S.badge, background: log.success ? '#dcfce7' : '#fef2f2', color: log.success ? '#16a34a' : '#dc2626' }}>{log.success ? 'Succes' : 'Echec'}</span></td>
+                <td style={S.td}><span style={{ ...S.badge, background: log.success ? '#dcfce7' : '#fef2f2', color: log.success ? '#16a34a' : '#dc2626' }}>{log.success ? t('logs.statusSuccess') : t('logs.statusFailed')}</span></td>
                 <td style={{ ...S.td, ...S.mono }}>{log.email || '--'}</td>
                 <td style={{ ...S.td, ...S.mono }}>{log.ip || '--'}</td>
                 <td style={{ ...S.td, fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.userAgent || '--'}</td>
@@ -139,9 +141,9 @@ export const LogsClient: React.FC = () => {
 
       {totalDocs > 0 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16, alignItems: 'center' }}>
-          <button style={S.purgeBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Precedent</button>
-          <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>Page {page} -- {totalDocs} resultats</span>
-          <button style={S.purgeBtn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>Suivant</button>
+          <button style={S.purgeBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>{t('common.previous')}</button>
+          <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{t('common.page')} {page} -- {totalDocs} {t('common.results')}</span>
+          <button style={S.purgeBtn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>{t('common.next')}</button>
         </div>
       )}
     </div>

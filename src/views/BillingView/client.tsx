@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/BillingView.module.scss'
 
 interface BillingEntry { duration: number; description: string; date: string }
@@ -15,6 +16,7 @@ function getMonthRange(offset: number): { from: string; to: string } { const now
 function getQuarterRange(offset: number): { from: string; to: string } { const now = new Date(); const q = Math.floor(now.getMonth() / 3) + offset; const start = new Date(now.getFullYear(), q * 3, 1); const end = new Date(now.getFullYear(), q * 3 + 3, 0); return { from: start.toISOString().split('T')[0], to: end.toISOString().split('T')[0] } }
 
 export const BillingClient: React.FC = () => {
+  const { t } = useTranslation()
   const [from, setFrom] = useState(() => getMonthRange(0).from)
   const [to, setTo] = useState(() => getMonthRange(0).to)
   const [projectId, setProjectId] = useState('')
@@ -80,28 +82,28 @@ export const BillingClient: React.FC = () => {
   return (
     <div style={S.page}>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Pre-facturation</h1>
-        <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>Agregation du temps par projet pour preparer la facturation</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('billing.title')}</h1>
+        <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>{t('billing.subtitle')}</p>
       </div>
 
       <div style={S.filters}>
         <div style={S.quickPeriod}>
-          <button style={S.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>Ce mois</button>
-          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-1))}>Mois precedent</button>
-          <button style={S.btn} onClick={() => setPeriod(getQuarterRange(0))}>Ce trimestre</button>
+          <button style={S.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>{t('billing.filters.thisMonth')}</button>
+          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-1))}>{t('billing.filters.lastMonth')}</button>
+          <button style={S.btn} onClick={() => setPeriod(getQuarterRange(0))}>{t('billing.filters.thisQuarter')}</button>
         </div>
         <div style={S.filterRow}>
-          <div style={S.fieldGroup}><label style={S.label}>Du</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={S.input} /></div>
-          <div style={S.fieldGroup}><label style={S.label}>Au</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={S.input} /></div>
-          <div style={S.fieldGroup}><label style={S.label}>Projet</label><select value={projectId} onChange={(e) => setProjectId(e.target.value)} style={S.select}><option value="">Tous</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-          <div style={S.fieldGroup}><label style={S.label}>Taux</label><div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><input type="number" value={rate} onChange={(e) => setRate(Number(e.target.value))} style={{ ...S.input, width: 70 }} min={0} /><span style={{ fontSize: 11 }}>EUR/h</span></div></div>
-          <button style={S.btnPrimary} onClick={fetchBilling} disabled={loading}>{loading ? 'Chargement...' : 'Charger'}</button>
+          <div style={S.fieldGroup}><label style={S.label}>{t('billing.filters.from')}</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={S.input} /></div>
+          <div style={S.fieldGroup}><label style={S.label}>{t('billing.filters.to')}</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={S.input} /></div>
+          <div style={S.fieldGroup}><label style={S.label}>{t('billing.filters.project')}</label><select value={projectId} onChange={(e) => setProjectId(e.target.value)} style={S.select}><option value="">{t('common.all')}</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+          <div style={S.fieldGroup}><label style={S.label}>{t('billing.filters.hourlyRate')}</label><div style={{ display: 'flex', gap: 4, alignItems: 'center' }}><input type="number" value={rate} onChange={(e) => setRate(Number(e.target.value))} style={{ ...S.input, width: 70 }} min={0} /><span style={{ fontSize: 11 }}>{t('billing.filters.rateUnit')}</span></div></div>
+          <button style={S.btnPrimary} onClick={fetchBilling} disabled={loading}>{loading ? t('billing.filters.loading') : t('billing.filters.load')}</button>
         </div>
       </div>
 
       {data && (
         <>
-          {data.groups.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Aucun ticket facturable sur cette periode.</div> : (
+          {data.groups.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('billing.empty')}</div> : (
             <>
               {data.groups.map((group, gi) => (
                 <div key={gi} style={S.groupCard}>
@@ -110,7 +112,7 @@ export const BillingClient: React.FC = () => {
                     <div style={{ textAlign: 'right' }}><div style={{ fontWeight: 700 }}>{formatDuration(group.totalMinutes)}</div><div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>{formatAmount(group.totalMinutes, rate)} EUR</div></div>
                   </div>
                   <table style={S.table}>
-                    <thead><tr><th style={S.th}>Ticket</th><th style={S.th}>Sujet</th><th style={S.th}>Date</th><th style={S.th}>Duree</th><th style={S.th}>Description</th><th style={{ ...S.th, textAlign: 'right' }}>Montant</th></tr></thead>
+                    <thead><tr><th style={S.th}>{t('billing.table.ticketNumber')}</th><th style={S.th}>{t('billing.table.subject')}</th><th style={S.th}>{t('billing.table.date')}</th><th style={S.th}>{t('billing.table.duration')}</th><th style={S.th}>{t('billing.table.description')}</th><th style={{ ...S.th, textAlign: 'right' }}>{t('billing.table.amount')}</th></tr></thead>
                     <tbody>
                       {group.tickets.map((ticket) => ticket.entries.map((entry, ei) => (
                         <tr key={`${ticket.id}-${ei}`}>
@@ -123,8 +125,8 @@ export const BillingClient: React.FC = () => {
                 </div>
               ))}
               <div style={S.grandTotal}>
-                <div><div style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{data.groups.reduce((s, g) => s + g.tickets.length, 0)} tickets facturables</div><div style={{ fontSize: 18, fontWeight: 700 }}>Total : {formatDuration(data.grandTotalMinutes)} = {formatAmount(data.grandTotalMinutes, rate)} EUR</div></div>
-                <button style={S.btnPrimary} onClick={copyRecap}>{copied ? 'Copie !' : 'Copier le recapitulatif'}</button>
+                <div><div style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{t('billing.totals.billableTicketsPlural', { count: String(data.groups.reduce((s, g) => s + g.tickets.length, 0)) })}</div><div style={{ fontSize: 18, fontWeight: 700 }}>{t('billing.totals.total')} : {formatDuration(data.grandTotalMinutes)} = {formatAmount(data.grandTotalMinutes, rate)} EUR</div></div>
+                <button style={S.btnPrimary} onClick={copyRecap}>{copied ? t('billing.totals.copiedRecap') : t('billing.totals.copyRecap')}</button>
               </div>
             </>
           )}

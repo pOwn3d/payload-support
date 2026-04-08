@@ -5,6 +5,7 @@ import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from 'lucide-
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
 import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../TicketConversation/config'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import ts from './TicketingSettings.module.scss'
 
 /* ============================================
@@ -293,6 +294,7 @@ const FieldRow: React.FC<{
  * ============================================ */
 
 export const TicketingSettingsClient: React.FC = () => {
+  const { t } = useTranslation()
   const [features, setFeatures] = useState<TicketingFeatures>(() => getFeatures())
   const [settings, setSettings] = useState<AllSettings>(DEFAULT_SETTINGS)
   const [signature, setSignature] = useState('')
@@ -379,34 +381,33 @@ export const TicketingSettingsClient: React.FC = () => {
     <div className={ts.page}>
       <AdminViewHeader
         icon={<Settings size={24} />}
-        title="Configuration du module Support"
-        subtitle={`${enabledCount}/${totalCount} fonctionnalites activees`}
+        title={t('settingsView.configTitle')}
+        subtitle={t('settings.subtitle', { enabled: String(enabledCount), total: String(totalCount) })}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleReset} style={btnStyle('var(--theme-elevation-400)', { small: true })}>
-              Reinitialiser
+              {t('settingsView.reset')}
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
               style={btnStyle(saved ? V.green : V.blue, { small: true })}
             >
-              {saving ? '...' : saved ? '\u2713 Sauvegarde' : 'Sauvegarder'}
+              {saving ? '...' : saved ? t('settingsView.saved') : t('common.save')}
             </button>
           </div>
         }
       />
 
       <p className={ts.intro}>
-        Configurez le module de support : fonctionnalités, email, IA, SLA et fermeture automatique.
-        Les changements prennent effet immédiatement après sauvegarde (rechargez la page du ticket).
+        {t('settingsView.intro')}
       </p>
 
       {/* ========================================
        * SECTION 1 — Feature Flags
        * ======================================== */}
       <CollapsibleSection
-        title="Fonctionnalités"
+        title={t('settingsView.features')}
         icon={<Settings size={16} />}
         color={V.blue}
         badge={
@@ -458,7 +459,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 2 — Email Configuration
        * ======================================== */}
       <CollapsibleSection
-        title="Configuration Email"
+        title={t('settingsView.emailConfig')}
         icon={<Mail size={16} />}
         color="#ea580c"
         defaultOpen={false}
@@ -523,7 +524,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 3 — AI Configuration
        * ======================================== */}
       <CollapsibleSection
-        title="Intelligence Artificielle"
+        title={t('settingsView.aiTitle')}
         icon={<Bot size={16} />}
         color="#7c3aed"
         defaultOpen={false}
@@ -613,7 +614,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 4 — SLA Configuration
        * ======================================== */}
       <CollapsibleSection
-        title="SLA (Accords de niveau de service)"
+        title={t('settingsView.slaTitle')}
         icon={<Clock size={16} />}
         color="#0891b2"
         defaultOpen={false}
@@ -684,7 +685,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 5 — Auto-Close
        * ======================================== */}
       <CollapsibleSection
-        title="Fermeture automatique"
+        title={t('settingsView.autoCloseTitle')}
         icon={<Timer size={16} />}
         color="#d97706"
         defaultOpen={false}
@@ -756,9 +757,9 @@ export const TicketingSettingsClient: React.FC = () => {
         background: 'linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%)',
         border: '1px solid #c7d2fe',
       }}>
-        <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>Mes preferences</div>
+        <div style={{ fontWeight: 700, fontSize: 15, color: '#1e293b' }}>{t('settingsView.myPreferences')}</div>
         <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-          Ces reglages sont propres a votre compte et ne s&apos;appliquent qu&apos;a vous.
+          {t('settingsView.myPreferencesDesc')}
         </div>
       </div>
 
@@ -766,7 +767,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 6 — Locale (per-user)
        * ======================================== */}
       <CollapsibleSection
-        title="Langue et localisation"
+        title={t('settingsView.localeTitle')}
         icon={<Globe size={16} />}
         color="#16a34a"
         defaultOpen={false}
@@ -791,7 +792,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 7 — Email Signature
        * ======================================== */}
       <CollapsibleSection
-        title="Signature email"
+        title={t('settingsView.signatureTitle')}
         icon={<FileSignature size={16} />}
         color="#6366f1"
         defaultOpen={false}
@@ -851,14 +852,14 @@ export const TicketingSettingsClient: React.FC = () => {
       {/* Bottom save bar */}
       <div className={ts.bottomBar}>
         <button onClick={handleReset} style={btnStyle('var(--theme-elevation-400)', { small: true })}>
-          Réinitialiser tout
+          {t('settingsView.resetAll')}
         </button>
         <button
           onClick={handleSave}
           disabled={saving}
           style={btnStyle(saved ? V.green : V.blue, { small: true })}
         >
-          {saving ? 'Sauvegarde...' : saved ? '\u2713 Sauvegardé' : 'Sauvegarder les modifications'}
+          {saving ? t('settingsView.saving') : saved ? t('settingsView.saved') : t('settingsView.saveChanges')}
         </button>
       </div>
     </div>

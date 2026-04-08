@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/EmailTracking.module.scss'
 
 interface EmailLog { id: number; status: 'success' | 'ignored' | 'error'; action?: string; subject?: string; recipientEmail?: string; ticketNumber?: string; errorMessage?: string; httpStatus?: number; processingTimeMs?: number; createdAt: string }
@@ -8,15 +9,16 @@ interface Stats { total: number; success: number; errors: number; ignored: numbe
 type StatusTab = 'all' | 'success' | 'error' | 'ignored'
 type DateRange = 7 | 30 | 90
 
-const STATUS_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  success: { label: 'Succes', bg: '#dcfce7', color: '#16a34a' },
-  error: { label: 'Erreur', bg: '#fef2f2', color: '#dc2626' },
-  ignored: { label: 'Ignore', bg: '#f3f4f6', color: '#6b7280' },
+const STATUS_CFG: Record<string, { key: string; bg: string; color: string }> = {
+  success: { key: 'emailTracking.status.success', bg: '#dcfce7', color: '#16a34a' },
+  error: { key: 'emailTracking.status.error', bg: '#fef2f2', color: '#dc2626' },
+  ignored: { key: 'emailTracking.status.ignored', bg: '#f3f4f6', color: '#6b7280' },
 }
 
 function fmtDate(d: string): string { return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) }
 
 export const EmailTrackingClient: React.FC = () => {
+  const { t } = useTranslation()
   const [logs, setLogs] = useState<EmailLog[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,19 +63,19 @@ export const EmailTrackingClient: React.FC = () => {
 
   return (
     <div style={S.page}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16, color: 'var(--theme-text)' }}>Suivi des emails</h1>
+      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16, color: 'var(--theme-text)' }}>{t('emailTracking.title')}</h1>
 
       <div style={S.statGrid}>
-        <div style={S.statCard}><div style={S.statLabel}>Emails envoyes</div><div style={S.statValue}>{stats?.total ?? '--'}</div></div>
-        <div style={S.statCard}><div style={S.statLabel}>Taux de succes</div><div style={S.statValue}>{stats ? `${stats.successRate}%` : '--'}</div></div>
-        <div style={S.statCard}><div style={S.statLabel}>Erreurs</div><div style={S.statValue}>{stats?.errors ?? '--'}</div></div>
-        <div style={S.statCard}><div style={S.statLabel}>Temps moyen</div><div style={S.statValue}>{stats ? `${stats.avgProcessingTime}ms` : '--'}</div></div>
+        <div style={S.statCard}><div style={S.statLabel}>{t('emailTracking.stats.emailsSent')}</div><div style={S.statValue}>{stats?.total ?? '--'}</div></div>
+        <div style={S.statCard}><div style={S.statLabel}>{t('emailTracking.stats.successRate')}</div><div style={S.statValue}>{stats ? `${stats.successRate}%` : '--'}</div></div>
+        <div style={S.statCard}><div style={S.statLabel}>{t('emailTracking.stats.errors')}</div><div style={S.statValue}>{stats?.errors ?? '--'}</div></div>
+        <div style={S.statCard}><div style={S.statLabel}>{t('emailTracking.stats.avgTime')}</div><div style={S.statValue}>{stats ? `${stats.avgProcessingTime}ms` : '--'}</div></div>
       </div>
 
       <div style={S.filters}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {(['all', 'success', 'error', 'ignored'] as StatusTab[]).map((t) => (
-            <button key={t} style={{ ...S.tab, ...(tab === t ? S.tabActive : {}) }} onClick={() => setTab(t)}>{t === 'all' ? 'Tous' : t === 'success' ? 'Succes' : t === 'error' ? 'Erreurs' : 'Ignores'}</button>
+          {(['all', 'success', 'error', 'ignored'] as StatusTab[]).map((st) => (
+            <button key={st} style={{ ...S.tab, ...(tab === st ? S.tabActive : {}) }} onClick={() => setTab(st)}>{t(`emailTracking.tabs.${st === 'error' ? 'errors' : st}`)}</button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -81,14 +83,14 @@ export const EmailTrackingClient: React.FC = () => {
             <button key={v} style={{ ...S.dateBtn, ...(dateRange === v ? S.dateBtnActive : {}) }} onClick={() => setDateRange(v)}>{v}j</button>
           ))}
         </div>
-        <input type="text" placeholder="Email, sujet..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} />
+        <input type="text" placeholder={t('emailTracking.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} />
       </div>
 
-      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
-        : logs.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Aucun log pour cette periode</div>
+      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
+        : logs.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('emailTracking.noLogs')}</div>
         : (
           <table style={S.table}>
-            <thead><tr><th style={S.th}>Date</th><th style={S.th}>Destinataire</th><th style={S.th}>Sujet</th><th style={S.th}>Ticket</th><th style={S.th}>Statut</th><th style={S.th}>Action</th><th style={{ ...S.th, textAlign: 'right' }}>Temps</th></tr></thead>
+            <thead><tr><th style={S.th}>{t('emailTracking.tableHeaders.date')}</th><th style={S.th}>{t('emailTracking.tableHeaders.recipient')}</th><th style={S.th}>{t('emailTracking.tableHeaders.subject')}</th><th style={S.th}>{t('emailTracking.tableHeaders.ticket')}</th><th style={S.th}>{t('emailTracking.tableHeaders.status')}</th><th style={S.th}>{t('emailTracking.tableHeaders.action')}</th><th style={{ ...S.th, textAlign: 'right' }}>{t('emailTracking.tableHeaders.time')}</th></tr></thead>
             <tbody>
               {logs.map((log) => (
                 <React.Fragment key={log.id}>
@@ -97,7 +99,7 @@ export const EmailTrackingClient: React.FC = () => {
                     <td style={{ ...S.td, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.recipientEmail || '--'}</td>
                     <td style={{ ...S.td, maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.subject || '--'}</td>
                     <td style={S.td}>{log.ticketNumber || '--'}</td>
-                    <td style={S.td}><span style={{ ...S.badge, background: STATUS_CFG[log.status]?.bg, color: STATUS_CFG[log.status]?.color }}>{STATUS_CFG[log.status]?.label || log.status}</span></td>
+                    <td style={S.td}><span style={{ ...S.badge, background: STATUS_CFG[log.status]?.bg, color: STATUS_CFG[log.status]?.color }}>{STATUS_CFG[log.status]?.key ? t(STATUS_CFG[log.status].key) : log.status}</span></td>
                     <td style={{ ...S.td, fontSize: 12 }}>{log.action || '--'}</td>
                     <td style={{ ...S.td, textAlign: 'right' }}>{log.processingTimeMs != null ? <span style={{ fontFamily: 'monospace', fontSize: 12, color: log.processingTimeMs > 2000 ? '#dc2626' : '#16a34a' }}>{log.processingTimeMs}ms</span> : '--'}</td>
                   </tr>
@@ -112,9 +114,9 @@ export const EmailTrackingClient: React.FC = () => {
 
       {totalDocs > 0 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16, alignItems: 'center' }}>
-          <button style={S.btn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Precedent</button>
-          <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>Page {page} -- {totalDocs} resultats</span>
-          <button style={S.btn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>Suivant</button>
+          <button style={S.btn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>{t('common.previous')}</button>
+          <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{t('common.page')} {page} -- {totalDocs} {t('common.results')}</span>
+          <button style={S.btn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>{t('common.next')}</button>
         </div>
       )}
     </div>

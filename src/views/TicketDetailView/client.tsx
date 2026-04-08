@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { getFeatures } from '../shared/config'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/TicketDetail.module.scss'
 
 interface Message {
@@ -38,6 +39,7 @@ function dateLabel(d: string): string {
 }
 
 export const TicketDetailClient: React.FC = () => {
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const ticketId = searchParams.get('id')
   const features = getFeatures()
@@ -397,9 +399,9 @@ export const TicketDetailClient: React.FC = () => {
   }
 
   // ---- RENDER ----
-  if (!ticketId) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>Selectionnez un ticket depuis la liste</div>
-  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>Chargement...</div>
-  if (!ticket) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>Ticket introuvable</div>
+  if (!ticketId) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>{t('detail.selectTicket')}</div>
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>{t('common.loading')}</div>
+  if (!ticket) return <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>{t('detail.notFound')}</div>
 
   const st = STATUS[(ticket.status as string) || 'open'] || STATUS.open
   const totalMin = timeEntries.reduce((a, e) => a + (e.duration || 0), 0)
@@ -449,9 +451,9 @@ export const TicketDetailClient: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <select style={{ ...S.statusChip, background: st.bg, color: st.color }} value={(ticket.status as string) || 'open'} onChange={(e) => handleStatusChange(e.target.value)} disabled={statusUpdating}>
-            <option value="open">Ouvert</option>
-            <option value="waiting_client">En attente</option>
-            <option value="resolved">Resolu</option>
+            <option value="open">{t('detail.statusOpen')}</option>
+            <option value="waiting_client">{t('detail.statusWaiting')}</option>
+            <option value="resolved">{t('detail.statusResolved')}</option>
           </select>
           {sentiment && features.ai && (
             <span style={{ ...S.badge, background: `${sentiment.color}12`, color: sentiment.color }}>
@@ -462,9 +464,9 @@ export const TicketDetailClient: React.FC = () => {
             <button onClick={() => setShowMenu(!showMenu)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--theme-elevation-500)' }}>&middot;&middot;&middot;</button>
             {showMenu && (
               <div style={{ position: 'absolute', right: 0, top: '100%', background: 'var(--theme-elevation-0)', border: '1px solid var(--theme-elevation-200)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 50, minWidth: 160 }}>
-                <button style={{ display: 'block', width: '100%', padding: '8px 14px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: 'var(--theme-text)' }} onClick={() => { navigator.clipboard.writeText(window.location.href); setShowMenu(false) }}>Copier le lien</button>
-                <Link href={`/admin/collections/tickets/${ticketId}`} style={{ display: 'block', padding: '8px 14px', fontSize: 13, color: 'var(--theme-text)', textDecoration: 'none' }} onClick={() => setShowMenu(false)}>Vue Payload</Link>
-                <a href={`/support/tickets/${ticketId}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '8px 14px', fontSize: 13, color: 'var(--theme-text)', textDecoration: 'none' }} onClick={() => setShowMenu(false)}>Vue client</a>
+                <button style={{ display: 'block', width: '100%', padding: '8px 14px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: 'var(--theme-text)' }} onClick={() => { navigator.clipboard.writeText(window.location.href); setShowMenu(false) }}>{t('detail.copyLink')}</button>
+                <Link href={`/admin/collections/tickets/${ticketId}`} style={{ display: 'block', padding: '8px 14px', fontSize: 13, color: 'var(--theme-text)', textDecoration: 'none' }} onClick={() => setShowMenu(false)}>{t('detail.payloadView')}</Link>
+                <a href={`/support/tickets/${ticketId}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '8px 14px', fontSize: 13, color: 'var(--theme-text)', textDecoration: 'none' }} onClick={() => setShowMenu(false)}>{t('detail.clientView')}</a>
               </div>
             )}
           </div>
@@ -522,9 +524,9 @@ export const TicketDetailClient: React.FC = () => {
                     </div>
                     {/* Hover actions */}
                     <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4, opacity: 0.6 }}>
-                      <button style={{ ...S.toolbarBtn, color: '#dc2626', fontSize: 11 }} onClick={() => handleDeleteMessage(msg.id)}>Supprimer</button>
-                      {features.splitTicket && !msg.isInternal && <button style={{ ...S.toolbarBtn, fontSize: 11 }} onClick={() => { setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) }); setSplitSubject(`Split: ${ticket.subject}`) }}>Extraire</button>}
-                      {isAdmin && !msg.isInternal && <button style={{ ...S.toolbarBtn, fontSize: 11 }} onClick={() => fetch('/api/support/resend-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ messageId: msg.id }) })}>Renvoyer</button>}
+                      <button style={{ ...S.toolbarBtn, color: '#dc2626', fontSize: 11 }} onClick={() => handleDeleteMessage(msg.id)}>{t('common.delete')}</button>
+                      {features.splitTicket && !msg.isInternal && <button style={{ ...S.toolbarBtn, fontSize: 11 }} onClick={() => { setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) }); setSplitSubject(`Split: ${ticket.subject}`) }}>{t('actions.extractMessage')}</button>}
+                      {isAdmin && !msg.isInternal && <button style={{ ...S.toolbarBtn, fontSize: 11 }} onClick={() => fetch('/api/support/resend-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ messageId: msg.id }) })}>{t('actions.resendEmail')}</button>}
                     </div>
                   </div>
                 </React.Fragment>
@@ -549,11 +551,11 @@ export const TicketDetailClient: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
               {features.ai && (
                 <>
-                  <button style={S.toolbarBtn} onClick={handleAiSuggest} disabled={aiReplying || messages.length === 0}>{aiReplying ? '...' : 'IA Suggestion'}</button>
-                  <button style={S.toolbarBtn} onClick={handleAiRewrite} disabled={aiRewriting || !replyBody.trim()}>{aiRewriting ? '...' : 'Reformuler'}</button>
+                  <button style={S.toolbarBtn} onClick={handleAiSuggest} disabled={aiReplying || messages.length === 0}>{aiReplying ? '...' : t('detail.iaSuggestion')}</button>
+                  <button style={S.toolbarBtn} onClick={handleAiRewrite} disabled={aiRewriting || !replyBody.trim()}>{aiRewriting ? '...' : t('detail.rewrite')}</button>
                 </>
               )}
-              <button style={S.toolbarBtn} onClick={() => fileInputRef.current?.click()}>Fichier</button>
+              <button style={S.toolbarBtn} onClick={() => fileInputRef.current?.click()}>{t('detail.file')}</button>
               <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }} onChange={(e) => handleFileSelect(e.target.files)} />
               {macros.length > 0 && (
                 <select
@@ -561,7 +563,7 @@ export const TicketDetailClient: React.FC = () => {
                   onChange={(e) => { const id = Number(e.target.value); if (id) handleApplyMacro(id); e.target.value = '' }}
                   disabled={applyingMacro}
                 >
-                  <option value="">{applyingMacro ? 'Application...' : 'Macros'}</option>
+                  <option value="">{applyingMacro ? t('detail.applyingMacro') : t('detail.macros')}</option>
                   {macros.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               )}
@@ -571,7 +573,7 @@ export const TicketDetailClient: React.FC = () => {
                   if (cr) { let b = cr.body; if (client) { b = b.replace(/\{\{client\.firstName\}\}/g, client.firstName).replace(/\{\{client\.company\}\}/g, client.company) }; setReplyBody(b) }
                   e.target.value = ''
                 }}>
-                  <option value="">Reponses types</option>
+                  <option value="">{t('detail.cannedResponses')}</option>
                   {cannedResponses.map((cr) => <option key={cr.id} value={String(cr.id)}>{cr.title}</option>)}
                 </select>
               )}
@@ -580,7 +582,7 @@ export const TicketDetailClient: React.FC = () => {
               style={S.textarea}
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
-              placeholder={isInternal ? 'Note interne...' : `Repondre a ${client?.firstName || 'client'}...`}
+              placeholder={isInternal ? t('composer.placeholderInternal') : t('composer.placeholderReplyTo', { name: client?.firstName || 'client' })}
             />
             {pendingFiles.length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
@@ -594,11 +596,11 @@ export const TicketDetailClient: React.FC = () => {
             )}
             <div style={S.composerFooter}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 12 }}>
-                <label><input type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} /> Note interne</label>
-                <label><input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} disabled={isInternal} /> Notifier</label>
+                <label><input type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} /> {t('detail.internalNote')}</label>
+                <label><input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} disabled={isInternal} /> {t('detail.notify')}</label>
               </div>
               <button style={{ ...S.sendBtn, ...(isInternal ? { background: '#d97706' } : {}) }} onClick={handleSend} disabled={sending || !replyBody.trim()} data-action="send-reply">
-                {sending ? 'Envoi...' : isInternal ? 'Ajouter note' : 'Envoyer ->'}
+                {sending ? t('detail.sending') : isInternal ? t('detail.sendNote') : t('detail.sendReply')}
               </button>
             </div>
           </div>
@@ -617,42 +619,42 @@ export const TicketDetailClient: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <Link href={`/admin/collections/support-clients/${client.id}`} style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid var(--theme-elevation-200)', fontSize: 11, textDecoration: 'none', color: 'var(--theme-text)' }}>Fiche</Link>
-                <button style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid var(--theme-elevation-200)', fontSize: 11, background: 'none', cursor: 'pointer', color: 'var(--theme-text)' }} onClick={() => window.open(`/api/admin/impersonate?clientId=${client.id}`, '_blank')}>Portail</button>
+                <Link href={`/admin/collections/support-clients/${client.id}`} style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid var(--theme-elevation-200)', fontSize: 11, textDecoration: 'none', color: 'var(--theme-text)' }}>{t('client.clientSheet')}</Link>
+                <button style={{ padding: '4px 10px', borderRadius: 4, border: '1px solid var(--theme-elevation-200)', fontSize: 11, background: 'none', cursor: 'pointer', color: 'var(--theme-text)' }} onClick={() => window.open(`/api/admin/impersonate?clientId=${client.id}`, '_blank')}>{t('client.clientPortal')}</button>
               </div>
             </div>
           )}
 
           {/* Editable sidebar fields */}
           <div style={S.sideSection}>
-            <div style={S.sideSectionTitle}>Details</div>
+            <div style={S.sideSectionTitle}>{t('detail.details')}</div>
             <div style={S.sideField}>
-              <span style={S.sideLabel}>Priorite</span>
+              <span style={S.sideLabel}>{t('detail.priority')}</span>
               <select style={S.sideSelect} value={(ticket.priority as string) || 'normal'} onChange={(e) => handleFieldPatch('priority', e.target.value)}>
-                <option value="low">Basse</option>
-                <option value="normal">Normale</option>
-                <option value="high">Haute</option>
-                <option value="urgent">Urgent</option>
+                <option value="low">{t('ticket.priority.low')}</option>
+                <option value="normal">{t('ticket.priority.normal')}</option>
+                <option value="high">{t('ticket.priority.high')}</option>
+                <option value="urgent">{t('ticket.priority.urgent')}</option>
               </select>
             </div>
             <div style={S.sideField}>
-              <span style={S.sideLabel}>Categorie</span>
+              <span style={S.sideLabel}>{t('detail.category')}</span>
               <select style={S.sideSelect} value={(ticket.category as string) || ''} onChange={(e) => handleFieldPatch('category', e.target.value)}>
                 <option value="">--</option>
-                <option value="bug">Bug</option>
-                <option value="content">Contenu</option>
-                <option value="feature">Fonctionnalite</option>
-                <option value="question">Question</option>
-                <option value="hosting">Hebergement</option>
+                <option value="bug">{t('ticket.category.bug')}</option>
+                <option value="content">{t('ticket.category.content')}</option>
+                <option value="feature">{t('ticket.category.feature')}</option>
+                <option value="question">{t('ticket.category.question')}</option>
+                <option value="hosting">{t('ticket.category.hosting')}</option>
               </select>
             </div>
-            <div style={S.sideField}><span style={S.sideLabel}>Source</span><span style={S.sideValue}>{(ticket.source as string) || 'Portail'}</span></div>
-            <div style={S.sideField}><span style={S.sideLabel}>Assigne</span><span style={S.sideValue}>{typeof ticket.assignedTo === 'object' && ticket.assignedTo ? (ticket.assignedTo as { firstName?: string }).firstName || 'Admin' : '--'}</span></div>
+            <div style={S.sideField}><span style={S.sideLabel}>{t('detail.source')}</span><span style={S.sideValue}>{(ticket.source as string) || t('ticket.source.portal')}</span></div>
+            <div style={S.sideField}><span style={S.sideLabel}>{t('detail.assigned')}</span><span style={S.sideValue}>{typeof ticket.assignedTo === 'object' && ticket.assignedTo ? (ticket.assignedTo as { firstName?: string }).firstName || 'Admin' : '--'}</span></div>
           </div>
 
           {/* Tags */}
           <div style={S.sideSection}>
-            <div style={S.sideSectionTitle}>Tags</div>
+            <div style={S.sideSectionTitle}>{t('detail.tags')}</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {tags.map((tag) => (
                 <span key={tag} style={S.tagChip}>
@@ -678,7 +680,7 @@ export const TicketDetailClient: React.FC = () => {
 
           {features.timeTracking && (
             <div style={S.sideSection}>
-              <div style={S.sideSectionTitle}>Temps <span style={{ fontWeight: 700, fontSize: 13, color: '#d97706' }}>{totalMin > 0 ? `${Math.floor(totalMin / 60)}h${String(totalMin % 60).padStart(2, '0')} total` : '0min'}</span></div>
+              <div style={S.sideSectionTitle}>{t('detail.time')} <span style={{ fontWeight: 700, fontSize: 13, color: '#d97706' }}>{totalMin > 0 ? `${Math.floor(totalMin / 60)}h${String(totalMin % 60).padStart(2, '0')} ${t('detail.total')}` : '0min'}</span></div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: timerRunning ? '#dc2626' : 'var(--theme-text)' }}>
                   {String(Math.floor(timerSeconds / 60)).padStart(2, '0')}:{String(timerSeconds % 60).padStart(2, '0')}
@@ -742,8 +744,8 @@ export const TicketDetailClient: React.FC = () => {
       {/* Undo delete toast */}
       {undoToast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', padding: '10px 20px', borderRadius: 8, background: '#1e293b', color: '#fff', fontSize: 13, display: 'flex', gap: 12, alignItems: 'center', zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} role="alert">
-          <span>Message supprime</span>
-          <button onClick={handleUndoDelete} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Annuler</button>
+          <span>{t('detail.messageDeleted')}</span>
+          <button onClick={handleUndoDelete} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, padding: '4px 10px', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{t('detail.undo')}</button>
         </div>
       )}
 
@@ -751,19 +753,19 @@ export const TicketDetailClient: React.FC = () => {
       {splitModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }} onClick={(e) => { if (e.target === e.currentTarget) { setSplitModal(null); setSplitSubject('') } }}>
           <div style={{ background: 'var(--theme-elevation-0)', borderRadius: 12, padding: 24, maxWidth: 480, width: '100%', boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }} role="dialog">
-            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>Extraire dans un nouveau ticket</h3>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700 }}>{t('detail.extractTitle')}</h3>
             <div style={{ padding: 10, background: 'var(--theme-elevation-50)', borderRadius: 6, fontSize: 13, color: 'var(--theme-elevation-500)', marginBottom: 12 }}>{splitModal.preview}</div>
             <input
               style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 13, marginBottom: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}
               value={splitSubject}
               onChange={(e) => setSplitSubject(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSplitConfirm() }}
-              placeholder="Sujet du nouveau ticket..."
+              placeholder={t('detail.extractSubjectPlaceholder')}
               autoFocus
             />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--theme-text)' }} onClick={() => { setSplitModal(null); setSplitSubject('') }}>Annuler</button>
-              <button style={{ ...S.sendBtn }} onClick={handleSplitConfirm} disabled={!splitSubject.trim()}>Creer le ticket</button>
+              <button style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--theme-text)' }} onClick={() => { setSplitModal(null); setSplitSubject('') }}>{t('common.cancel')}</button>
+              <button style={{ ...S.sendBtn }} onClick={handleSplitConfirm} disabled={!splitSubject.trim()}>{t('ticket.createTicket')}</button>
             </div>
           </div>
         </div>

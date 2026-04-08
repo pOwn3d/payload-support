@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/TimeDashboard.module.scss'
 
 interface TimeEntry {
@@ -19,6 +20,7 @@ function getMonthRange(offset: number): { from: string; to: string } { const now
 const MONTHS_FR = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export const TimeDashboardClient: React.FC = () => {
+  const { t } = useTranslation()
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [from, setFrom] = useState(() => getMonthRange(0).from)
@@ -79,43 +81,43 @@ export const TimeDashboardClient: React.FC = () => {
     <div style={S.page}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Tableau de bord du temps</h1>
-          <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>Analyse et suivi du temps passe par periode, projet et ticket</p>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('timeDashboard.title')}</h1>
+          <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>{t('timeDashboard.subtitle')}</p>
         </div>
-        <a href="/admin/collections/time-entries/create" style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}>+ Nouvelle entree</a>
+        <a href="/admin/collections/time-entries/create" style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}>{t('timeDashboard.newEntry')}</a>
       </div>
 
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          <button style={S.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>Ce mois</button>
-          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-1))}>Mois precedent</button>
-          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-2))}>-2 mois</button>
+          <button style={S.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>{t('timeDashboard.filters.thisMonth')}</button>
+          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-1))}>{t('timeDashboard.filters.lastMonth')}</button>
+          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-2))}>{t('timeDashboard.filters.twoMonthsAgo')}</button>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>Du</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>Au</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>Grouper par</label><select value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}><option value="day">Jour</option><option value="week">Semaine</option><option value="project">Projet</option></select></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.from')}</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.to')}</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.groupBy')}</label><select value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}><option value="day">{t('timeDashboard.filters.day')}</option><option value="week">{t('timeDashboard.filters.week')}</option><option value="project">{t('timeDashboard.filters.project')}</option></select></div>
         </div>
       </div>
 
-      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div> : (
+      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div> : (
         <>
           <div style={S.kpis}>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>Temps total</div><div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb' }}>{formatDuration(totalMinutes)}</div></div>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>Entrees</div><div style={{ fontSize: 24, fontWeight: 700, color: '#d97706' }}>{entries.length}</div></div>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>Moyenne/jour</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ea580c' }}>{dailyChart.length > 0 ? formatDuration(Math.round(totalMinutes / dailyChart.length)) : '-'}</div></div>
+            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.totalTime')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb' }}>{formatDuration(totalMinutes)}</div></div>
+            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.entries')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#d97706' }}>{entries.length}</div></div>
+            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.dailyAverage')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ea580c' }}>{dailyChart.length > 0 ? formatDuration(Math.round(totalMinutes / dailyChart.length)) : '-'}</div></div>
           </div>
 
           {dailyChart.length > 0 && (
             <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)', marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Temps par jour</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('timeDashboard.chart.title')}</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
                 {dailyChart.map((d) => <div key={d.day} style={{ flex: 1, background: '#3b82f6', borderRadius: '3px 3px 0 0', height: `${Math.max((d.minutes / maxDailyMinutes) * 100, 4)}%` }} title={`${d.day}: ${formatDuration(d.minutes)}`} />)}
               </div>
             </div>
           )}
 
-          {grouped.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Aucune entree de temps sur cette periode.</div> : grouped.map((group) => (
+          {grouped.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('timeDashboard.empty')}</div> : grouped.map((group) => (
             <div key={group.label} style={S.groupCard}>
               <div style={S.groupHeader}><span style={{ fontWeight: 700 }}>{group.label}</span><span style={{ fontWeight: 700, color: '#2563eb' }}>{formatDuration(group.totalMinutes)}</span></div>
               <table style={S.table}>

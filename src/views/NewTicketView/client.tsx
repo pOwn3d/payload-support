@@ -3,28 +3,30 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/NewTicket.module.scss'
 
 interface ClientOption { id: number; firstName?: string; lastName?: string; company?: string; email?: string }
 interface ProjectOption { id: number; name: string }
 
-const CATEGORIES = [
-  { value: '', label: '-- Selectionner --' },
-  { value: 'bug', label: 'Bug / Dysfonctionnement' },
-  { value: 'content', label: 'Modification de contenu' },
-  { value: 'feature', label: 'Nouvelle fonctionnalite' },
-  { value: 'question', label: 'Question / Aide' },
-  { value: 'hosting', label: 'Hebergement / Domaine' },
+const CATEGORY_KEYS = [
+  { value: '', key: 'ticket.category.select' },
+  { value: 'bug', key: 'ticket.category.bugFull' },
+  { value: 'content', key: 'ticket.category.contentFull' },
+  { value: 'feature', key: 'ticket.category.featureFull' },
+  { value: 'question', key: 'ticket.category.questionFull' },
+  { value: 'hosting', key: 'ticket.category.hostingFull' },
 ]
 
-const PRIORITIES = [
-  { value: 'low', label: 'Basse' },
-  { value: 'normal', label: 'Normale' },
-  { value: 'high', label: 'Haute' },
-  { value: 'urgent', label: 'Urgente' },
+const PRIORITY_KEYS = [
+  { value: 'low', key: 'ticket.priority.low' },
+  { value: 'normal', key: 'ticket.priority.normal' },
+  { value: 'high', key: 'ticket.priority.high' },
+  { value: 'urgent', key: 'ticket.priority.urgent' },
 ]
 
 export const NewTicketClient: React.FC = () => {
+  const { t } = useTranslation()
   const router = useRouter()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
@@ -63,8 +65,8 @@ export const NewTicketClient: React.FC = () => {
     e.preventDefault()
     setError('')
 
-    if (!subject.trim()) { setError('Le sujet est obligatoire'); return }
-    if (!clientId) { setError('Selectionnez un client'); return }
+    if (!subject.trim()) { setError(t('newTicket.errors.subjectRequired')); return }
+    if (!clientId) { setError(t('newTicket.errors.clientRequired')); return }
 
     setSubmitting(true)
     try {
@@ -85,7 +87,7 @@ export const NewTicketClient: React.FC = () => {
 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
-        setError(d.errors?.[0]?.message || 'Erreur lors de la creation')
+        setError(d.errors?.[0]?.message || t('newTicket.errors.creationError'))
         return
       }
 
@@ -107,7 +109,7 @@ export const NewTicketClient: React.FC = () => {
 
       router.push(`/admin/support/ticket?id=${ticket.doc.id}`)
     } catch {
-      setError('Erreur reseau')
+      setError(t('newTicket.errors.networkError'))
     } finally {
       setSubmitting(false)
     }
@@ -135,9 +137,9 @@ export const NewTicketClient: React.FC = () => {
   return (
     <div style={S.page}>
       <div style={S.header}>
-        <Link href="/admin/support/inbox" style={S.backLink}>&larr; Retour a l&apos;inbox</Link>
-        <h1 style={S.title}>Nouveau ticket</h1>
-        <p style={S.subtitle}>Creer un ticket de support pour un client</p>
+        <Link href="/admin/support/inbox" style={S.backLink}>&larr; {t('newTicket.backToInbox')}</Link>
+        <h1 style={S.title}>{t('newTicket.title')}</h1>
+        <p style={S.subtitle}>{t('newTicket.subtitle')}</p>
       </div>
 
       {error && <div style={S.error}>{error}</div>}
@@ -145,7 +147,7 @@ export const NewTicketClient: React.FC = () => {
       <form onSubmit={handleSubmit}>
         {/* Client search */}
         <div style={S.fieldGroup}>
-          <label style={S.label}>Client <span style={S.required}>*</span></label>
+          <label style={S.label}>{t('newTicket.clientLabel')} <span style={S.required}>*</span></label>
           {selectedClient ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-50)' }}>
               <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--theme-text)' }}>
@@ -159,7 +161,7 @@ export const NewTicketClient: React.FC = () => {
               <input
                 type="text"
                 style={S.input}
-                placeholder="Rechercher par nom, email, entreprise..."
+                placeholder={t('newTicket.clientSearchPlaceholder')}
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
               />
@@ -183,28 +185,28 @@ export const NewTicketClient: React.FC = () => {
 
         {/* Subject */}
         <div style={S.fieldGroup}>
-          <label style={S.label}>Sujet <span style={S.required}>*</span></label>
-          <input type="text" style={S.input} placeholder="Decrivez brievement le probleme" value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <label style={S.label}>{t('newTicket.subjectLabel')} <span style={S.required}>*</span></label>
+          <input type="text" style={S.input} placeholder={t('newTicket.subjectPlaceholder')} value={subject} onChange={(e) => setSubject(e.target.value)} />
         </div>
 
         {/* Category + Priority + Project */}
         <div style={S.row3}>
           <div style={S.fieldGroup}>
-            <label style={S.label}>Categorie</label>
+            <label style={S.label}>{t('newTicket.categoryLabel')}</label>
             <select style={S.select} value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              {CATEGORY_KEYS.map((c) => <option key={c.value} value={c.value}>{t(c.key)}</option>)}
             </select>
           </div>
           <div style={S.fieldGroup}>
-            <label style={S.label}>Priorite</label>
+            <label style={S.label}>{t('newTicket.priorityLabel')}</label>
             <select style={S.select} value={priority} onChange={(e) => setPriority(e.target.value)}>
-              {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              {PRIORITY_KEYS.map((p) => <option key={p.value} value={p.value}>{t(p.key)}</option>)}
             </select>
           </div>
           <div style={S.fieldGroup}>
-            <label style={S.label}>Projet</label>
+            <label style={S.label}>{t('newTicket.projectLabel')}</label>
             <select style={S.select} value={projectId || ''} onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}>
-              <option value="">-- Aucun --</option>
+              <option value="">{t('ticket.noProject')}</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
@@ -212,12 +214,12 @@ export const NewTicketClient: React.FC = () => {
 
         {/* Description */}
         <div style={S.fieldGroup}>
-          <label style={S.label}>Description</label>
-          <textarea style={S.textarea} placeholder="Detaillez le probleme ou la demande..." value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label style={S.label}>{t('newTicket.descriptionLabel')}</label>
+          <textarea style={S.textarea} placeholder={t('newTicket.descriptionPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
         <button type="submit" style={S.submitBtn} disabled={submitting}>
-          {submitting ? 'Creation...' : 'Creer le ticket'}
+          {submitting ? t('newTicket.submitting') : t('newTicket.submitButton')}
         </button>
       </form>
     </div>

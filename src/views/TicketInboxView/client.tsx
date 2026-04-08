@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/TicketInbox.module.scss'
 
 interface Ticket {
@@ -27,10 +28,10 @@ const STATUS_DOTS: Record<string, string> = {
   resolved: '#94a3b8',
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  open: 'Ouverts',
-  waiting_client: 'Attente',
-  resolved: 'Resolus',
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  open: 'inbox.tabs.open',
+  waiting_client: 'inbox.tabs.waiting',
+  resolved: 'inbox.tabs.resolved',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -40,12 +41,12 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: 'transparent',
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  bug: 'Bug',
-  content: 'Contenu',
-  feature: 'Feature',
-  question: 'Question',
-  hosting: 'Hosting',
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  bug: 'ticket.category.bug',
+  content: 'ticket.category.content',
+  feature: 'ticket.category.feature',
+  question: 'ticket.category.question',
+  hosting: 'ticket.category.hosting',
 }
 
 function relativeTime(dateStr: string): string {
@@ -61,6 +62,7 @@ function relativeTime(dateStr: string): string {
 }
 
 export const TicketInboxClient: React.FC = () => {
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,7 +89,7 @@ export const TicketInboxClient: React.FC = () => {
 
   const _toggleAll = () => {
     if (checkedIds.size === tickets.length) setCheckedIds(new Set())
-    else setCheckedIds(new Set(tickets.map((t) => t.id)))
+    else setCheckedIds(new Set(tickets.map((tk) => tk.id)))
   }
 
   const handleBulkAction = async (action: string) => {
@@ -171,10 +173,10 @@ export const TicketInboxClient: React.FC = () => {
   }, [tickets, selectedIdx])
 
   const tabs: Array<{ key: Tab; label: string; count: number }> = [
-    { key: 'all', label: 'Tous', count: counts.all },
-    { key: 'open', label: 'Ouverts', count: counts.open },
-    { key: 'waiting_client', label: 'Attente', count: counts.waiting },
-    { key: 'resolved', label: 'Resolus', count: counts.resolved },
+    { key: 'all', label: t('inbox.tabs.all'), count: counts.all },
+    { key: 'open', label: t('inbox.tabs.open'), count: counts.open },
+    { key: 'waiting_client', label: t('inbox.tabs.waiting'), count: counts.waiting },
+    { key: 'resolved', label: t('inbox.tabs.resolved'), count: counts.resolved },
   ]
 
   const S: Record<string, React.CSSProperties> = {
@@ -205,30 +207,30 @@ export const TicketInboxClient: React.FC = () => {
     <div style={S.page}>
       {/* Header */}
       <div style={S.header}>
-        <h1 style={S.title}>Tickets</h1>
+        <h1 style={S.title}>{t('inbox.title')}</h1>
         <div style={S.headerRight}>
           <div style={S.searchWrap}>
             <input
               type="text"
               style={S.searchInput}
-              placeholder="Rechercher..."
+              placeholder={t('inbox.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Link href="/admin/support/new-ticket" style={S.newTicketBtn}>Nouveau ticket</Link>
+          <Link href="/admin/support/new-ticket" style={S.newTicketBtn}>{t('inbox.newTicketBtn')}</Link>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={S.tabsRow}>
-        {tabs.map((t) => (
+        {tabs.map((tb) => (
           <button
-            key={t.key}
-            style={{ ...S.tab, ...(tab === t.key ? S.tabActive : {}) }}
-            onClick={() => { setTab(t.key); setSelectedIdx(-1) }}
+            key={tb.key}
+            style={{ ...S.tab, ...(tab === tb.key ? S.tabActive : {}) }}
+            onClick={() => { setTab(tb.key); setSelectedIdx(-1) }}
           >
-            {t.label} <span style={{ opacity: 0.6 }}>({t.count})</span>
+            {tb.label} <span style={{ opacity: 0.6 }}>({tb.count})</span>
           </button>
         ))}
       </div>
@@ -237,63 +239,63 @@ export const TicketInboxClient: React.FC = () => {
       <div style={S.sortRow}>
         {checkedIds.size > 0 ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--theme-text)' }}>{checkedIds.size} selectionne{checkedIds.size > 1 ? 's' : ''}</span>
-            <button style={S.sortSelect} onClick={() => handleBulkAction('close')} disabled={bulkProcessing}>Fermer</button>
-            <button style={S.sortSelect} onClick={() => handleBulkAction('reopen')} disabled={bulkProcessing}>Rouvrir</button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--theme-text)' }}>{checkedIds.size > 1 ? t('inbox.selectedPlural', { count: String(checkedIds.size) }) : t('inbox.selected', { count: String(checkedIds.size) })}</span>
+            <button style={S.sortSelect} onClick={() => handleBulkAction('close')} disabled={bulkProcessing}>{t('inbox.closeAction')}</button>
+            <button style={S.sortSelect} onClick={() => handleBulkAction('reopen')} disabled={bulkProcessing}>{t('inbox.reopenAction')}</button>
             <select style={S.sortSelect} value={bulkAction} onChange={(e) => { if (e.target.value) handleBulkAction(e.target.value); setBulkAction('') }}>
-              <option value="">Plus...</option>
-              <option value="set_priority">Changer priorite</option>
-              <option value="delete">Supprimer</option>
+              <option value="">{t('inbox.moreActions')}</option>
+              <option value="set_priority">{t('inbox.changePriority')}</option>
+              <option value="delete">{t('inbox.deleteAction')}</option>
             </select>
-            <button style={{ ...S.sortSelect, marginLeft: 'auto' }} onClick={() => setCheckedIds(new Set())}>Deselectionner</button>
+            <button style={{ ...S.sortSelect, marginLeft: 'auto' }} onClick={() => setCheckedIds(new Set())}>{t('inbox.deselect')}</button>
           </div>
         ) : (
           <select style={S.sortSelect} value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="-updatedAt">Tri : Recents</option>
-            <option value="updatedAt">Tri : Anciens</option>
-            <option value="-createdAt">Tri : Creation</option>
-            <option value="priority">Tri : Priorite</option>
+            <option value="-updatedAt">{t('inbox.sort.newest')}</option>
+            <option value="updatedAt">{t('inbox.sort.oldest')}</option>
+            <option value="-createdAt">{t('inbox.sort.created')}</option>
+            <option value="priority">{t('inbox.sort.priority')}</option>
           </select>
         )}
       </div>
 
       {/* List */}
       {loading ? (
-        <div style={S.loading}>Chargement...</div>
+        <div style={S.loading}>{t('common.loading')}</div>
       ) : tickets.length === 0 ? (
-        <div style={S.empty}>Aucun ticket trouve</div>
+        <div style={S.empty}>{t('inbox.empty')}</div>
       ) : (
         <div style={S.list}>
-          {tickets.map((t, idx) => {
-            const clientObj = typeof t.client === 'object' ? t.client : null
+          {tickets.map((tk, idx) => {
+            const clientObj = typeof tk.client === 'object' ? tk.client : null
             const clientName = clientObj ? `${clientObj.firstName || ''} ${clientObj.lastName || ''}`.trim() : ''
             const clientCompany = clientObj?.company || ''
             const displayClient = clientName ? `${clientName}${clientCompany ? `, ${clientCompany}` : ''}` : '--'
-            const isUnread = t.lastClientMessageAt && (!t.lastAdminReadAt || new Date(t.lastClientMessageAt) > new Date(t.lastAdminReadAt))
-            const priorityColor = PRIORITY_COLORS[t.priority] || 'transparent'
+            const isUnread = tk.lastClientMessageAt && (!tk.lastAdminReadAt || new Date(tk.lastClientMessageAt) > new Date(tk.lastAdminReadAt))
+            const priorityColor = PRIORITY_COLORS[tk.priority] || 'transparent'
 
             return (
               <a
-                key={t.id}
-                href={`/admin/support/ticket?id=${t.id}`}
+                key={tk.id}
+                href={`/admin/support/ticket?id=${tk.id}`}
                 style={{ ...S.row, ...(idx === selectedIdx ? { background: 'var(--theme-elevation-100)' } : {}) }}
-                onClick={(e) => { e.preventDefault(); window.location.href = `/admin/support/ticket?id=${t.id}` }}
+                onClick={(e) => { e.preventDefault(); window.location.href = `/admin/support/ticket?id=${tk.id}` }}
               >
                 <input
                   type="checkbox"
-                  checked={checkedIds.has(t.id)}
+                  checked={checkedIds.has(tk.id)}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={() => toggleCheck(t.id)}
+                  onChange={() => toggleCheck(tk.id)}
                   style={{ width: 14, height: 14, cursor: 'pointer', accentColor: '#2563eb' }}
                 />
-                <div style={{ ...S.statusDot, backgroundColor: STATUS_DOTS[t.status] || '#94a3b8' }} />
-                <span style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{STATUS_LABELS[t.status] || t.status}</span>
-                <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--theme-elevation-400)' }}>{t.ticketNumber}</span>
-                <span style={{ fontWeight: 500 }}>{t.subject}</span>
+                <div style={{ ...S.statusDot, backgroundColor: STATUS_DOTS[tk.status] || '#94a3b8' }} />
+                <span style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{STATUS_LABEL_KEYS[tk.status] ? t(STATUS_LABEL_KEYS[tk.status]) : tk.status}</span>
+                <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--theme-elevation-400)' }}>{tk.ticketNumber}</span>
+                <span style={{ fontWeight: 500 }}>{tk.subject}</span>
                 <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayClient}</span>
-                {t.category ? <span style={{ fontSize: 11, color: 'var(--theme-elevation-400)' }}>[{CATEGORY_LABELS[t.category] || t.category}]</span> : <span />}
+                {tk.category ? <span style={{ fontSize: 11, color: 'var(--theme-elevation-400)' }}>[{CATEGORY_LABEL_KEYS[tk.category] ? t(CATEGORY_LABEL_KEYS[tk.category]) : tk.category}]</span> : <span />}
                 <div style={{ ...S.priorityBar, backgroundColor: priorityColor }} />
-                <span style={{ fontSize: 11, color: 'var(--theme-elevation-400)', textAlign: 'right' }}>{relativeTime(t.updatedAt)}</span>
+                <span style={{ fontSize: 11, color: 'var(--theme-elevation-400)', textAlign: 'right' }}>{relativeTime(tk.updatedAt)}</span>
                 {isUnread ? <div style={S.unreadDot} /> : <span />}
               </a>
             )
@@ -303,8 +305,8 @@ export const TicketInboxClient: React.FC = () => {
 
       {/* Keyboard hints */}
       <div style={S.keyboardHints}>
-        <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> naviguer</span>
-        <span><kbd>&#8629;</kbd> ouvrir</span>
+        <span><kbd>&#8593;</kbd><kbd>&#8595;</kbd> {t('inbox.keyboardNavigate')}</span>
+        <span><kbd>&#8629;</kbd> {t('inbox.keyboardOpen')}</span>
       </div>
     </div>
   )

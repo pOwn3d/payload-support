@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useRef } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/ImportConversation.module.scss'
 
 interface PreviewMessage { from: 'client' | 'admin'; name: string; date: string; preview: string }
@@ -8,6 +9,7 @@ interface PreviewData { client: { email: string; name: string; company: string }
 interface ImportResult { ticketNumber: string; ticketId: number; clientEmail: string; clientName: string; clientCompany: string; isNewClient: boolean; messagesImported: number }
 
 export function ImportConversationClient() {
+  const { t } = useTranslation()
   const [markdown, setMarkdown] = useState('')
   const [fileName, setFileName] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
@@ -18,8 +20,8 @@ export function ImportConversationClient() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const handleFile = useCallback((file: File) => {
-    if (!file.name.endsWith('.md') && !file.name.endsWith('.txt')) { setError('Format accepte : .md ou .txt'); return }
-    if (file.size > 512_000) { setError('Fichier trop volumineux (max 500 Ko)'); return }
+    if (!file.name.endsWith('.md') && !file.name.endsWith('.txt')) { setError(t('import.formatError')); return }
+    if (file.size > 512_000) { setError(t('import.sizeError')); return }
     setError(''); setFileName(file.name); setResult(null); setPreview(null)
     const reader = new FileReader()
     reader.onload = (e) => { setMarkdown(e.target?.result as string) }
@@ -63,41 +65,41 @@ export function ImportConversationClient() {
   return (
     <div style={S.page}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Importer une conversation</h1>
-        {result && <button onClick={reset} style={S.btnPrimary}>Nouvel import</button>}
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('import.title')}</h1>
+        {result && <button onClick={reset} style={S.btnPrimary}>{t('import.newImport')}</button>}
       </div>
 
       {!result && (
         <div style={isDragOver ? S.dropzoneDragOver : markdown ? S.dropzoneHasFile : S.dropzone} onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }} onDragLeave={() => setIsDragOver(false)} onDrop={onDrop} onClick={() => fileRef.current?.click()}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>&#8593;</div>
-          <p style={{ fontSize: 14, color: 'var(--theme-text)' }}>{markdown ? 'Fichier charge -- cliquer pour en choisir un autre' : 'Glisser un fichier .md ici ou cliquer pour parcourir'}</p>
-          {!markdown && <p style={{ fontSize: 12, color: 'var(--theme-elevation-400)', marginTop: 8 }}>Formats acceptes : .md, .txt</p>}
+          <p style={{ fontSize: 14, color: 'var(--theme-text)' }}>{markdown ? t('import.dropzoneLoaded') : t('import.dropzoneText')}</p>
+          {!markdown && <p style={{ fontSize: 12, color: 'var(--theme-elevation-400)', marginTop: 8 }}>{t('import.acceptedFormats')}</p>}
           {fileName && <p style={{ fontSize: 12, fontWeight: 600, marginTop: 8 }}>{fileName}</p>}
           <input ref={fileRef} type="file" accept=".md,.txt" onChange={onFileChange} style={{ display: 'none' }} />
         </div>
       )}
 
-      {error && <div style={S.resultError}><strong>Erreur</strong><p style={{ margin: '4px 0 0' }}>{error}</p></div>}
+      {error && <div style={S.resultError}><strong>{t('common.error')}</strong><p style={{ margin: '4px 0 0' }}>{error}</p></div>}
 
       {markdown && !preview && !result && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-          <button onClick={doPreview} disabled={loading} style={S.btnAmber}>{loading ? 'Analyse...' : 'Apercu'}</button>
+          <button onClick={doPreview} disabled={loading} style={S.btnAmber}>{loading ? t('import.analyzing') : t('import.preview')}</button>
         </div>
       )}
 
       {preview && (
         <>
           <div style={S.section}>
-            <div style={{ fontWeight: 700, marginBottom: 8 }}>Client</div>
-            <div style={S.infoRow}><span style={S.infoLabel}>Nom</span><span style={S.infoValue}>{preview.client.name}</span></div>
-            <div style={S.infoRow}><span style={S.infoLabel}>Email</span><span style={S.infoValue}>{preview.client.email}</span></div>
-            <div style={S.infoRow}><span style={S.infoLabel}>Entreprise</span><span style={S.infoValue}>{preview.client.company}</span></div>
-            <div style={S.infoRow}><span style={S.infoLabel}>Parsing</span><span style={S.infoValue}>{preview.parseMethod === 'structured' ? 'Regex' : 'IA'}</span></div>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>{t('import.client')}</div>
+            <div style={S.infoRow}><span style={S.infoLabel}>{t('import.name')}</span><span style={S.infoValue}>{preview.client.name}</span></div>
+            <div style={S.infoRow}><span style={S.infoLabel}>{t('import.email')}</span><span style={S.infoValue}>{preview.client.email}</span></div>
+            <div style={S.infoRow}><span style={S.infoLabel}>{t('import.company')}</span><span style={S.infoValue}>{preview.client.company}</span></div>
+            <div style={S.infoRow}><span style={S.infoLabel}>{t('import.parsing')}</span><span style={S.infoValue}>{preview.parseMethod === 'structured' ? t('import.parsingRegex') : t('import.parsingAi')}</span></div>
           </div>
 
           <div style={S.section}>
             <div style={{ fontWeight: 700, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-              <span>{preview.subject}</span><span style={{ color: 'var(--theme-elevation-500)', fontSize: 12 }}>{preview.messageCount} messages</span>
+              <span>{preview.subject}</span><span style={{ color: 'var(--theme-elevation-500)', fontSize: 12 }}>{preview.messageCount} {t('import.messages')}</span>
             </div>
             {preview.messages.map((msg, i) => (
               <div key={i} style={msg.from === 'admin' ? S.msgAdmin : S.msgClient}>
@@ -111,19 +113,19 @@ export function ImportConversationClient() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
-            <button onClick={() => setPreview(null)} style={S.btn}>Annuler</button>
-            <button onClick={doImport} disabled={loading} style={S.btnGreen}>{loading ? 'Import en cours...' : `Importer ${preview.messageCount} messages`}</button>
+            <button onClick={() => setPreview(null)} style={S.btn}>{t('common.cancel')}</button>
+            <button onClick={doImport} disabled={loading} style={S.btnGreen}>{loading ? t('import.importing') : t('import.importButton', { count: String(preview.messageCount) })}</button>
           </div>
         </>
       )}
 
       {result && (
         <div style={S.resultSuccess}>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12, color: '#166534' }}>Conversation importee</div>
-          <div style={S.infoRow}><span style={S.infoLabel}>Ticket</span><span style={S.infoValue}><a href={`/admin/support/ticket?id=${result.ticketId}`} style={{ color: '#2563eb' }}>{result.ticketNumber}</a></span></div>
-          <div style={S.infoRow}><span style={S.infoLabel}>Client</span><span style={S.infoValue}>{result.clientName} ({result.clientEmail}){result.isNewClient && <span style={{ marginLeft: 8, padding: '1px 6px', borderRadius: 4, background: '#dbeafe', color: '#1e40af', fontSize: 10 }}>Nouveau</span>}</span></div>
-          <div style={S.infoRow}><span style={S.infoLabel}>Entreprise</span><span style={S.infoValue}>{result.clientCompany}</span></div>
-          <div style={S.infoRow}><span style={S.infoLabel}>Messages</span><span style={S.infoValue}>{result.messagesImported} importes</span></div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 12, color: '#166534' }}>{t('import.resultTitle')}</div>
+          <div style={S.infoRow}><span style={S.infoLabel}>{t('import.resultTicket')}</span><span style={S.infoValue}><a href={`/admin/support/ticket?id=${result.ticketId}`} style={{ color: '#2563eb' }}>{result.ticketNumber}</a></span></div>
+          <div style={S.infoRow}><span style={S.infoLabel}>{t('import.resultClient')}</span><span style={S.infoValue}>{result.clientName} ({result.clientEmail}){result.isNewClient && <span style={{ marginLeft: 8, padding: '1px 6px', borderRadius: 4, background: '#dbeafe', color: '#1e40af', fontSize: 10 }}>{t('import.resultNew')}</span>}</span></div>
+          <div style={S.infoRow}><span style={S.infoLabel}>{t('import.resultCompany')}</span><span style={S.infoValue}>{result.clientCompany}</span></div>
+          <div style={S.infoRow}><span style={S.infoLabel}>{t('import.resultMessages')}</span><span style={S.infoValue}>{t('import.resultImported', { count: String(result.messagesImported) })}</span></div>
         </div>
       )}
     </div>

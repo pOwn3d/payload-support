@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/SupportDashboard.module.scss'
 
 // ---- Types ----
@@ -117,6 +118,7 @@ function formatSlaTime(minutes: number): string {
 }
 
 function SlaSection() {
+  const { t } = useTranslation()
   const [sla, setSla] = useState<SlaData | null>(null)
   const [slaLoading, setSlaLoading] = useState(true)
 
@@ -133,21 +135,21 @@ function SlaSection() {
     return () => clearInterval(interval)
   }, [])
 
-  if (slaLoading) return <div style={{ padding: 16, color: '#94a3b8', fontSize: 13 }}>SLA: Chargement...</div>
+  if (slaLoading) return <div style={{ padding: 16, color: '#94a3b8', fontSize: 13 }}>{t('sla.loading')}</div>
   if (!sla) return null
 
   return (
     <div style={{ marginTop: 24 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--theme-text)' }}>SLA</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--theme-text)' }}>{t('sla.title')}</h2>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Breached */}
         <div style={{ padding: 16, borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', margin: 0 }}>En breach</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', margin: 0 }}>{t('sla.breached')}</h3>
             <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fecaca', color: '#dc2626', fontSize: 12, fontWeight: 700 }}>{sla.breached.length}</span>
           </div>
           {sla.breached.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6b7280' }}>Aucun ticket en breach</div>
+            <div style={{ fontSize: 13, color: '#6b7280' }}>{t('sla.noBreached')}</div>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {sla.breached.map((ticket) => {
@@ -169,11 +171,11 @@ function SlaSection() {
         {/* At Risk */}
         <div style={{ padding: 16, borderRadius: 10, border: '1px solid #fde68a', background: '#fefce8' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#d97706', margin: 0 }}>A risque</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#d97706', margin: 0 }}>{t('sla.atRisk')}</h3>
             <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fde68a', color: '#d97706', fontSize: 12, fontWeight: 700 }}>{sla.atRisk.length}</span>
           </div>
           {sla.atRisk.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6b7280' }}>Aucun ticket a risque</div>
+            <div style={{ fontSize: 13, color: '#6b7280' }}>{t('sla.noAtRisk')}</div>
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {sla.atRisk.map((ticket) => {
@@ -186,7 +188,7 @@ function SlaSection() {
                       <span style={{ fontWeight: 600 }}>#{ticket.ticketNumber}</span>{' '}
                       <span style={{ color: '#6b7280' }}>{ticket.subject}</span>
                     </div>
-                    <span style={{ color: '#d97706', fontWeight: 600, fontSize: 12 }}>{formatSlaTime(remainingMin)} restant</span>
+                    <span style={{ color: '#d97706', fontWeight: 600, fontSize: 12 }}>{t('sla.remaining', { time: formatSlaTime(remainingMin) })}</span>
                   </li>
                 )
               })}
@@ -201,6 +203,7 @@ function SlaSection() {
 // ---- Main Dashboard ----
 
 export const SupportDashboardClient: React.FC = () => {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<Stats | null>(null)
   const [tickets, setTickets] = useState<ActiveTicket[]>([])
   const [loading, setLoading] = useState(true)
@@ -245,19 +248,19 @@ export const SupportDashboardClient: React.FC = () => {
   const volumeData = useMemo(() => {
     if (!stats) return []
     const avg = stats.createdLast7Days
-    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+    const days = [t('dashboard.weekDays.mon'), t('dashboard.weekDays.tue'), t('dashboard.weekDays.wed'), t('dashboard.weekDays.thu'), t('dashboard.weekDays.fri'), t('dashboard.weekDays.sat'), t('dashboard.weekDays.sun')]
     const base = Math.max(Math.floor(avg / 7), 0)
     return days.map((label, i) => ({
       label,
       value: Math.max(base + ((i * 3 + 1) % 5) - 2, 0),
     }))
-  }, [stats])
+  }, [stats, t])
 
   if (loading) {
     return (
       <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>Dashboard Support</h1>
-        <p style={{ color: '#94a3b8' }}>Chargement des metriques...</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700 }}>{t('dashboard.title')}</h1>
+        <p style={{ color: '#94a3b8' }}>{t('dashboard.loadingMetrics')}</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 20 }}>
           {[0, 1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 10, background: '#f1f5f9' }} />)}
         </div>
@@ -269,8 +272,8 @@ export const SupportDashboardClient: React.FC = () => {
     return (
       <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ padding: 40, textAlign: 'center', color: '#dc2626' }}>
-          <strong>Erreur de chargement</strong>
-          <p>{sessionExpired ? 'Session expiree. Rechargez la page.' : 'Impossible de charger les statistiques.'}</p>
+          <strong>{t('dashboard.loadError')}</strong>
+          <p>{sessionExpired ? t('common.sessionExpired') : t('dashboard.cannotLoadStats')}</p>
         </div>
       </div>
     )
@@ -315,44 +318,44 @@ export const SupportDashboardClient: React.FC = () => {
     <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>Dashboard Support</h1>
-        <p style={{ color: 'var(--theme-elevation-500)', margin: '4px 0 0', fontSize: 14 }}>Vue d&apos;ensemble des metriques du support client</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('dashboard.title')}</h1>
+        <p style={{ color: 'var(--theme-elevation-500)', margin: '4px 0 0', fontSize: 14 }}>{t('dashboard.subtitle')}</p>
       </div>
 
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard label="Tickets ouverts" value={String(openCount)} trend={trendOpen} accentColor="#3b82f6" />
-        <StatCard label="Attente client" value={String(waitingCount)} trend={waitingTrend} accentColor="#f59e0b" />
-        <StatCard label="Temps de reponse" value={formatResponseTime(stats.avgResponseTimeHours)} accentColor={stats.avgResponseTimeHours != null && stats.avgResponseTimeHours > 24 ? '#ef4444' : '#22c55e'} />
-        <StatCard label="Satisfaction" value={stats.satisfactionAvg > 0 ? `${stats.satisfactionAvg}/5` : '--'} accentColor={stats.satisfactionAvg >= 4 ? '#22c55e' : stats.satisfactionAvg >= 3 ? '#f59e0b' : '#94a3b8'} />
+        <StatCard label={t('dashboard.openTickets')} value={String(openCount)} trend={trendOpen} accentColor="#3b82f6" />
+        <StatCard label={t('dashboard.waitingClient')} value={String(waitingCount)} trend={waitingTrend} accentColor="#f59e0b" />
+        <StatCard label={t('dashboard.responseTime')} value={formatResponseTime(stats.avgResponseTimeHours)} accentColor={stats.avgResponseTimeHours != null && stats.avgResponseTimeHours > 24 ? '#ef4444' : '#22c55e'} />
+        <StatCard label={t('dashboard.satisfaction')} value={stats.satisfactionAvg > 0 ? `${stats.satisfactionAvg}/5` : '--'} accentColor={stats.satisfactionAvg >= 4 ? '#22c55e' : stats.satisfactionAvg >= 3 ? '#f59e0b' : '#94a3b8'} />
       </div>
 
       {/* Middle Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, marginBottom: 24 }}>
         {/* Left: Active Tickets */}
         <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>Tickets actifs</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.activeTickets')}</h2>
           {tickets.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Aucun ticket actif</div>
+            <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('dashboard.noActiveTickets')}</div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>Statut</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>N&deg;</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>Sujet</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>Client</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>Modifie</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.status')}</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.number')}</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.subject')}</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.client')}</th>
+                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.modified')}</th>
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((t) => (
-                  <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => { window.location.href = `/admin/support/ticket?id=${t.id}` }}>
-                    <td style={{ padding: '8px' }}><span style={{ width: 8, height: 8, borderRadius: '50%', display: 'inline-block', backgroundColor: statusDotColor(t.status) }} /></td>
-                    <td style={{ padding: '8px', fontWeight: 600, fontSize: 12 }}>#{t.ticketNumber}</td>
-                    <td style={{ padding: '8px', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.subject}</td>
-                    <td style={{ padding: '8px', color: 'var(--theme-elevation-500)', fontSize: 12 }}>{getClientName(t)}</td>
-                    <td style={{ padding: '8px', color: 'var(--theme-elevation-400)', fontSize: 12 }}>{timeAgo(t.updatedAt)}</td>
+                {tickets.map((tk) => (
+                  <tr key={tk.id} style={{ cursor: 'pointer' }} onClick={() => { window.location.href = `/admin/support/ticket?id=${tk.id}` }}>
+                    <td style={{ padding: '8px' }}><span style={{ width: 8, height: 8, borderRadius: '50%', display: 'inline-block', backgroundColor: statusDotColor(tk.status) }} /></td>
+                    <td style={{ padding: '8px', fontWeight: 600, fontSize: 12 }}>#{tk.ticketNumber}</td>
+                    <td style={{ padding: '8px', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tk.subject}</td>
+                    <td style={{ padding: '8px', color: 'var(--theme-elevation-500)', fontSize: 12 }}>{getClientName(tk)}</td>
+                    <td style={{ padding: '8px', color: 'var(--theme-elevation-400)', fontSize: 12 }}>{timeAgo(tk.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,7 +367,7 @@ export const SupportDashboardClient: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Volume chart */}
           <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>Volume (7 jours)</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.volume7days')}</h2>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
               {volumeData.map((d, i) => (
                 <div key={i} style={{ flex: 1, background: '#3b82f6', borderRadius: '3px 3px 0 0', height: `${Math.max((d.value / maxVolume) * 100, 5)}%` }} title={`${d.label}: ${d.value}`} />
@@ -378,7 +381,7 @@ export const SupportDashboardClient: React.FC = () => {
 
           {/* CSAT ring */}
           <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>CSAT</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.csat')}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ position: 'relative', width: 80, height: 80 }}>
                 <svg width="80" height="80" viewBox="0 0 100 100">
@@ -390,8 +393,8 @@ export const SupportDashboardClient: React.FC = () => {
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{csatScore > 0 ? `${csatScore.toFixed(1)} / 5` : 'Pas de donnees'}</div>
-                <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{stats.satisfactionCount > 0 ? `${stats.satisfactionCount} avis recueillis` : 'Aucun avis'}</div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{csatScore > 0 ? `${csatScore.toFixed(1)} / 5` : t('dashboard.csatNoData')}</div>
+                <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{stats.satisfactionCount > 0 ? t('dashboard.csatReviews', { count: String(stats.satisfactionCount) }) : t('dashboard.csatNoReviews')}</div>
               </div>
             </div>
           </div>
@@ -403,18 +406,18 @@ export const SupportDashboardClient: React.FC = () => {
 
       {/* Quick Actions */}
       <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-        <Link href="/admin/support/new-ticket" style={{ padding: '8px 16px', borderRadius: 8, background: '#2563eb', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>+ Nouveau ticket</Link>
+        <Link href="/admin/support/new-ticket" style={{ padding: '8px 16px', borderRadius: 8, background: '#2563eb', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>{t('dashboard.newTicketAction')}</Link>
         <Link href="/admin/support/emails" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          Emails en attente
+          {t('dashboard.pendingEmails')}
           {stats.pendingEmailsCount > 0 ? (
             <span style={{ padding: '1px 6px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 700 }}>{stats.pendingEmailsCount}</span>
           ) : (
             <span style={{ padding: '1px 6px', borderRadius: 10, background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 700 }}>0</span>
           )}
         </Link>
-        <Link href="/admin/support/crm" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>CRM</Link>
-        <Link href="/admin/support/billing" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>Pre-facturation</Link>
-        <a href="/api/support/export-csv" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }} target="_blank" rel="noopener noreferrer">Export CSV</a>
+        <Link href="/admin/support/crm" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>{t('dashboard.crm')}</Link>
+        <Link href="/admin/support/billing" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>{t('dashboard.preBilling')}</Link>
+        <a href="/api/support/export-csv" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }} target="_blank" rel="noopener noreferrer">{t('dashboard.exportCsv')}</a>
       </div>
     </div>
   )

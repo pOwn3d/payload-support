@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import s from '../../styles/ChatView.module.scss'
 
 interface ChatSession {
@@ -23,6 +24,7 @@ interface ChatMessage {
 }
 
 export const ChatViewClient: React.FC = () => {
+  const { t } = useTranslation()
   const [sessions, setSessions] = useState<{ active: ChatSession[]; closed: ChatSession[] }>({ active: [], closed: [] })
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -220,19 +222,19 @@ export const ChatViewClient: React.FC = () => {
   return (
     <div style={S.page}>
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>Chat en direct</h1>
-        <p style={{ color: 'var(--theme-elevation-500)', fontSize: 13, margin: '4px 0 0' }}>{sessions.active.length} session{sessions.active.length !== 1 ? 's' : ''} active{sessions.active.length !== 1 ? 's' : ''}</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('chat.title')}</h1>
+        <p style={{ color: 'var(--theme-elevation-500)', fontSize: 13, margin: '4px 0 0' }}>{sessions.active.length !== 1 ? t('chat.sessionCountPlural', { count: String(sessions.active.length) }) : t('chat.sessionCount', { count: String(sessions.active.length) })}</p>
       </div>
 
       <div style={S.container}>
         <div style={S.sidebar}>
           <div style={S.tabsRow}>
-            <button onClick={() => setShowClosed(false)} style={{ ...S.tab, ...(!showClosed ? S.tabActive : {}) }}>Actifs ({sessions.active.length})</button>
-            <button onClick={() => setShowClosed(true)} style={{ ...S.tab, ...(showClosed ? S.tabActive : {}) }}>Fermes ({sessions.closed.length})</button>
+            <button onClick={() => setShowClosed(false)} style={{ ...S.tab, ...(!showClosed ? S.tabActive : {}) }}>{t('chat.tabs.active')} ({sessions.active.length})</button>
+            <button onClick={() => setShowClosed(true)} style={{ ...S.tab, ...(showClosed ? S.tabActive : {}) }}>{t('chat.tabs.closed')} ({sessions.closed.length})</button>
           </div>
           <div>
-            {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Chargement...</div>
-              : displayedSessions.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Aucune session {showClosed ? 'fermee' : 'active'}</div>
+            {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
+              : displayedSessions.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{showClosed ? t('chat.noSessionClosed') : t('chat.noSessionActive')}</div>
               : displayedSessions.map((s) => (
                 <button key={s.session} onClick={() => setSelectedSession(s.session)} style={{ ...S.sessionItem, ...(selectedSession === s.session ? S.sessionActive : {}) }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -240,7 +242,7 @@ export const ChatViewClient: React.FC = () => {
                     {s.unreadCount > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700 }}>{s.unreadCount}</span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.lastMessage}</div>
-                  <div style={{ fontSize: 11, color: 'var(--theme-elevation-400)', marginTop: 2 }}>{new Date(s.lastMessageAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} -- {s.messageCount} msg</div>
+                  <div style={{ fontSize: 11, color: 'var(--theme-elevation-400)', marginTop: 2 }}>{new Date(s.lastMessageAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} -- {s.messageCount} {t('chat.msg')}</div>
                 </button>
               ))}
           </div>
@@ -248,12 +250,12 @@ export const ChatViewClient: React.FC = () => {
 
         <div style={S.chatPanel}>
           {!selectedSession ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 14 }}>Selectionnez une session pour commencer</div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 14 }}>{t('chat.selectSession')}</div>
           ) : (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid var(--theme-elevation-200)' }}>
                 <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--theme-elevation-500)' }}>{selectedSession}</span>
-                <button onClick={closeSession} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #dc2626', background: 'none', color: '#dc2626', fontSize: 12, cursor: 'pointer' }}>Fermer le chat</button>
+                <button onClick={closeSession} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #dc2626', background: 'none', color: '#dc2626', fontSize: 12, cursor: 'pointer' }}>{t('chat.closeChat')}</button>
               </div>
               <div style={S.messagesArea}>
                 {messages.map((msg) => (
@@ -262,7 +264,7 @@ export const ChatViewClient: React.FC = () => {
                       <div style={S.bubbleSystem}>{msg.message}</div>
                     ) : (
                       <div style={{ ...S.bubble, ...(msg.senderType === 'agent' ? S.bubbleAgent : S.bubbleClient) }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2 }}>{msg.senderType === 'agent' ? 'Vous' : 'Client'}</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2 }}>{msg.senderType === 'agent' ? t('chat.you') : t('chat.clientLabel')}</div>
                         <div>{msg.message}</div>
                         <div style={{ fontSize: 10, color: msg.senderType === 'agent' ? '#1e40af' : 'var(--theme-elevation-400)', marginTop: 2 }}>{new Date(msg.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
@@ -274,13 +276,13 @@ export const ChatViewClient: React.FC = () => {
               <form onSubmit={sendMessage} style={S.composer}>
                 {cannedResponses.length > 0 && (
                   <select onChange={(e) => { const cr = cannedResponses.find((c) => String(c.id) === e.target.value); if (cr) setInput(cr.body); e.target.value = '' }} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 11, marginBottom: 6, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}>
-                    <option value="">Reponse rapide...</option>
+                    <option value="">{t('chat.quickReply')}</option>
                     {cannedResponses.map((cr) => <option key={cr.id} value={String(cr.id)}>{cr.title}</option>)}
                   </select>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Tapez votre reponse..." maxLength={2000} style={S.composerInput} autoFocus />
-                  <button type="submit" disabled={!input.trim() || sending} style={S.sendBtn}>Envoyer</button>
+                  <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t('chat.inputPlaceholder')} maxLength={2000} style={S.composerInput} autoFocus />
+                  <button type="submit" disabled={!input.trim() || sending} style={S.sendBtn}>{t('chat.sendButton')}</button>
                 </div>
               </form>
             </>

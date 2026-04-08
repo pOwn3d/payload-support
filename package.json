@@ -1,6 +1,6 @@
 {
   "name": "@consilioweb/payload-support",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Payload CMS plugin — professional support & ticketing system with AI, SLA, time tracking, live chat, and more",
   "type": "module",
   "main": "./dist/index.cjs",
