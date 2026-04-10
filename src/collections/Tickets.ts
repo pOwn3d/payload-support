@@ -440,7 +440,7 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
     type: 'ui',
     admin: {
       components: {
-        Field: options?.conversationComponent || '@consilioweb/payload-support/src/components/TicketConversation',
+        Field: options?.conversationComponent || '@consilioweb/payload-support/components/TicketConversation',
       },
     },
   })

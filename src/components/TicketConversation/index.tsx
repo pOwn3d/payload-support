@@ -1,7 +1,26 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useDocumentInfo } from '@payloadcms/ui'
+
+// Replacement for @payloadcms/ui's useDocumentInfo — avoids importing
+// @payloadcms/ui (which has chunk splits that break webpack resolution
+// when this bundle is consumed from node_modules).
+// Extracts the document id from the admin URL pattern:
+// /admin/collections/:slug/:id  or  /admin/globals/:slug
+function useDocumentIdFromUrl(): { id: string | number | undefined } {
+  const [id, setId] = useState<string | number | undefined>(undefined)
+  useEffect(() => {
+    const match = window.location.pathname.match(
+      /\/admin\/collections\/[^/]+\/([^/?#]+)/
+    )
+    if (match && match[1] !== 'create') {
+      const raw = match[1]
+      const num = Number(raw)
+      setId(Number.isFinite(num) && String(num) === raw ? num : raw)
+    }
+  }, [])
+  return { id }
+}
 import type { Message, TimeEntry, ClientInfo, CannedResponse, ActivityEntry, SatisfactionSurvey } from './types'
 import type { RichTextEditorHandle } from './context'
 import { C, s } from './constants'
@@ -64,7 +83,7 @@ const layoutStyles = {
 }
 
 const TicketConversation: React.FC = () => {
-  const { id } = useDocumentInfo()
+  const { id } = useDocumentIdFromUrl()
   const [features] = useState<TicketingFeatures>(() => getFeatures())
   const [messages, setMessages] = useState<Message[]>([])
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])

@@ -54,8 +54,9 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
   }
 
   const bp = config?.basePath || '/support'
-  // Views are referenced by source path so Next.js can resolve server/client boundaries
-  const viewsBase = '@consilioweb/payload-support/src/views'
+  // Use compiled subpath exports (one file per view) — avoids webpack
+  // issues with bundled 'use client' files from node_modules.
+  const viewsBase = '@consilioweb/payload-support/views'
   const slugs = resolveSlugs({
     ...config?.collectionSlugs,
     users: config?.userCollectionSlug || 'users',
