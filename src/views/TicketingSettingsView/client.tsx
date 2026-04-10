@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from 'lucide-react'
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
-import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../TicketConversation/config'
+import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../../components/TicketConversation/config'
 import ts from './TicketingSettings.module.scss'
 
 /* ============================================

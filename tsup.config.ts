@@ -1,5 +1,6 @@
 import { defineConfig, type Options } from 'tsup'
 import { writeFileSync, readFileSync, rmSync } from 'fs'
+import { sassPlugin } from 'esbuild-sass-plugin'
 
 const CLIENT_BANNER = '"use client";\n'
 
@@ -21,6 +22,7 @@ const serverExternals = [
   '@consilioweb/payload-support/client',
   '@anthropic-ai/sdk',
   'openai',
+  'lucide-react',
 ]
 
 const clientExternals = [
@@ -36,6 +38,7 @@ const clientExternals = [
   'next',
   'next/navigation',
   'next/link',
+  'lucide-react',
   '@consilioweb/payload-support',
   '@consilioweb/payload-support/client',
 ]
@@ -64,6 +67,7 @@ export default defineConfig([
     ...sharedConfig,
     external: clientExternals,
     entry: { client: 'src/client.ts' },
+    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
     onSuccess: async () => {
       for (const file of ['dist/client.js', 'dist/client.cjs']) {
         try {
@@ -79,6 +83,7 @@ export default defineConfig([
     ...sharedConfig,
     external: clientExternals,
     entry: { views: 'src/views.ts' },
+    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
     onSuccess: async () => {
       for (const file of ['dist/views.js', 'dist/views.cjs']) {
         try {
