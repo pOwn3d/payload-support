@@ -127,6 +127,45 @@ export default defineConfig([
     onSuccess: async () => {
       const { readdirSync, readFileSync, writeFileSync, statSync } = await import('fs')
       const { join } = await import('path')
+
+      // 1. Walk all .js files in dist and add .js extension to relative imports
+      //    (required because tsup bundle:false doesn't add extensions on ESM import)
+      function walkJs(dir: string, cb: (path: string) => void) {
+        try {
+          for (const f of readdirSync(dir)) {
+            const p = join(dir, f)
+            if (statSync(p).isDirectory()) { walkJs(p, cb); continue }
+            if (p.endsWith('.js')) cb(p)
+          }
+        } catch { /* ignore */ }
+      }
+
+      function addJsExtensions(path: string) {
+        try {
+          const content = readFileSync(path, 'utf-8')
+          // Match: import X from './path' or "./path" or '../path' (no extension)
+          // Only for relative imports that don't already have an extension
+          const fixed = content.replace(
+            /((?:from|import)\s*['"])(\.\.?\/[^'"]+?)(['"])/g,
+            (match, prefix, importPath, suffix) => {
+              // Skip if already has extension
+              if (/\.(js|jsx|mjs|cjs|css|scss|json)$/.test(importPath)) return match
+              return `${prefix}${importPath}.js${suffix}`
+            }
+          )
+          if (fixed !== content) writeFileSync(path, fixed)
+        } catch { /* ignore */ }
+      }
+
+      walkJs('dist/views', addJsExtensions)
+      walkJs('dist/components', addJsExtensions)
+      // Fix views.js barrel too
+      try {
+        addJsExtensions('dist/views.js')
+        addJsExtensions('dist/views.cjs')
+      } catch {}
+
+      // 2. Prepend 'use client' to client files
       function processDir(dir: string, pattern: (file: string, path: string) => boolean) {
         try {
           for (const file of readdirSync(dir)) {
@@ -144,15 +183,12 @@ export default defineConfig([
           }
         } catch { /* ignore */ }
       }
-      // views/*/client.js
       processDir('dist/views', (f) => f === 'client.js')
-      // views/shared client helpers
       processDir('dist/views/shared', (f) =>
         f === 'ErrorBoundary.js' || f === 'Skeleton.js' || f === 'AdminViewHeader.js'
       )
-      // TicketConversation tree — all js files under dist/components/TicketConversation/
       processDir('dist/components/TicketConversation', () => true)
-      console.log('✓ Prepended "use client" to individual client files')
+      console.log('✓ Fixed .js extensions + prepended "use client"')
     },
   },
 ])
