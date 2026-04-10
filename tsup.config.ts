@@ -19,7 +19,6 @@ const serverExternals = [
   '@consilioweb/payload-support',
   '@consilioweb/payload-support/client',
   '@consilioweb/payload-support/views',
-  '@consilioweb/payload-support/components/TicketConversation',
   '@anthropic-ai/sdk',
   'openai',
   'lucide-react',
@@ -62,7 +61,7 @@ export default defineConfig([
     ...sharedConfig,
     entry: { index: 'src/index.ts' },
   },
-  // Client entry — React components barrel
+  // Client barrel
   {
     ...sharedConfig,
     external: clientExternals,
@@ -80,21 +79,72 @@ export default defineConfig([
       console.log('✓ Prepended "use client" to client barrel')
     },
   },
-  // Views barrel — server components for Payload importMap
-  // Bundled as a single file (like admin-theme's ./rsc) so that Next.js
-  // can properly detect and follow the client references in each view.
+  // Views barrel — a single bundled file that re-exports all views via
+  // subpath imports. This matches the pattern used by admin-theme's `./rsc`.
+  // The server components inside each view import their `./client` siblings
+  // which are emitted as separate files in the individual build below.
   {
     ...sharedConfig,
-    external: clientExternals,
+    external: [
+      ...clientExternals,
+      // Externalize all view individual files so the barrel just re-exports
+      // them without bundling
+      /^\.\/views\//,
+    ],
     entry: { views: 'src/views.ts' },
-    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
-    // NO 'use client' — this is a server barrel that re-exports server
-    // components. Each server component internally imports its `./client`
-    // sibling which has `'use client'` directive.
+  },
+  // Individual view files — bundle:false preserves the directory structure
+  // so that `./client` imports in server index.tsx can resolve to
+  // `./client.js` in the output.
+  {
+    ...sharedConfig,
+    dts: false,
+    bundle: false,
+    external: clientExternals,
+    entry: [
+      'src/views/**/*.tsx',
+      'src/views/**/*.ts',
+      'src/views/**/*.scss',
+      'src/views/**/*.css',
+      '!src/views/**/*.d.ts',
+    ],
+    loader: {
+      '.scss': 'copy',
+      '.css': 'copy',
+    },
+    esbuildOptions(options) {
+      options.outbase = 'src'
+    },
+    onSuccess: async () => {
+      const { readdirSync, readFileSync, writeFileSync, statSync } = await import('fs')
+      const { join } = await import('path')
+      function processDir(dir: string, pattern: (file: string, path: string) => boolean) {
+        try {
+          for (const file of readdirSync(dir)) {
+            const path = join(dir, file)
+            if (statSync(path).isDirectory()) {
+              processDir(path, pattern)
+              continue
+            }
+            if (!file.endsWith('.js')) continue
+            if (!pattern(file, path)) continue
+            const content = readFileSync(path, 'utf-8')
+            if (!content.startsWith('"use client"')) {
+              writeFileSync(path, '"use client";\n' + content)
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      // Prepend 'use client' to client.js files and shared client components
+      processDir('dist/views', (f) => f === 'client.js')
+      processDir('dist/views/shared', (f) =>
+        f === 'ErrorBoundary.js' || f === 'Skeleton.js' || f === 'AdminViewHeader.js'
+      )
+      console.log('✓ Prepended "use client" to individual client files')
+    },
   },
   // TicketConversation — single bundled client component
-  // Output: dist/components/TicketConversation.js (flat file like admin-theme)
-  // ESM only — CJS bundling with 'use client' directive causes tsup to fail
+  // Output: dist/components/TicketConversation.js
   {
     ...sharedConfig,
     format: ['esm'],
