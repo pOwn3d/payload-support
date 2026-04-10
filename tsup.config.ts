@@ -93,9 +93,10 @@ export default defineConfig([
     ],
     entry: { views: 'src/views.ts' },
   },
-  // Individual view files — bundle:false preserves the directory structure
-  // so that `./client` imports in server index.tsx can resolve to
-  // `./client.js` in the output.
+  // Individual view + component files — bundle:false preserves directory
+  // structure so that relative imports like `./client` or
+  // `../../components/TicketConversation/hooks/useTranslation` resolve
+  // correctly at runtime.
   {
     ...sharedConfig,
     dts: false,
@@ -106,11 +107,19 @@ export default defineConfig([
       'src/views/**/*.ts',
       'src/views/**/*.scss',
       'src/views/**/*.css',
-      '!src/views/**/*.d.ts',
+      'src/components/TicketConversation/**/*.tsx',
+      'src/components/TicketConversation/**/*.ts',
+      'src/components/TicketConversation/**/*.json',
+      'src/components/TicketConversation/**/*.scss',
+      'src/components/TicketConversation/**/*.css',
+      'src/styles/**/*.css',
+      'src/styles/**/*.scss',
+      '!src/**/*.d.ts',
     ],
     loader: {
       '.scss': 'copy',
       '.css': 'copy',
+      '.json': 'copy',
     },
     esbuildOptions(options) {
       options.outbase = 'src'
@@ -135,35 +144,15 @@ export default defineConfig([
           }
         } catch { /* ignore */ }
       }
-      // Prepend 'use client' to client.js files and shared client components
+      // views/*/client.js
       processDir('dist/views', (f) => f === 'client.js')
+      // views/shared client helpers
       processDir('dist/views/shared', (f) =>
         f === 'ErrorBoundary.js' || f === 'Skeleton.js' || f === 'AdminViewHeader.js'
       )
+      // TicketConversation tree — all js files under dist/components/TicketConversation/
+      processDir('dist/components/TicketConversation', () => true)
       console.log('✓ Prepended "use client" to individual client files')
-    },
-  },
-  // TicketConversation — single bundled client component
-  // Output: dist/components/TicketConversation.js
-  {
-    ...sharedConfig,
-    format: ['esm'],
-    dts: false,
-    external: clientExternals,
-    entry: { 'components/TicketConversation': 'src/components/TicketConversation/index.tsx' },
-    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
-    loader: { '.json': 'copy' },
-    onSuccess: async () => {
-      const { readFileSync, writeFileSync } = await import('fs')
-      for (const file of ['dist/components/TicketConversation.js']) {
-        try {
-          const content = readFileSync(file, 'utf-8')
-          if (!content.startsWith('"use client"')) {
-            writeFileSync(file, '"use client";\n' + content)
-          }
-        } catch { /* ignore */ }
-      }
-      console.log('✓ Prepended "use client" to TicketConversation bundle')
     },
   },
 ])
