@@ -106,26 +106,26 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       (incomingConfig.admin?.components?.views as Record<string, AdminViewConfig>) || {}
 
     const supportViews: Record<string, AdminViewConfig> = {
-      'support-inbox': viewConfig(`${viewsBase}/TicketInboxView`, `${bp}/inbox`),
-      'support-dashboard': viewConfig(`${viewsBase}/SupportDashboardView`, `${bp}/dashboard`),
-      'support-ticket': viewConfig(`${viewsBase}/TicketDetailView`, `${bp}/ticket`),
-      'support-new-ticket': viewConfig(`${viewsBase}/NewTicketView`, `${bp}/new-ticket`),
-      'support-settings': viewConfig(`${viewsBase}/TicketingSettingsView`, `${bp}/settings`),
-      'support-logs': viewConfig(`${viewsBase}/LogsView`, `${bp}/logs`),
-      'support-crm': viewConfig(`${viewsBase}/CrmView`, `${bp}/crm`),
+      'support-inbox': viewConfig(`${viewsBase}#TicketInboxView`, `${bp}/inbox`),
+      'support-dashboard': viewConfig(`${viewsBase}#SupportDashboardView`, `${bp}/dashboard`),
+      'support-ticket': viewConfig(`${viewsBase}#TicketDetailView`, `${bp}/ticket`),
+      'support-new-ticket': viewConfig(`${viewsBase}#NewTicketView`, `${bp}/new-ticket`),
+      'support-settings': viewConfig(`${viewsBase}#TicketingSettingsView`, `${bp}/settings`),
+      'support-logs': viewConfig(`${viewsBase}#LogsView`, `${bp}/logs`),
+      'support-crm': viewConfig(`${viewsBase}#CrmView`, `${bp}/crm`),
     }
 
     if (features.chat) {
-      supportViews['support-chat'] = viewConfig(`${viewsBase}/ChatView`, `${bp}/chat`)
+      supportViews['support-chat'] = viewConfig(`${viewsBase}#ChatView`, `${bp}/chat`)
     }
     if (features.pendingEmails) {
-      supportViews['support-emails'] = viewConfig(`${viewsBase}/PendingEmailsView`, `${bp}/emails`)
+      supportViews['support-emails'] = viewConfig(`${viewsBase}#PendingEmailsView`, `${bp}/emails`)
     }
     if (features.emailTracking) {
-      supportViews['support-tracking'] = viewConfig(`${viewsBase}/EmailTrackingView`, `${bp}/tracking`)
+      supportViews['support-tracking'] = viewConfig(`${viewsBase}#EmailTrackingView`, `${bp}/tracking`)
     }
     if (features.timeTracking) {
-      supportViews['support-time'] = viewConfig(`${viewsBase}/TimeDashboardView`, `${bp}/time`)
+      supportViews['support-time'] = viewConfig(`${viewsBase}#TimeDashboardView`, `${bp}/time`)
     }
 
     // ─── Endpoints ───────────────────────────────────────

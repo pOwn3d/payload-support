@@ -1,5 +1,6 @@
 import { defineConfig, type Options } from 'tsup'
 import { rmSync } from 'fs'
+import { sassPlugin } from 'esbuild-sass-plugin'
 
 const serverExternals = [
   'payload',
@@ -17,6 +18,8 @@ const serverExternals = [
   'next/headers',
   '@consilioweb/payload-support',
   '@consilioweb/payload-support/client',
+  '@consilioweb/payload-support/views',
+  '@consilioweb/payload-support/components/TicketConversation',
   '@anthropic-ai/sdk',
   'openai',
   'lucide-react',
@@ -51,26 +54,19 @@ const sharedConfig: Partial<Options> = {
   target: 'es2022',
   external: serverExternals,
   clean: false,
-  // Keep individual modules instead of bundling (required for Next.js RSC
-  // to resolve each client boundary individually from node_modules)
-  bundle: false,
 }
 
 export default defineConfig([
-  // Server entry — plugin + collections + types (bundled single file)
+  // Server entry — plugin + collections + types
   {
     ...sharedConfig,
     entry: { index: 'src/index.ts' },
-    bundle: true,
-    format: ['esm', 'cjs'],
   },
-  // Client barrel — small re-export file
+  // Client entry — React components barrel
   {
     ...sharedConfig,
     external: clientExternals,
     entry: { client: 'src/client.ts' },
-    bundle: true,
-    format: ['esm', 'cjs'],
     onSuccess: async () => {
       const { readFileSync, writeFileSync } = await import('fs')
       for (const file of ['dist/client.js', 'dist/client.cjs']) {
@@ -79,105 +75,45 @@ export default defineConfig([
           if (!content.startsWith('"use client"')) {
             writeFileSync(file, '"use client";\n' + content)
           }
-        } catch { /* ignore if file doesn't exist */ }
+        } catch { /* ignore */ }
       }
       console.log('✓ Prepended "use client" to client barrel')
     },
   },
-  // RSC entry — server components (NO 'use client')
-  // These wrap DefaultTemplate and render the client components inside.
-  // They MUST remain server components so Payload can call them with
-  // AdminViewServerProps. bundle:false means imports like `./client` stay
-  // as imports in the output.
-  // esbuildOptions.outbase forces tsup to use `src/` as the base so that
-  // files preserve their `views/NAME/index.js` structure in dist.
+  // Views barrel — server components for Payload importMap
+  // Bundled as a single file (like admin-theme's ./rsc) so that Next.js
+  // can properly detect and follow the client references in each view.
   {
     ...sharedConfig,
     external: clientExternals,
-    entry: [
-      'src/views/TicketInboxView/index.tsx',
-      'src/views/TicketDetailView/index.tsx',
-      'src/views/SupportDashboardView/index.tsx',
-      'src/views/NewTicketView/index.tsx',
-      'src/views/TicketingSettingsView/index.tsx',
-      'src/views/LogsView/index.tsx',
-      'src/views/ChatView/index.tsx',
-      'src/views/CrmView/index.tsx',
-      'src/views/PendingEmailsView/index.tsx',
-      'src/views/EmailTrackingView/index.tsx',
-      'src/views/BillingView/index.tsx',
-      'src/views/TimeDashboardView/index.tsx',
-      'src/views/ImportConversationView/index.tsx',
-      // shared server-only utils (no React classes, no hooks)
-      'src/views/shared/adminTokens.ts',
-      'src/views/shared/config.ts',
-    ],
-    esbuildOptions(options) {
-      options.outbase = 'src'
-    },
+    entry: { views: 'src/views.ts' },
+    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
+    // NO 'use client' — this is a server barrel that re-exports server
+    // components. Each server component internally imports its `./client`
+    // sibling which has `'use client'` directive.
   },
-  // Client entry — individual client components (WITH 'use client')
-  // These are the `client.tsx` files for each view + the TicketConversation
-  // component tree. Each file is emitted individually thanks to bundle:false.
-  // Globs are used to pick up all subfiles of TicketConversation.
+  // TicketConversation — single bundled client component
+  // Output: dist/components/TicketConversation.js (flat file like admin-theme)
+  // ESM only — CJS bundling with 'use client' directive causes tsup to fail
   {
     ...sharedConfig,
+    format: ['esm'],
+    dts: false,
     external: clientExternals,
-    entry: [
-      'src/views/**/client.tsx',
-      'src/views/**/*.scss',
-      'src/views/**/*.css',
-      'src/views/shared/ErrorBoundary.tsx',
-      'src/views/shared/Skeleton.tsx',
-      'src/views/shared/AdminViewHeader.tsx',
-      'src/views/shared/index.ts',
-      'src/components/TicketConversation/**/*.tsx',
-      'src/components/TicketConversation/**/*.ts',
-      'src/components/TicketConversation/**/*.json',
-      'src/components/TicketConversation/**/*.scss',
-      'src/components/TicketConversation/**/*.css',
-      'src/styles/**/*.css',
-      'src/styles/**/*.scss',
-      '!src/components/TicketConversation/**/*.d.ts',
-    ],
-    loader: {
-      '.json': 'copy',
-      '.css': 'copy',
-      '.scss': 'copy',
-    },
-    esbuildOptions(options) {
-      options.outbase = 'src'
-    },
+    entry: { 'components/TicketConversation': 'src/components/TicketConversation/index.tsx' },
+    esbuildPlugins: [sassPlugin({ type: 'local-css' })],
+    loader: { '.json': 'copy' },
     onSuccess: async () => {
-      // Prepend "use client" to individual client files (NOT the RSC ones)
-      const { readdirSync, readFileSync, writeFileSync, statSync } = await import('fs')
-      const { join } = await import('path')
-
-      function processDir(dir: string, pattern: (file: string) => boolean) {
+      const { readFileSync, writeFileSync } = await import('fs')
+      for (const file of ['dist/components/TicketConversation.js']) {
         try {
-          for (const file of readdirSync(dir)) {
-            const path = join(dir, file)
-            if (statSync(path).isDirectory()) {
-              processDir(path, pattern)
-              continue
-            }
-            if (!file.endsWith('.js') && !file.endsWith('.cjs')) continue
-            if (!pattern(file)) continue
-            const content = readFileSync(path, 'utf-8')
-            if (!content.startsWith('"use client"')) {
-              writeFileSync(path, '"use client";\n' + content)
-            }
+          const content = readFileSync(file, 'utf-8')
+          if (!content.startsWith('"use client"')) {
+            writeFileSync(file, '"use client";\n' + content)
           }
         } catch { /* ignore */ }
       }
-
-      // views/*/client.js — client components only
-      processDir('dist/views', (f) => f === 'client.js' || f === 'client.cjs')
-      // views/shared — client helpers (ErrorBoundary, Skeleton, AdminViewHeader, index barrel)
-      processDir('dist/views/shared', (f) => f.endsWith('.js') || f.endsWith('.cjs'))
-      // components/TicketConversation/** — all files (TicketConversation and its subcomponents)
-      processDir('dist/components', () => true)
-      console.log('✓ Prepended "use client" to individual client files')
+      console.log('✓ Prepended "use client" to TicketConversation bundle')
     },
   },
 ])

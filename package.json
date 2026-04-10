@@ -1,6 +1,6 @@
 {
   "name": "@consilioweb/payload-support",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Payload CMS plugin — professional support & ticketing system with AI, SLA, time tracking, live chat, and more",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -27,24 +27,19 @@
         "default": "./dist/client.cjs"
       }
     },
-    "./views/*": {
+    "./views": {
       "import": {
-        "types": "./dist/views/*/index.d.ts",
-        "default": "./dist/views/*/index.js"
+        "types": "./dist/views.d.ts",
+        "default": "./dist/views.js"
       },
       "require": {
-        "types": "./dist/views/*/index.d.cts",
-        "default": "./dist/views/*/index.cjs"
+        "types": "./dist/views.d.cts",
+        "default": "./dist/views.cjs"
       }
     },
-    "./components/*": {
+    "./components/TicketConversation": {
       "import": {
-        "types": "./dist/components/*/index.d.ts",
-        "default": "./dist/components/*/index.js"
-      },
-      "require": {
-        "types": "./dist/components/*/index.d.cts",
-        "default": "./dist/components/*/index.cjs"
+        "default": "./dist/components/TicketConversation.js"
       }
     }
   },
