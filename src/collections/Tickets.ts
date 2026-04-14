@@ -607,7 +607,7 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
         ],
       },
       // Sidebar
-      { name: 'ticketNumber', type: 'text', unique: true, label: 'N° Ticket', admin: { readOnly: true, position: 'sidebar' } },
+      { name: 'ticketNumber', type: 'text', unique: true, label: 'N° Ticket', admin: { position: 'sidebar' } },
       { name: 'slaPolicy', type: 'relationship', relationTo: slugs.slaPolicies, label: 'Politique SLA', admin: { position: 'sidebar' } },
       {
         name: 'category', type: 'select', label: 'Categorie',
