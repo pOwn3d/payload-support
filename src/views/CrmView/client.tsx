@@ -18,6 +18,19 @@ const statusColors: Record<string, string> = { open: '#3b82f6', waiting_client: 
 function formatDuration(minutes: number): string { const h = Math.floor(minutes / 60); const m = minutes % 60; if (h === 0) return `${m}min`; if (m === 0) return `${h}h`; return `${h}h${m}m` }
 function timeAgo(dateStr: string): string { const diff = Date.now() - new Date(dateStr).getTime(); const days = Math.floor(diff / 86400000); if (days === 0) return "Aujourd'hui"; if (days === 1) return 'Hier'; if (days < 30) return `Il y a ${days}j`; return `Il y a ${Math.floor(days / 30)} mois` }
 
+interface ClientSummary {
+  summary: string
+  recurringTopics: { topic: string; count: number; lastSeen: string }[]
+  patterns: string[]
+  keyFacts: string[]
+  ticketCount: number
+  messageCount: number
+  averageSatisfaction: number | null
+  generatedAt: string
+  aiModel: string
+  fromCache?: boolean
+}
+
 export const CrmClient: React.FC = () => {
   const { t } = useTranslation()
   const [clients, setClients] = useState<Client[]>([])
@@ -28,6 +41,10 @@ export const CrmClient: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false)
   const [showMerge, setShowMerge] = useState(false)
   const [mergeSearch, setMergeSearch] = useState('')
+  // Client Intelligence
+  const [intelligence, setIntelligence] = useState<ClientSummary | null>(null)
+  const [intelLoading, setIntelLoading] = useState(false)
+  const [intelRefreshing, setIntelRefreshing] = useState(false)
   const [mergeResults, setMergeResults] = useState<Client[]>([])
   const [merging, setMerging] = useState(false)
   const [mergeSuccess, setMergeSuccess] = useState('')
@@ -66,7 +83,22 @@ export const CrmClient: React.FC = () => {
     setDetailLoading(false)
   }, [])
 
-  const selectClient = (id: number) => { setSelectedId(id); fetchDetail(id); setShowMerge(false); setMergeSuccess('') }
+  const fetchIntelligence = useCallback(async (clientId: number, force = false) => {
+    if (force) setIntelRefreshing(true); else setIntelLoading(true)
+    try {
+      const method = force ? 'POST' : 'GET'
+      const url = force
+        ? '/api/support/client-intelligence'
+        : `/api/support/client-intelligence?clientId=${clientId}`
+      const opts: RequestInit = { method, credentials: 'include', headers: { 'Content-Type': 'application/json' } }
+      if (force) opts.body = JSON.stringify({ clientId })
+      const res = await fetch(url, opts)
+      if (res.ok) setIntelligence(await res.json())
+    } catch { /* silent */ }
+    setIntelLoading(false); setIntelRefreshing(false)
+  }, [])
+
+  const selectClient = (id: number) => { setSelectedId(id); fetchDetail(id); fetchIntelligence(id); setShowMerge(false); setMergeSuccess(''); setIntelligence(null) }
 
   useEffect(() => {
     if (!mergeSearch || mergeSearch.length < 2) { setMergeResults([]); return }
@@ -176,6 +208,81 @@ export const CrmClient: React.FC = () => {
                       <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--theme-text)' }}>{stat.value}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* Client Intelligence */}
+                <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)', marginBottom: 16, background: 'linear-gradient(135deg, rgba(37,99,235,0.03) 0%, rgba(139,92,246,0.03) 100%)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>🧠</span> Résumé IA
+                    </h3>
+                    <button
+                      onClick={() => selectedId && fetchIntelligence(selectedId, true)}
+                      disabled={intelRefreshing}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-0)', fontSize: 11, fontWeight: 600, cursor: 'pointer', color: 'var(--theme-text)' }}
+                    >
+                      {intelRefreshing ? '⏳ Génération...' : '🔄 Actualiser'}
+                    </button>
+                  </div>
+                  {intelLoading ? (
+                    <div style={{ padding: 20, textAlign: 'center', color: 'var(--theme-elevation-400)', fontSize: 13 }}>Chargement du résumé...</div>
+                  ) : intelligence ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {/* Summary */}
+                      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: 'var(--theme-text)' }}>{intelligence.summary}</p>
+
+                      {/* Recurring Topics */}
+                      {intelligence.recurringTopics && intelligence.recurringTopics.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--theme-elevation-500)', marginBottom: 6, textTransform: 'uppercase' }}>Sujets récurrents</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {intelligence.recurringTopics.map((t, i) => (
+                              <span key={i} style={{ padding: '3px 10px', borderRadius: 12, background: 'rgba(37,99,235,0.08)', color: '#2563eb', fontSize: 11, fontWeight: 600 }}>
+                                {t.topic} ({t.count}x)
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Patterns */}
+                      {intelligence.patterns && intelligence.patterns.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--theme-elevation-500)', marginBottom: 6, textTransform: 'uppercase' }}>Patterns détectés</div>
+                          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--theme-text)', lineHeight: 1.8 }}>
+                            {intelligence.patterns.map((p, i) => <li key={i}>{p}</li>)}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Key Facts */}
+                      {intelligence.keyFacts && intelligence.keyFacts.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--theme-elevation-500)', marginBottom: 6, textTransform: 'uppercase' }}>Faits clés</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                            {intelligence.keyFacts.map((f, i) => (
+                              <span key={i} style={{ padding: '3px 10px', borderRadius: 12, background: 'rgba(22,163,74,0.08)', color: '#16a34a', fontSize: 11, fontWeight: 600 }}>
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Meta */}
+                      <div style={{ fontSize: 10, color: 'var(--theme-elevation-400)', display: 'flex', gap: 12, marginTop: 4 }}>
+                        <span>{intelligence.ticketCount} tickets analysés</span>
+                        <span>{intelligence.messageCount} messages</span>
+                        {intelligence.averageSatisfaction && <span>Satisfaction: {intelligence.averageSatisfaction}/5</span>}
+                        {intelligence.fromCache && <span>Cache</span>}
+                        {intelligence.generatedAt && <span>Généré {timeAgo(intelligence.generatedAt)}</span>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: 16, textAlign: 'center', color: 'var(--theme-elevation-400)', fontSize: 13 }}>
+                      Cliquez sur "Actualiser" pour générer le résumé IA de ce client.
+                    </div>
+                  )}
                 </div>
 
                 {/* Tickets table */}
