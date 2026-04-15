@@ -22,7 +22,6 @@ export function createClientSummariesCollection(slugs: CollectionSlugs): Collect
         type: 'relationship',
         relationTo: slugs.supportClients,
         required: true,
-        unique: true,
         index: true,
         label: 'Client',
       },
