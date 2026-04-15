@@ -461,6 +461,37 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
     {
       type: 'row',
       fields: [
+        {
+          name: 'billingType',
+          type: 'select',
+          label: 'Type de facturation',
+          defaultValue: 'hourly',
+          options: [
+            { label: 'Au temps passé', value: 'hourly' },
+            { label: 'Forfait', value: 'flat' },
+          ],
+          admin: { width: '33%' },
+        },
+        {
+          name: 'flatRateAmount',
+          type: 'number',
+          label: 'Montant forfait (EUR)',
+          admin: {
+            width: '33%',
+            condition: (data) => data?.billingType === 'flat',
+          },
+        },
+        {
+          name: 'billedAmount',
+          type: 'number',
+          label: 'Montant facturé (EUR)',
+          admin: { width: '33%' },
+        },
+      ],
+    },
+    {
+      type: 'row',
+      fields: [
         ...(options?.documentsCollectionSlug ? [
           {
             name: 'quote',
@@ -498,14 +529,8 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
         {
           name: 'paidAt',
           type: 'date',
-          label: 'Paye le',
+          label: 'Payé le',
           admin: { width: '33%', date: { displayFormat: 'dd/MM/yyyy HH:mm' } },
-        },
-        {
-          name: 'billedAmount',
-          type: 'number',
-          label: 'Montant facture (EUR)',
-          admin: { width: '33%' },
         },
       ],
     },
@@ -651,7 +676,17 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
       { name: 'snoozeUntil', type: 'date', label: 'Snooze jusqu\'au', admin: { position: 'sidebar', date: { pickerAppearance: 'dayAndTime', displayFormat: 'dd/MM/yyyy HH:mm' } } },
       // Billing sidebar
       { name: 'billable', type: 'checkbox', defaultValue: true, label: 'Facturable', admin: { position: 'sidebar' } },
-      { name: 'showTimeToClient', type: 'checkbox', defaultValue: true, label: 'Afficher le temps au client', admin: { position: 'sidebar' } },
+      {
+        name: 'showTimeToClient',
+        type: 'checkbox',
+        defaultValue: true,
+        label: 'Afficher le temps au client',
+        admin: {
+          position: 'sidebar',
+          description: 'Auto-désactivé en mode forfait',
+          condition: (data) => data?.billingType !== 'flat',
+        },
+      },
       { name: 'totalTimeMinutes', type: 'number', defaultValue: 0, label: 'Temps total (minutes)', admin: { readOnly: true, position: 'sidebar' } },
     ],
     hooks: {

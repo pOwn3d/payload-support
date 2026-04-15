@@ -87,7 +87,7 @@ export function useAI(
     setAiReplying(false)
   }
 
-  const handleAiRewrite = async () => {
+  const handleAiRewrite = async (style: string = 'auto') => {
     if (!replyBody.trim()) return
     setAiRewriting(true)
     try {
@@ -95,7 +95,7 @@ export function useAI(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action: 'rewrite', text: replyBody }),
+        body: JSON.stringify({ action: 'rewrite', text: replyBody, style }),
       })
       if (res.ok) {
         const data = await res.json()

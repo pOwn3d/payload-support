@@ -169,10 +169,20 @@ Rédige une réponse appropriée au dernier message du client. Sois concis (3-5 
           if (!aiSettings.enableRewrite) {
             return Response.json({ rewritten: '', disabled: true })
           }
-          const { text } = body as { text: string }
+          const { text, style } = body as { text: string; style?: string }
           if (!text?.trim()) return Response.json({ error: 'text required' }, { status: 400 })
 
-          const prompt = `Tu es un agent de support technique professionnel. Reformule le texte ci-dessous de manière plus professionnelle et corrige les fautes d'orthographe/grammaire. Garde le même sens et le même ton (tutoiement/vouvoiement). Ne change pas le fond du message, améliore uniquement la forme. Réponds UNIQUEMENT avec le texte reformulé, sans commentaire ni explication.
+          const styleInstructions: Record<string, string> = {
+            auto: 'Garde le même ton (tutoiement/vouvoiement).',
+            tutoyer: 'Utilise le tutoiement. Si le texte vouvoie, convertis en tutoiement.',
+            vouvoyer: 'Utilise le vouvoiement. Si le texte tutoie, convertis en vouvoiement.',
+            formel: 'Adopte un ton formel et professionnel avec vouvoiement.',
+            court: 'Raccourcis le texte au maximum tout en gardant le sens. Sois concis et direct.',
+            amical: 'Adopte un ton chaleureux et amical avec tutoiement.',
+          }
+          const styleGuide = styleInstructions[style || 'auto'] || styleInstructions.auto
+
+          const prompt = `Tu es un agent de support technique professionnel. Reformule le texte ci-dessous de manière plus professionnelle et corrige les fautes d'orthographe/grammaire. ${styleGuide} Ne change pas le fond du message, améliore uniquement la forme. Réponds UNIQUEMENT avec le texte reformulé, sans commentaire ni explication.
 
 Texte original :
 ${text}`
