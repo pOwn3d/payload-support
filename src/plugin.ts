@@ -115,6 +115,8 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       'support-settings': viewConfig(`${viewsBase}#TicketingSettingsView`, `${bp}/settings`),
       'support-logs': viewConfig(`${viewsBase}#LogsView`, `${bp}/logs`),
       'support-crm': viewConfig(`${viewsBase}#CrmView`, `${bp}/crm`),
+      'support-billing': viewConfig(`${viewsBase}#BillingView`, `${bp}/billing`),
+      'support-import': viewConfig(`${viewsBase}#ImportConversationView`, `/import-conversation`),
     }
 
     if (features.chat) {
