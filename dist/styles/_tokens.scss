@@ -1,0 +1,78 @@
+// Design tokens — based on Payload CMS CSS variables
+$text: var(--theme-text);
+$text-secondary: var(--theme-elevation-500);
+$text-muted: var(--theme-elevation-400);
+$bg: var(--theme-elevation-50);
+$bg-card: var(--theme-elevation-100);
+$bg-surface: var(--theme-elevation-0);
+$border: var(--theme-elevation-300);
+$border-light: var(--theme-elevation-200);
+$radius: 8px;
+$radius-sm: 6px;
+$radius-lg: 12px;
+$transition: 150ms ease;
+
+// Semantic colors
+$blue: #2563eb;
+$green: #16a34a;
+$amber: #d97706;
+$orange: #ea580c;
+$red: #dc2626;
+$purple: #7c3aed;
+$cyan: #0891b2;
+
+// Mixins
+@mixin btn($bg-color: $blue) {
+  padding: 7px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $bg-color;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity $transition;
+  white-space: nowrap;
+  &:hover { opacity: 0.85; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+@mixin ghost-btn($color: $text-secondary) {
+  @include btn(transparent);
+  color: $color;
+  &:hover { background: $bg-card; }
+}
+
+@mixin badge($bg-color, $text-color) {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: $bg-color;
+  color: $text-color;
+  white-space: nowrap;
+}
+
+@mixin card {
+  padding: 14px 18px;
+  border-radius: $radius;
+  border: 1px solid $border;
+  background: $bg-card;
+}
+
+@mixin input {
+  padding: 8px 12px;
+  border-radius: $radius-sm;
+  border: 1px solid $border;
+  background: $bg-surface;
+  color: $text;
+  font-size: 13px;
+  transition: border-color $transition;
+  &:focus {
+    outline: none;
+    border-color: $blue;
+    box-shadow: 0 0 0 2px rgba($blue, 0.1);
+  }
+}

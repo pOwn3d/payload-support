@@ -1,0 +1,350 @@
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+}
+
+.intro {
+  font-size: 0.875rem;
+  color: var(--theme-elevation-600);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+// ── Sections ──────────────────────────────────
+
+.sectionWrapper {
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  background: var(--theme-elevation-0);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 150ms;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+  }
+}
+
+.sectionIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--theme-text);
+  flex: 1;
+}
+
+.sectionChevron {
+  font-size: 0.625rem;
+  color: var(--theme-elevation-400);
+  transition: transform 200ms;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.sectionBody {
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.sectionDescription {
+  font-size: 0.8125rem;
+  color: var(--theme-elevation-500);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+// ── Badges ────────────────────────────────────
+
+.badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+// ── Feature cards ─────────────────────────────
+
+.categoryGroup {
+  margin-bottom: 1.25rem;
+}
+
+.categoryHeading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.categoryDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.featureCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-150);
+  cursor: pointer;
+  transition: all 150ms;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+  }
+
+  &.enabled {
+    border-color: var(--theme-elevation-200);
+    background: var(--theme-elevation-50);
+  }
+}
+
+.featureLabel {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--theme-text);
+}
+
+.featureDesc {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+  margin-top: 0.125rem;
+}
+
+// ── Fields ────────────────────────────────────
+
+.fieldRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.625rem 0;
+}
+
+.fieldLabel {
+  flex: 0 0 200px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  padding-top: 0.5rem;
+}
+
+.fieldDescription {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+  font-weight: 400;
+  margin-top: 0.125rem;
+}
+
+.fieldContent {
+  flex: 1;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  background: var(--theme-input-bg, var(--theme-elevation-0));
+  color: var(--theme-text);
+  outline: none;
+  transition: border-color 150ms;
+
+  &:focus {
+    border-color: var(--theme-success-500);
+  }
+}
+
+.inputReadonly {
+  composes: input;
+  background: var(--theme-elevation-50);
+  color: var(--theme-elevation-500);
+  cursor: not-allowed;
+}
+
+.select {
+  composes: input;
+  appearance: auto;
+}
+
+.numberInput {
+  composes: input;
+  max-width: 120px;
+}
+
+.separator {
+  border-top: 1px solid var(--theme-elevation-100);
+  margin: 1rem 0;
+}
+
+// ── Toggle rows ───────────────────────────────
+
+.toggleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.inlineLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.inlineDesc {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+  margin-top: 0.125rem;
+}
+
+// ── SLA ───────────────────────────────────────
+
+.slaInline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slaHint {
+  font-size: 0.75rem;
+  color: var(--theme-elevation-500);
+}
+
+// ── API Key ───────────────────────────────────
+
+.apiKeyRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.apiKeyToggle {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 6px;
+  background: var(--theme-elevation-50);
+  color: var(--theme-text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+// ── AI sub features ───────────────────────────
+
+.aiSubFeaturesLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin: 0 0 0.5rem;
+}
+
+.aiToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0;
+}
+
+.aiToggleLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--theme-text);
+}
+
+.aiToggleDesc {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--theme-elevation-500);
+}
+
+// ── Signature ─────────────────────────────────
+
+.signatureTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  background: var(--theme-input-bg, var(--theme-elevation-0));
+  color: var(--theme-text);
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: var(--theme-success-500);
+  }
+}
+
+// ── Purge ─────────────────────────────────────
+
+.purgeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.purgeCategory {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.purgeCategoryLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--theme-text);
+  min-width: 100px;
+}
+
+.purgeButtons {
+  display: flex;
+  gap: 0.375rem;
+}
+
+// ── Bottom bar ────────────────────────────────
+
+.bottomBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--theme-elevation-100);
+  margin-top: 1rem;
+}

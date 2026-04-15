@@ -1,0 +1,878 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "open": "Open",
+    "loading": "Loading...",
+    "search": "Search",
+    "send": "Send",
+    "back": "Back",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "none": "None",
+    "error": "Error",
+    "success": "Success",
+    "networkError": "Network error",
+    "unknownError": "Unknown error",
+    "sessionExpired": "Session expired. Reload the page to reconnect.",
+    "copied": "Copied",
+    "stable": "stable",
+    "noData": "No data",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "now": "now",
+    "justNow": "just now",
+    "agoMinutes": "{{count}}m ago",
+    "agoHours": "{{count}}h ago",
+    "agoDays": "{{count}}d ago",
+    "agoWeeks": "{{count}}w ago",
+    "agoMonths": "{{count}} months ago",
+    "file": "File",
+    "attachment": "Attachment",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page",
+    "results": "results",
+    "all": "All",
+    "or": "OR",
+    "required": "required",
+    "optional": "optional"
+  },
+  "ticket": {
+    "title": "Ticket",
+    "tickets": "Tickets",
+    "newTicket": "New Ticket",
+    "createTicket": "Create ticket",
+    "creating": "Creating...",
+    "subject": "Subject",
+    "description": "Description",
+    "message": "Message",
+    "messages": "Messages",
+    "noMessages": "No messages.",
+    "messageDeleted": "This message has been deleted.",
+    "messageDeletedShort": "Message deleted",
+    "conversation": "Conversation",
+    "selectTicket": "Select a ticket from the list",
+    "notFound": "Ticket not found",
+    "saveToSee": "Save the ticket to see the dashboard.",
+    "status": {
+      "open": "Open",
+      "waiting_client": "Waiting",
+      "resolved": "Resolved",
+      "label": "Status"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent",
+      "label": "Priority"
+    },
+    "category": {
+      "bug": "Bug",
+      "bugFull": "Bug / Issue",
+      "content": "Content",
+      "contentFull": "Content modification",
+      "feature": "Feature",
+      "featureFull": "New feature",
+      "question": "Question",
+      "questionFull": "Question / Help",
+      "hosting": "Hosting",
+      "hostingFull": "Hosting / Domain",
+      "label": "Category",
+      "select": "-- Select --"
+    },
+    "source": {
+      "email": "Email",
+      "liveChat": "Live Chat",
+      "portal": "Portal",
+      "admin": "Admin",
+      "label": "Source"
+    },
+    "details": "Details",
+    "assigned": "Assigned",
+    "project": "Project",
+    "noProject": "-- None --",
+    "allProjects": "All projects",
+    "noProjectLabel": "No project"
+  },
+  "inbox": {
+    "title": "Tickets",
+    "searchPlaceholder": "Search tickets...",
+    "newTicketBtn": "New Ticket",
+    "tabs": {
+      "all": "All",
+      "open": "Open",
+      "waiting": "Waiting",
+      "resolved": "Resolved"
+    },
+    "sort": {
+      "newest": "Sort by: Newest",
+      "oldest": "Sort by: Oldest",
+      "created": "Sort by: Created",
+      "priority": "Sort by: Priority"
+    },
+    "selected": "{{count}} selected",
+    "selectedPlural": "{{count}} selected",
+    "closeAction": "Close",
+    "reopenAction": "Reopen",
+    "moreActions": "More...",
+    "changePriority": "Change priority",
+    "deleteAction": "Delete",
+    "deselect": "Deselect",
+    "empty": "No tickets matching filters",
+    "keyboardNavigate": "navigate",
+    "keyboardOpen": "open"
+  },
+  "dashboard": {
+    "title": "Support Dashboard",
+    "subtitle": "Overview of support client metrics",
+    "loadingMetrics": "Loading metrics...",
+    "loadError": "Loading error",
+    "cannotLoadStats": "Unable to load support statistics.",
+    "openTickets": "Open tickets",
+    "waitingClient": "Waiting for client",
+    "responseTime": "Response time",
+    "satisfaction": "Satisfaction",
+    "activeTickets": "Active tickets",
+    "noActiveTickets": "No active tickets",
+    "volume7days": "Volume (7 days)",
+    "csat": "CSAT",
+    "csatNoData": "No data",
+    "csatReviews": "{{count}} reviews collected",
+    "csatNoReviews": "No reviews",
+    "newTicketAction": "+ New ticket",
+    "pendingEmails": "Pending emails",
+    "crm": "CRM",
+    "preBilling": "Pre-billing",
+    "exportCsv": "Export CSV",
+    "tableHeaders": {
+      "status": "Status",
+      "number": "No.",
+      "subject": "Subject",
+      "client": "Client",
+      "modified": "Modified"
+    },
+    "weekDays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  },
+  "composer": {
+    "placeholder": "Write a reply to the client...",
+    "placeholderInternal": "Internal note...",
+    "placeholderReplyTo": "Reply to {{name}}...",
+    "sendReply": "Send \u2192",
+    "sending": "Sending...",
+    "addNote": "Add note",
+    "sendAndNotify": "Send + Notify",
+    "saveOnly": "Save",
+    "internalNote": "Internal note",
+    "notifyClient": "Notify client",
+    "internal": "Internal",
+    "notify": "Notify",
+    "sendAsSupport": "Send as: Support",
+    "sendAsClient": "Send as: Client",
+    "attachment": "+ Attachment",
+    "canned": "Canned",
+    "cannedSelect": "Quick reply...",
+    "cannedVariablesHint": "Available variables: {{client.firstName}}, {{client.lastName}}, {{client.company}}, {{client.email}}, {{ticket.number}}, {{ticket.subject}}, {{agent.name}}",
+    "quickReplies": {
+      "received": "Got it, I'll look into it!",
+      "fixed": "It's fixed!",
+      "clarify": "Could you clarify?",
+      "backSoon": "I'll get back to you shortly",
+      "screenshot": "Could you send me a screenshot?"
+    },
+    "schedule": {
+      "label": "Schedule for:",
+      "button": "Schedule",
+      "tooltip": "Schedule sending at a specific date/time"
+    },
+    "shortcuts": {
+      "sendHint": "\u2318Enter to send",
+      "noteHint": "\u2318\u21e7N internal note"
+    }
+  },
+  "settings": {
+    "title": "Support Module Configuration",
+    "subtitle": "{{enabled}}/{{total}} features enabled",
+    "resetAll": "Reset all",
+    "saved": "\u2713 Saved",
+    "description": "Enable or disable support module features. Disabled features are completely hidden from the interface. Changes take effect immediately after saving (reload the ticket page).",
+    "categories": {
+      "core": "Core Features",
+      "communication": "Communication",
+      "productivity": "Productivity",
+      "advanced": "Advanced"
+    },
+    "features": {
+      "canned": {
+        "label": "Quick replies",
+        "description": "Pre-registered response templates with dynamic variables"
+      },
+      "scheduledReplies": {
+        "label": "Scheduled replies",
+        "description": "Send a reply at a future date/time"
+      },
+      "activityLog": {
+        "label": "Activity log",
+        "description": "Timeline of actions on each ticket (status changes, assignment...)"
+      },
+      "emailTracking": {
+        "label": "Email tracking",
+        "description": "Send and open tracking for email notifications"
+      },
+      "chat": {
+        "label": "Live Chat",
+        "description": "Real-time chat with ticket conversion"
+      },
+      "externalMessages": {
+        "label": "External messages",
+        "description": "Manually add messages received by email, SMS, WhatsApp..."
+      },
+      "ai": {
+        "label": "Artificial Intelligence",
+        "description": "Sentiment analysis, summary, reply suggestion, rewriting"
+      },
+      "timeTracking": {
+        "label": "Time tracking",
+        "description": "Timer, manual entries, billing"
+      },
+      "codeSnippets": {
+        "label": "Code / secret sharing",
+        "description": "AES-256 encrypted snippets with expiration and burn-after-reading"
+      },
+      "satisfaction": {
+        "label": "Satisfaction surveys",
+        "description": "CSAT score after ticket resolution"
+      },
+      "merge": {
+        "label": "Ticket merge",
+        "description": "Combine two tickets into one"
+      },
+      "splitTicket": {
+        "label": "Message extraction",
+        "description": "Extract a message into a new linked ticket"
+      },
+      "snooze": {
+        "label": "Snooze",
+        "description": "Temporarily hide a ticket with automatic reminder"
+      },
+      "clientHistory": {
+        "label": "Client history",
+        "description": "Past tickets, projects and internal notes"
+      }
+    }
+  },
+  "ai": {
+    "suggest": "AI Suggestion",
+    "suggesting": "Generating...",
+    "rewrite": "Rewrite",
+    "rewriting": "Rewriting...",
+    "summary": "AI Summary",
+    "summaryHide": "Hide AI summary",
+    "summaryTitle": "AI Summary",
+    "regenerate": "Regenerate",
+    "regenerating": "Generating...",
+    "saveAsNote": "Save (internal note)",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "analyzing": "Analyzing conversation...",
+    "clickRegenerate": "Click \"Regenerate\" to start the analysis",
+    "tooltipSuggest": "AI Suggestion",
+    "tooltipRewrite": "Rewrite",
+    "codeSnippet": "Code / Secret",
+    "sentiment": {
+      "label": "Sentiment",
+      "frustrated": "Frustrated",
+      "unhappy": "Unhappy",
+      "urgent": "Urgent",
+      "neutral": "Neutral",
+      "satisfied": "Satisfied"
+    }
+  },
+  "timer": {
+    "title": "Time",
+    "total": "total",
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "save": "Save",
+    "discard": "Discard",
+    "recording": "Recording in progress -- session kept active",
+    "minRequired": "Minimum 1 minute",
+    "saveMinutes": "Save {{count}} min",
+    "manualEntry": {
+      "minutes": "Min",
+      "description": "Description",
+      "placeholder": "Work performed...",
+      "addTime": "+ Time"
+    },
+    "tableHeaders": {
+      "date": "Date",
+      "duration": "Duration",
+      "description": "Description"
+    }
+  },
+  "client": {
+    "title": "Client",
+    "clientCard": "Client profile",
+    "viewAsClient": "View as client",
+    "clientPortal": "Portal",
+    "clientSheet": "Profile",
+    "copyAdminLink": "Copy admin link",
+    "copyClientLink": "Copy client link",
+    "history": {
+      "title": "Client history",
+      "ticketCount": "{{count}} ticket",
+      "ticketCountPlural": "{{count}} tickets",
+      "projectCount": "{{count}} project",
+      "projectCountPlural": "{{count}} projects",
+      "pastTickets": "Recent tickets",
+      "noOtherTickets": "No other tickets",
+      "projects": "Projects",
+      "noProjects": "No projects",
+      "internalNotes": "Internal notes",
+      "notesPlaceholder": "Notes about this client...",
+      "saveNotes": "Save notes",
+      "savingNotes": "Saving...",
+      "notesSaved": "Saved"
+    }
+  },
+  "activity": {
+    "title": "History",
+    "noActivity": "No activity recorded.",
+    "activityLabel": "Activity"
+  },
+  "actions": {
+    "waitingClient": "Waiting for client",
+    "resolved": "Resolved",
+    "reopen": "Reopen",
+    "merge": "Merge",
+    "addReceivedMessage": "+ Received message",
+    "snooze": "Snooze",
+    "nextTicket": "Next ticket",
+    "cancelSnooze": "Cancel snooze",
+    "nextTicketLabel": "Next ticket:",
+    "noMoreTickets": "No more tickets",
+    "editMessage": "Edit",
+    "deleteMessage": "Delete",
+    "resendEmail": "Resend email",
+    "resending": "Sending...",
+    "resent": "Sent!",
+    "extractMessage": "Extract",
+    "extractToNewTicket": "Extract to new ticket",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "payloadView": "Payload View",
+    "clientView": "Client view",
+    "copyLink": "Copy link",
+    "deleteConfirm": "Delete?"
+  },
+  "merge": {
+    "title": "Merge this ticket into another",
+    "placeholder": "TK-0001",
+    "search": "Search",
+    "confirm": "Confirm merge",
+    "merging": "Merging..."
+  },
+  "externalMessage": {
+    "title": "Add a received message (email, SMS, WhatsApp...)",
+    "placeholder": "Paste the received message content...",
+    "sentByClient": "Sent by client",
+    "sentBySupport": "Sent by support",
+    "addAttachment": "+ Attachment",
+    "adding": "Adding...",
+    "addWithoutNotification": "Add (without notification)"
+  },
+  "snooze": {
+    "title": "Snooze -- temporarily hide",
+    "oneDay": "1 day",
+    "threeDays": "3 days",
+    "oneWeek": "1 week",
+    "snoozed": "Snoozed"
+  },
+  "collapse": {
+    "showPrevious": "Show {{count}} previous message",
+    "showPreviousPlural": "Show {{count}} previous messages",
+    "hideOld": "Hide older messages"
+  },
+  "messageStatus": {
+    "internal": "Internal",
+    "solution": "Solution",
+    "chat": "Chat",
+    "email": "Email",
+    "support": "Support",
+    "edited": "(edited)",
+    "sent": "Sent",
+    "read": "Read",
+    "opened": "Opened",
+    "sentTo": "Sent to {{to}}",
+    "openedAt": "Opened {{date}}",
+    "scheduled": "Scheduled on {{created}} -- written on {{scheduled}}",
+    "scheduledPending": "Written on {{created}} -- scheduled for {{scheduled}}"
+  },
+  "newTicket": {
+    "title": "New ticket",
+    "subtitle": "Create a support ticket for a client",
+    "backToInbox": "Back to inbox",
+    "clientLabel": "Client",
+    "clientSearchPlaceholder": "Search by name, email, company...",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Briefly describe the issue",
+    "categoryLabel": "Category",
+    "priorityLabel": "Priority",
+    "projectLabel": "Project",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Detail the problem or request...",
+    "submitButton": "Create ticket",
+    "submitting": "Creating...",
+    "errors": {
+      "subjectRequired": "Subject is required",
+      "clientRequired": "Select a client",
+      "creationError": "Error during creation",
+      "networkError": "Network error"
+    }
+  },
+  "commandPalette": {
+    "placeholder": "Search tickets, clients, messages...",
+    "searching": "Searching...",
+    "noResults": "No results for \"{{query}}\"",
+    "sections": {
+      "tickets": "Tickets",
+      "clients": "Clients",
+      "messages": "Messages",
+      "knowledgeBase": "Knowledge Base"
+    },
+    "keyboard": {
+      "navigate": "navigate",
+      "open": "open",
+      "close": "close"
+    }
+  },
+  "chat": {
+    "title": "Live Chat",
+    "sessionCount": "{{count}} active session",
+    "sessionCountPlural": "{{count}} active sessions",
+    "tabs": {
+      "active": "Active",
+      "closed": "Closed"
+    },
+    "noSession": "No sessions",
+    "noSessionActive": "No active sessions",
+    "noSessionClosed": "No closed sessions",
+    "selectSession": "Select a session to begin",
+    "closeChat": "Close chat",
+    "quickReply": "Quick reply...",
+    "inputPlaceholder": "Type your reply...",
+    "sendButton": "Send",
+    "clientReview": "Client review",
+    "you": "You",
+    "agent": "Agent",
+    "clientLabel": "Client",
+    "msg": "msg"
+  },
+  "crm": {
+    "title": "Client CRM",
+    "subtitle": "Complete client profile with ticket history, projects and time spent",
+    "searchPlaceholder": "Search a client...",
+    "noClientFound": "No client found",
+    "selectClient": "Select a client to view their profile",
+    "editButton": "Edit",
+    "mergeButton": "Merge",
+    "mergeTitle": "Merge this client into another",
+    "mergeDescription": "All tickets, messages, projects and surveys from {{company}} will be transferred to the target client. The current client will be deleted.",
+    "mergeSearchPlaceholder": "Search target client (name, email, company)...",
+    "mergeConfirm": "Merge \"{{source}}\" into \"{{target}}\"?\n\nAll tickets, messages and projects will be transferred.\nThe client \"{{source}}\" will be deleted.\n\nThis action is irreversible.",
+    "mergeNoClient": "No client found",
+    "stats": {
+      "totalTickets": "Total tickets",
+      "openTickets": "Open",
+      "resolvedTickets": "Resolved",
+      "timeSpent": "Time spent",
+      "lastActivity": "Last activity"
+    },
+    "sections": {
+      "projects": "Projects",
+      "tickets": "Tickets",
+      "viewAll": "View all"
+    },
+    "noTickets": "No tickets",
+    "tableHeaders": {
+      "number": "No.",
+      "subject": "Subject",
+      "status": "Status",
+      "date": "Date"
+    },
+    "projectStatus": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed"
+    }
+  },
+  "pendingEmails": {
+    "title": "Pending Emails",
+    "subtitle": "Incoming email queue -- Validate, link or ignore",
+    "pendingCount": "{{count}} pending",
+    "tabs": {
+      "pending": "Pending",
+      "processed": "Processed",
+      "ignored": "Ignored"
+    },
+    "empty": {
+      "pending": "No pending emails",
+      "processed": "No processed emails",
+      "ignored": "No ignored emails"
+    },
+    "actions": {
+      "createTicket": "Create a ticket",
+      "linkToTicket": "Link to a ticket",
+      "ignore": "Ignore"
+    },
+    "status": {
+      "ticketCreated": "Ticket created",
+      "messageAdded": "Linked",
+      "ignored": "Ignored"
+    },
+    "similarTo": "Similar to {{ticket}} ({{score}}%)",
+    "expand": "Show all",
+    "collapse": "Collapse",
+    "linkModal": {
+      "title": "Link to a ticket",
+      "suggestions": "Suggestions",
+      "searchPlaceholder": "Search a ticket (TK-0042, subject...)...",
+      "searching": "Searching...",
+      "noTicketFound": "No ticket found"
+    },
+    "clientModal": {
+      "title": "Choose a client",
+      "detected": "Detected client",
+      "useButton": "Use",
+      "searchPlaceholder": "Search a client (name, email, company)...",
+      "searching": "Searching...",
+      "noClientFound": "No client found",
+      "createNew": "Create a new client",
+      "cancelCreate": "Cancel creation",
+      "firstName": "First name *",
+      "lastName": "Last name",
+      "email": "Email *",
+      "company": "Company *",
+      "requiredFields": "Email, first name and company are required",
+      "creating": "Creating...",
+      "createAndUse": "Create and use",
+      "createError": "Error during creation"
+    }
+  },
+  "emailTracking": {
+    "title": "Email Tracking",
+    "tabs": {
+      "all": "All",
+      "success": "Success",
+      "errors": "Errors",
+      "ignored": "Ignored"
+    },
+    "stats": {
+      "emailsSent": "Emails sent",
+      "successRate": "Success rate",
+      "errors": "Errors",
+      "avgTime": "Average time"
+    },
+    "status": {
+      "success": "Success",
+      "error": "Error",
+      "ignored": "Ignored"
+    },
+    "tableHeaders": {
+      "date": "Date",
+      "recipient": "Recipient",
+      "subject": "Subject",
+      "ticket": "Ticket",
+      "status": "Status",
+      "action": "Action",
+      "time": "Time"
+    },
+    "noLogs": "No logs for this period",
+    "searchPlaceholder": "Email, subject..."
+  },
+  "billing": {
+    "title": "Pre-billing",
+    "subtitle": "Time aggregation by project for billing preparation",
+    "filters": {
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "thisQuarter": "This quarter",
+      "lastQuarter": "Last quarter",
+      "from": "From",
+      "to": "To",
+      "project": "Project",
+      "hourlyRate": "Hourly rate",
+      "rateUnit": "EUR/h",
+      "load": "Load",
+      "loading": "Loading..."
+    },
+    "empty": "No billable tickets with time entries for this period.",
+    "table": {
+      "checkbox": "Check/uncheck all",
+      "ticketNumber": "Ticket No.",
+      "subject": "Subject",
+      "date": "Date",
+      "duration": "Duration",
+      "description": "Description",
+      "amount": "Amount",
+      "billed": "Billed",
+      "markBilled": "Mark as billed",
+      "markUnbilled": "Mark as unbilled",
+      "billedLabel": "billed",
+      "timeLabel": "(time)",
+      "flatRate": "(flat rate)"
+    },
+    "totals": {
+      "billableTickets": "{{count}} billable ticket",
+      "billableTicketsPlural": "{{count}} billable tickets",
+      "checked": "{{count}} checked",
+      "checkedPlural": "{{count}} checked",
+      "total": "Total",
+      "uncheckAll": "Uncheck all",
+      "checkAll": "Check all",
+      "copyRecap": "Copy summary",
+      "copiedRecap": "Copied!"
+    },
+    "recap": {
+      "header": "PRE-BILLING -- From {{from}} to {{to}}",
+      "hourlyRate": "Hourly rate: {{rate}} EUR/h",
+      "project": "PROJECT: {{name}}",
+      "client": "Client: {{company}}",
+      "subtotal": "Subtotal",
+      "projectTotal": "Project total",
+      "grandTotal": "GRAND TOTAL"
+    }
+  },
+  "timeDashboard": {
+    "title": "Time Dashboard",
+    "subtitle": "Time tracking analysis by period, project and ticket",
+    "newEntry": "+ New entry",
+    "filters": {
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "twoMonthsAgo": "-2 months",
+      "from": "From",
+      "to": "To",
+      "groupBy": "Group by",
+      "day": "Day",
+      "week": "Week",
+      "project": "Project"
+    },
+    "kpis": {
+      "totalTime": "Total time",
+      "entries": "Entries",
+      "dailyAverage": "Daily average"
+    },
+    "chart": {
+      "title": "Time per day"
+    },
+    "empty": "No time entries for this period.",
+    "weekLabel": "Week {{number}}"
+  },
+  "logs": {
+    "title": "Email Log",
+    "titleAuth": "Authentication Log",
+    "tabs": {
+      "email": "Emails",
+      "auth": "Authentication"
+    },
+    "purge7": "Purge +7d",
+    "purge30": "Purge +30d",
+    "purgeAll": "Purge all",
+    "purgeConfirm": "Delete {{label}} ({{collection}})? This action is irreversible.",
+    "purgeAllLabel": "ALL logs",
+    "purgeDaysLabel": "logs older than {{days}} days",
+    "purgeResult": "{{count}} log(s) deleted",
+    "noLogs": "No logs",
+    "tableHeaders": {
+      "date": "Date",
+      "status": "Status",
+      "recipient": "Recipient",
+      "subject": "Subject",
+      "action": "Action",
+      "time": "Time",
+      "email": "Email",
+      "ip": "IP",
+      "userAgent": "User Agent"
+    },
+    "statusSuccess": "Success",
+    "statusError": "Error",
+    "statusIgnored": "Ignored",
+    "statusFailed": "Failed"
+  },
+  "import": {
+    "title": "Import a conversation",
+    "newImport": "New import",
+    "dropzoneText": "Drop a .md file here or click to browse",
+    "dropzoneLoaded": "File loaded -- click to choose another",
+    "acceptedFormats": "Accepted formats: .md, .txt",
+    "formatError": "Accepted format: .md or .txt",
+    "sizeError": "File too large (max 500 KB)",
+    "preview": "Preview",
+    "analyzing": "Analyzing...",
+    "importButton": "Import {{count}} messages",
+    "importing": "Importing...",
+    "client": "Client",
+    "name": "Name",
+    "email": "Email",
+    "company": "Company",
+    "parsing": "Parsing",
+    "parsingRegex": "Regex",
+    "parsingAi": "AI",
+    "messages": "messages",
+    "resultTitle": "Conversation imported",
+    "resultTicket": "Ticket",
+    "resultClient": "Client",
+    "resultCompany": "Company",
+    "resultMessages": "Messages",
+    "resultImported": "{{count}} imported",
+    "resultNew": "New"
+  },
+  "detail": {
+    "backLabel": "Back",
+    "copyLink": "Copy link",
+    "payloadView": "Payload View",
+    "clientView": "Client view",
+    "viewingAlso": "{{names}} is also viewing this ticket",
+    "viewingAlsoPlural": "{{names}} are also viewing this ticket",
+    "typing": "{{name}} is typing...",
+    "internalNote": "Internal note",
+    "notify": "Notify",
+    "sendNote": "Add note",
+    "sendReply": "Send ->",
+    "sending": "Sending...",
+    "iaSuggestion": "AI Suggestion",
+    "rewrite": "Rewrite",
+    "file": "File",
+    "macros": "Macros",
+    "applyingMacro": "Applying...",
+    "cannedResponses": "Canned responses",
+    "details": "Details",
+    "priority": "Priority",
+    "category": "Category",
+    "source": "Source",
+    "assigned": "Assigned",
+    "tags": "Tags",
+    "time": "Time",
+    "total": "total",
+    "manualAdd": "+ Add",
+    "manualEntry": "Manual entry",
+    "activity": "Activity",
+    "messageDeleted": "Message deleted",
+    "undo": "Undo",
+    "extractTitle": "Extract to new ticket",
+    "extractSubjectPlaceholder": "New ticket subject...",
+    "statusOpen": "Open",
+    "statusWaiting": "Waiting",
+    "statusResolved": "Resolved",
+    "selectTicket": "Select a ticket from the list",
+    "notFound": "Ticket not found"
+  },
+  "settingsView": {
+    "configTitle": "Support Module Configuration",
+    "features": "Features",
+    "featuresDescription": "Enable or disable module features. Disabled features are completely hidden from the interface.",
+    "emailConfig": "Email Configuration",
+    "emailDescription": "Email notification settings. The SMTP address is configured via server environment variables.",
+    "senderAddress": "Sender address",
+    "senderAddressDesc": "Email address shown in the From field",
+    "senderName": "Sender name",
+    "senderNameDesc": "Name displayed next to the email address",
+    "replyTo": "Reply-To address",
+    "replyToDesc": "If different from sender address",
+    "smtpServer": "SMTP Server",
+    "smtpServerDesc": "Configured via environment variables",
+    "smtpPort": "SMTP Port",
+    "aiTitle": "Artificial Intelligence",
+    "aiDescription": "Configure the AI provider and enable/disable each feature independently.",
+    "aiProvider": "Provider",
+    "aiProviderDesc": "AI service used for analysis",
+    "aiApiKey": "API Key",
+    "aiApiKeyDesc": "Provider secret key (not stored in plain text)",
+    "aiModel": "Model",
+    "aiModelDesc": "Model name to use",
+    "aiSubFeatures": "Individual AI features",
+    "aiSentiment": "Sentiment analysis",
+    "aiSentimentDesc": "Detects client frustration or satisfaction level",
+    "aiSynthesis": "Automatic summary",
+    "aiSynthesisDesc": "Summarizes long conversations in a few sentences",
+    "aiSuggestion": "Reply suggestion",
+    "aiSuggestionDesc": "Proposes a reply draft based on context",
+    "aiRewrite": "Rewriting",
+    "aiRewriteDesc": "Rewrites a message to make it more professional",
+    "showKey": "Show",
+    "hideKey": "Hide",
+    "active": "Active",
+    "inactive": "Inactive",
+    "slaTitle": "SLA (Service Level Agreements)",
+    "slaDescription": "Set expected response and resolution times.",
+    "slaFirstResponse": "First response",
+    "slaFirstResponseDesc": "Maximum delay in minutes (default: 120 = 2h)",
+    "slaResolution": "Resolution",
+    "slaResolutionDesc": "Maximum delay in minutes (default: 1440 = 24h)",
+    "minutes": "minutes",
+    "businessHoursOnly": "Business hours only",
+    "businessHoursDesc": "SLA countdown pauses outside business hours (Mon-Fri, 9am-6pm)",
+    "escalationEmail": "Escalation email",
+    "escalationEmailDesc": "Address notified when SLA is exceeded",
+    "autoCloseTitle": "Automatic closure",
+    "autoCloseDescription": "Waiting tickets without client response will be automatically resolved after the configured delay.",
+    "autoCloseEnable": "Enable automatic closure",
+    "autoCloseDelay": "Delay before closure",
+    "autoCloseDelayDesc": "Days without client response",
+    "days": "days",
+    "autoCloseReminder": "Reminder before closure",
+    "autoCloseReminderDesc": "Reminder email sent X days before",
+    "daysBeforeReminder": "days before (reminder at D-{{count}})",
+    "myPreferences": "My preferences",
+    "myPreferencesDesc": "These settings are specific to your account.",
+    "localeTitle": "Language and localization",
+    "localeDescription": "Support module interface language and email notifications language.",
+    "language": "Language",
+    "languageDesc": "Module primary language",
+    "french": "Francais",
+    "english": "English",
+    "signatureTitle": "Email signature",
+    "signatureDescription": "Signature automatically added at the bottom of each reply email sent to the client.",
+    "signaturePlaceholder": "Best regards,\nThe ConsilioWEB team",
+    "purgeTitle": "Log purge",
+    "purgeDescription": "Delete old logs to free up space. This action is irreversible.",
+    "purgeEmailLogs": "Email Logs",
+    "purgeAuthLogs": "Auth Logs",
+    "purge7days": "7 days",
+    "purge30days": "30 days",
+    "purge90days": "90 days",
+    "purgeAllLabel": "All",
+    "purgeConfirm": "Delete {{collection}} logs older than {{days}} days?",
+    "purgeDone": "{{count}} log(s) deleted",
+    "resetAll": "Reset all",
+    "saving": "Saving...",
+    "saved": "\u2713 Saved",
+    "saveChanges": "Save changes",
+    "reset": "Reset",
+    "intro": "Configure the support module: features, email, AI, SLA and automatic closure. Changes take effect immediately after saving (reload the ticket page)."
+  },
+  "sla": {
+    "title": "SLA",
+    "loading": "SLA: Loading...",
+    "breached": "Breached",
+    "atRisk": "At risk",
+    "noBreached": "No breached tickets",
+    "noAtRisk": "No at-risk tickets",
+    "remaining": "{{time}} remaining"
+  }
+}

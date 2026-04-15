@@ -1,0 +1,3 @@
+declare const SUPPORT_CLIENT_VERSION = "0.2.0";
+
+export { SUPPORT_CLIENT_VERSION };

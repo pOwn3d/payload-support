@@ -1,0 +1,13 @@
+export { default as TicketInboxView } from './views/TicketInboxView/index';
+export { default as TicketDetailView } from './views/TicketDetailView/index';
+export { default as SupportDashboardView } from './views/SupportDashboardView/index';
+export { default as NewTicketView } from './views/NewTicketView/index';
+export { default as TicketingSettingsView } from './views/TicketingSettingsView/index';
+export { default as LogsView } from './views/LogsView/index';
+export { default as ChatView } from './views/ChatView/index';
+export { default as CrmView } from './views/CrmView/index';
+export { default as PendingEmailsView } from './views/PendingEmailsView/index';
+export { default as EmailTrackingView } from './views/EmailTrackingView/index';
+export { default as BillingView } from './views/BillingView/index';
+export { default as TimeDashboardView } from './views/TimeDashboardView/index';
+export { default as ImportConversationView } from './views/ImportConversationView/index';

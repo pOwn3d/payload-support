@@ -1,0 +1,633 @@
+/* ============================================
+ * Support Module — Theme Variables
+ * ============================================
+ * Override these variables to customize the
+ * support module's appearance.
+ *
+ * Usage: Import this file or copy the variables
+ * into your project's global CSS.
+ *
+ * The module integrates with Payload CMS theme
+ * variables (--theme-*) for seamless dark/light
+ * mode support.
+ * ============================================ */
+
+:root {
+
+  /* ------------------------------------------
+   * 1. PRIMARY BRAND COLORS
+   * ------------------------------------------
+   * Main action color used for buttons, links,
+   * active states, and focus rings.
+   * ------------------------------------------ */
+  --support-primary: #2563eb;
+  --support-primary-hover: #1d4ed8;
+  --support-primary-light: #dbeafe;
+  --support-primary-text: #1e40af;
+
+  /* ------------------------------------------
+   * 2. SEMANTIC COLORS
+   * ------------------------------------------
+   * Contextual colors for success, warning,
+   * error, and informational states.
+   * ------------------------------------------ */
+  --support-success: #16a34a;
+  --support-success-light: #dcfce7;
+  --support-success-text: #166534;
+
+  --support-warning: #d97706;
+  --support-warning-light: #fef3c7;
+  --support-warning-text: #92400e;
+
+  --support-error: #dc2626;
+  --support-error-light: #fef2f2;
+  --support-error-text: #991b1b;
+
+  --support-info: #0891b2;
+  --support-info-light: #ecfeff;
+  --support-info-text: #155e75;
+
+  /* ------------------------------------------
+   * 3. TICKET STATUS COLORS
+   * ------------------------------------------
+   * Background + text pairs for each ticket
+   * status badge.
+   * ------------------------------------------ */
+  --support-status-open-bg: #dbeafe;
+  --support-status-open-text: #1e40af;
+  --support-status-open-dot: #2563eb;
+
+  --support-status-waiting-bg: #fef3c7;
+  --support-status-waiting-text: #92400e;
+  --support-status-waiting-dot: #d97706;
+
+  --support-status-resolved-bg: #dcfce7;
+  --support-status-resolved-text: #166534;
+  --support-status-resolved-dot: #16a34a;
+
+  --support-status-closed-bg: #e5e7eb;
+  --support-status-closed-text: #374151;
+  --support-status-closed-dot: #6b7280;
+
+  /* ------------------------------------------
+   * 4. PRIORITY COLORS
+   * ------------------------------------------
+   * Left-border or badge accent for ticket
+   * priority levels.
+   * ------------------------------------------ */
+  --support-priority-urgent: #dc2626;
+  --support-priority-urgent-bg: #fef2f2;
+  --support-priority-high: #ea580c;
+  --support-priority-high-bg: #fff7ed;
+  --support-priority-normal: transparent;
+  --support-priority-normal-bg: transparent;
+  --support-priority-low: #94a3b8;
+  --support-priority-low-bg: transparent;
+
+  /* ------------------------------------------
+   * 5. SENTIMENT COLORS
+   * ------------------------------------------
+   * AI-detected client sentiment indicators.
+   * ------------------------------------------ */
+  --support-sentiment-frustrated: #dc2626;
+  --support-sentiment-unhappy: #ea580c;
+  --support-sentiment-urgent: #dc2626;
+  --support-sentiment-neutral: #6b7280;
+  --support-sentiment-satisfied: #16a34a;
+
+  /* ------------------------------------------
+   * 6. MESSAGE BUBBLES
+   * ------------------------------------------
+   * Background, border, and text colors for
+   * each message type in the conversation.
+   * ------------------------------------------ */
+
+  /* Admin messages (agent replies) */
+  --support-msg-admin-bg: #f8fafc;
+  --support-msg-admin-border: #2563eb;
+  --support-msg-admin-text: var(--theme-text, #1e293b);
+
+  /* Client messages */
+  --support-msg-client-bg: #fafafa;
+  --support-msg-client-border: #e2e8f0;
+  --support-msg-client-text: var(--theme-text, #1e293b);
+
+  /* Inbound email messages */
+  --support-msg-email-bg: #fffbeb;
+  --support-msg-email-border: #ea580c;
+  --support-msg-email-text: var(--theme-text, #1e293b);
+
+  /* Internal notes (visible only to agents) */
+  --support-msg-internal-bg: #fefce8;
+  --support-msg-internal-border: #d97706;
+  --support-msg-internal-text: var(--theme-text, #1e293b);
+
+  /* System/automated messages */
+  --support-msg-system-bg: #f1f5f9;
+  --support-msg-system-border: #cbd5e1;
+  --support-msg-system-text: #64748b;
+
+  /* ------------------------------------------
+   * 7. CATEGORY COLORS
+   * ------------------------------------------
+   * Feature flag category indicators used on
+   * the settings page.
+   * ------------------------------------------ */
+  --support-cat-core: #2563eb;
+  --support-cat-communication: #16a34a;
+  --support-cat-productivity: #d97706;
+  --support-cat-advanced: #7c3aed;
+
+  /* ------------------------------------------
+   * 8. PROJECT STATUS COLORS
+   * ------------------------------------------
+   * Displayed in client history sidebar for
+   * associated projects.
+   * ------------------------------------------ */
+  --support-project-active-bg: #dcfce7;
+  --support-project-active-text: #166534;
+  --support-project-paused-bg: #fef3c7;
+  --support-project-paused-text: #92400e;
+  --support-project-completed-bg: #e5e7eb;
+  --support-project-completed-text: #374151;
+
+  /* ------------------------------------------
+   * 9. TYPOGRAPHY
+   * ------------------------------------------
+   * Font families, sizes, weights, and line
+   * heights used across the module.
+   * ------------------------------------------ */
+  --support-font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  --support-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --support-font-size-xs: 10px;
+  --support-font-size-sm: 11px;
+  --support-font-size-base: 13px;
+  --support-font-size-md: 14px;
+  --support-font-size-lg: 16px;
+  --support-font-size-xl: 22px;
+
+  --support-font-weight-normal: 400;
+  --support-font-weight-medium: 500;
+  --support-font-weight-semibold: 600;
+  --support-font-weight-bold: 700;
+
+  --support-line-height-tight: 1.3;
+  --support-line-height-base: 1.5;
+  --support-line-height-relaxed: 1.6;
+
+  /* ------------------------------------------
+   * 10. SPACING
+   * ------------------------------------------
+   * Consistent spacing scale used for padding,
+   * margins, and gaps.
+   * ------------------------------------------ */
+  --support-space-xs: 4px;
+  --support-space-sm: 6px;
+  --support-space-md: 8px;
+  --support-space-base: 12px;
+  --support-space-lg: 16px;
+  --support-space-xl: 20px;
+  --support-space-2xl: 24px;
+  --support-space-3xl: 32px;
+
+  /* ------------------------------------------
+   * 11. BORDER RADIUS
+   * ------------------------------------------
+   * Corner rounding for cards, buttons,
+   * badges, and inputs.
+   * ------------------------------------------ */
+  --support-radius-xs: 4px;
+  --support-radius-sm: 6px;
+  --support-radius: 8px;
+  --support-radius-lg: 12px;
+  --support-radius-xl: 16px;
+  --support-radius-pill: 9999px;
+  --support-radius-circle: 50%;
+
+  /* ------------------------------------------
+   * 12. BORDERS
+   * ------------------------------------------
+   * Default border color and widths used
+   * throughout the module.
+   * ------------------------------------------ */
+  --support-border-color: #e2e8f0;
+  --support-border-light: #f1f5f9;
+  --support-border-width: 1px;
+  --support-border-width-thick: 2px;
+  --support-border-width-accent: 3px;
+
+  /* ------------------------------------------
+   * 13. BACKGROUNDS
+   * ------------------------------------------
+   * Surface, card, and page-level backgrounds.
+   * Integrates with Payload CMS theme vars.
+   * ------------------------------------------ */
+  --support-bg-page: var(--theme-elevation-50, #f8fafc);
+  --support-bg-card: var(--theme-elevation-100, #f1f5f9);
+  --support-bg-surface: var(--theme-elevation-0, #ffffff);
+  --support-bg-hover: var(--theme-elevation-150, #e2e8f0);
+  --support-bg-active: var(--theme-elevation-200, #cbd5e1);
+  --support-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* ------------------------------------------
+   * 14. TEXT COLORS
+   * ------------------------------------------
+   * Primary, secondary, and muted text levels.
+   * ------------------------------------------ */
+  --support-text-primary: var(--theme-text, #1e293b);
+  --support-text-secondary: #6b7280;
+  --support-text-muted: #9ca3af;
+  --support-text-disabled: #d1d5db;
+  --support-text-link: #2563eb;
+  --support-text-link-hover: #1d4ed8;
+  --support-text-on-primary: #ffffff;
+  --support-text-on-dark: #f8fafc;
+
+  /* ------------------------------------------
+   * 15. SHADOWS
+   * ------------------------------------------
+   * Elevation shadows for cards, modals,
+   * dropdowns, and tooltips.
+   * ------------------------------------------ */
+  --support-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --support-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --support-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --support-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --support-shadow-focus: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  --support-shadow-error-focus: 0 0 0 2px rgba(220, 38, 38, 0.15);
+  --support-shadow-toggle: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  /* ------------------------------------------
+   * 16. TRANSITIONS & ANIMATIONS
+   * ------------------------------------------
+   * Duration and easing for interactive states.
+   * ------------------------------------------ */
+  --support-transition-fast: 100ms ease;
+  --support-transition-base: 150ms ease;
+  --support-transition-slow: 300ms ease;
+  --support-transition-spring: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ------------------------------------------
+   * 17. Z-INDEX LAYERS
+   * ------------------------------------------
+   * Stacking order for overlapping elements.
+   * ------------------------------------------ */
+  --support-z-base: 1;
+  --support-z-sticky: 10;
+  --support-z-dropdown: 100;
+  --support-z-modal-backdrop: 500;
+  --support-z-modal: 510;
+  --support-z-toast: 600;
+  --support-z-tooltip: 700;
+
+  /* ------------------------------------------
+   * 18. LAYOUT
+   * ------------------------------------------
+   * Page structure: sidebar width, max-width,
+   * header height, breakpoints.
+   * ------------------------------------------ */
+  --support-sidebar-width: 320px;
+  --support-content-max-width: 800px;
+  --support-header-height: 56px;
+  --support-reply-box-min-height: 120px;
+  --support-reply-box-max-height: 400px;
+
+  /* ------------------------------------------
+   * 19. BUTTONS
+   * ------------------------------------------
+   * Padding, font-size, and border styles for
+   * button size variants.
+   * ------------------------------------------ */
+  --support-btn-padding-sm: 6px 12px;
+  --support-btn-padding-md: 7px 14px;
+  --support-btn-padding-lg: 10px 18px;
+  --support-btn-font-sm: 12px;
+  --support-btn-font-md: 13px;
+  --support-btn-font-lg: 14px;
+  --support-btn-radius: var(--support-radius-sm);
+  --support-btn-disabled-opacity: 0.5;
+
+  /* ------------------------------------------
+   * 20. INPUTS & FORM CONTROLS
+   * ------------------------------------------
+   * Styling for text inputs, textareas,
+   * selects, and other form elements.
+   * ------------------------------------------ */
+  --support-input-padding: 8px 12px;
+  --support-input-radius: var(--support-radius-sm);
+  --support-input-border: var(--support-border-color);
+  --support-input-bg: var(--support-bg-surface);
+  --support-input-text: var(--support-text-primary);
+  --support-input-placeholder: var(--support-text-muted);
+  --support-input-focus-border: var(--support-primary);
+  --support-input-focus-shadow: var(--support-shadow-focus);
+  --support-input-disabled-bg: var(--support-bg-card);
+  --support-input-disabled-opacity: 0.6;
+
+  /* ------------------------------------------
+   * 21. BADGES & TAGS
+   * ------------------------------------------
+   * Small inline labels used for statuses,
+   * categories, and metadata.
+   * ------------------------------------------ */
+  --support-badge-padding: 2px 8px;
+  --support-badge-radius: var(--support-radius-xs);
+  --support-badge-font-size: 11px;
+  --support-badge-font-weight: 600;
+
+  /* ------------------------------------------
+   * 22. TOGGLE SWITCH
+   * ------------------------------------------
+   * Custom toggle control used in feature
+   * flags and boolean settings.
+   * ------------------------------------------ */
+  --support-toggle-width: 40px;
+  --support-toggle-height: 22px;
+  --support-toggle-knob-size: 18px;
+  --support-toggle-knob-offset: 2px;
+  --support-toggle-off-bg: var(--support-border-color);
+  --support-toggle-on-bg: var(--support-primary);
+  --support-toggle-knob-color: #ffffff;
+  --support-toggle-knob-shadow: var(--support-shadow-toggle);
+
+  /* ------------------------------------------
+   * 23. TIME TRACKING
+   * ------------------------------------------
+   * Timer display, entries table, and related
+   * indicators.
+   * ------------------------------------------ */
+  --support-timer-running-bg: #fef2f2;
+  --support-timer-running-border: #fca5a5;
+  --support-timer-running-dot: #dc2626;
+  --support-timer-idle-bg: var(--support-bg-card);
+  --support-timer-idle-border: var(--support-border-color);
+
+/* ------------------------------------------
+   * 25. SATISFACTION SURVEY
+   * ------------------------------------------
+   * CSAT rating colors (1-5 stars or emoji).
+   * ------------------------------------------ */
+  --support-csat-1: #dc2626;
+  --support-csat-2: #ea580c;
+  --support-csat-3: #d97706;
+  --support-csat-4: #16a34a;
+  --support-csat-5: #059669;
+  --support-csat-bg: #f0fdf4;
+
+  /* ------------------------------------------
+   * 26. ACTIVITY LOG
+   * ------------------------------------------
+   * Timeline dots, connector lines, and
+   * entry backgrounds.
+   * ------------------------------------------ */
+  --support-activity-dot-size: 8px;
+  --support-activity-line-color: var(--support-border-color);
+  --support-activity-dot-default: var(--support-text-muted);
+  --support-activity-dot-status: var(--support-primary);
+  --support-activity-dot-assign: #7c3aed;
+  --support-activity-dot-merge: #0891b2;
+
+  /* ------------------------------------------
+   * 27. NOTIFICATION INDICATORS
+   * ------------------------------------------
+   * Unread counts, typing indicator, and
+   * real-time notification badges.
+   * ------------------------------------------ */
+  --support-notification-dot: #dc2626;
+  --support-notification-dot-size: 8px;
+  --support-typing-dot-color: #94a3b8;
+  --support-typing-dot-size: 6px;
+  --support-unread-bg: #dc2626;
+  --support-unread-text: #ffffff;
+
+  /* ------------------------------------------
+   * 28. SEARCH & FILTERS
+   * ------------------------------------------
+   * Search bar, filter dropdowns, and
+   * highlighted match styles.
+   * ------------------------------------------ */
+  --support-search-bg: var(--support-bg-surface);
+  --support-search-border: var(--support-border-color);
+  --support-search-focus-border: var(--support-primary);
+  --support-search-highlight-bg: #fef08a;
+  --support-search-highlight-text: #1e293b;
+
+  /* ------------------------------------------
+   * 29. SCROLLBAR
+   * ------------------------------------------
+   * Custom scrollbar styling for conversation
+   * panels and sidebars.
+   * ------------------------------------------ */
+  --support-scrollbar-width: 6px;
+  --support-scrollbar-track: transparent;
+  --support-scrollbar-thumb: #cbd5e1;
+  --support-scrollbar-thumb-hover: #94a3b8;
+
+  /* ------------------------------------------
+   * 30. RICH TEXT EDITOR
+   * ------------------------------------------
+   * Editor area, toolbar, and content styling
+   * within the reply box.
+   * ------------------------------------------ */
+  --support-rte-bg: var(--support-bg-surface);
+  --support-rte-border: var(--support-border-color);
+  --support-rte-toolbar-bg: var(--support-bg-card);
+  --support-rte-toolbar-border: var(--support-border-light);
+  --support-rte-blockquote-border: var(--support-primary);
+  --support-rte-blockquote-bg: var(--support-bg-page);
+  --support-rte-link-color: var(--support-primary);
+
+  /* ------------------------------------------
+   * 31. SNOOZE INDICATOR
+   * ------------------------------------------
+   * Visual cues when a ticket is snoozed
+   * (hidden temporarily).
+   * ------------------------------------------ */
+  --support-snooze-bg: #eff6ff;
+  --support-snooze-border: #93c5fd;
+  --support-snooze-text: #1d4ed8;
+  --support-snooze-icon: #3b82f6;
+
+  /* ------------------------------------------
+   * 32. MERGE INDICATOR
+   * ------------------------------------------
+   * Visual treatment for merged tickets
+   * and their source references.
+   * ------------------------------------------ */
+  --support-merge-bg: #ecfeff;
+  --support-merge-border: #06b6d4;
+  --support-merge-text: #155e75;
+
+  /* ------------------------------------------
+   * 33. SCHEDULED REPLY
+   * ------------------------------------------
+   * Indicator for messages scheduled to be
+   * sent at a future date/time.
+   * ------------------------------------------ */
+  --support-scheduled-bg: #f5f3ff;
+  --support-scheduled-border: #a78bfa;
+  --support-scheduled-text: #5b21b6;
+  --support-scheduled-icon: #7c3aed;
+
+  /* ------------------------------------------
+   * 34. EMAIL TRACKING
+   * ------------------------------------------
+   * Delivery and open status indicators for
+   * outbound email notifications.
+   * ------------------------------------------ */
+  --support-email-sent: #2563eb;
+  --support-email-delivered: #16a34a;
+  --support-email-opened: #059669;
+  --support-email-bounced: #dc2626;
+  --support-email-pending: #9ca3af;
+
+  /* ------------------------------------------
+   * 35. CANNED RESPONSE PICKER
+   * ------------------------------------------
+   * Quick reply template selector dropdown.
+   * ------------------------------------------ */
+  --support-canned-bg: var(--support-bg-surface);
+  --support-canned-hover-bg: var(--support-bg-card);
+  --support-canned-border: var(--support-border-color);
+  --support-canned-category-text: var(--support-text-muted);
+  --support-canned-shortcut-bg: var(--support-bg-card);
+  --support-canned-shortcut-text: var(--support-text-secondary);
+}
+
+
+/* ============================================
+ * DARK MODE OVERRIDES
+ * ============================================
+ * Applied when Payload CMS is in dark mode.
+ * Uses [data-theme="dark"] selector to match
+ * Payload's native theme switching.
+ * ============================================ */
+
+[data-theme="dark"] {
+
+  /* Primary */
+  --support-primary: #3b82f6;
+  --support-primary-hover: #60a5fa;
+  --support-primary-light: #1e3a5f;
+  --support-primary-text: #93c5fd;
+
+  /* Semantic */
+  --support-success: #22c55e;
+  --support-success-light: #14532d;
+  --support-success-text: #86efac;
+
+  --support-warning: #eab308;
+  --support-warning-light: #422006;
+  --support-warning-text: #fde047;
+
+  --support-error: #ef4444;
+  --support-error-light: #450a0a;
+  --support-error-text: #fca5a5;
+
+  --support-info: #22d3ee;
+  --support-info-light: #083344;
+  --support-info-text: #67e8f9;
+
+  /* Ticket statuses */
+  --support-status-open-bg: #1e3a5f;
+  --support-status-open-text: #93c5fd;
+  --support-status-open-dot: #3b82f6;
+
+  --support-status-waiting-bg: #422006;
+  --support-status-waiting-text: #fde047;
+  --support-status-waiting-dot: #eab308;
+
+  --support-status-resolved-bg: #14532d;
+  --support-status-resolved-text: #86efac;
+  --support-status-resolved-dot: #22c55e;
+
+  --support-status-closed-bg: #374151;
+  --support-status-closed-text: #d1d5db;
+  --support-status-closed-dot: #9ca3af;
+
+  /* Priority */
+  --support-priority-urgent: #ef4444;
+  --support-priority-urgent-bg: #450a0a;
+  --support-priority-high: #f97316;
+  --support-priority-high-bg: #431407;
+
+  /* Message bubbles */
+  --support-msg-admin-bg: #1e293b;
+  --support-msg-admin-border: #3b82f6;
+
+  --support-msg-client-bg: #0f172a;
+  --support-msg-client-border: #334155;
+
+  --support-msg-email-bg: #1c1917;
+  --support-msg-email-border: #ea580c;
+
+  --support-msg-internal-bg: #1a1a0e;
+  --support-msg-internal-border: #eab308;
+
+  --support-msg-system-bg: #1e293b;
+  --support-msg-system-border: #475569;
+  --support-msg-system-text: #94a3b8;
+
+  /* Backgrounds */
+  --support-bg-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Text */
+  --support-text-secondary: #94a3b8;
+  --support-text-muted: #64748b;
+  --support-text-disabled: #475569;
+  --support-text-link: #60a5fa;
+  --support-text-link-hover: #93c5fd;
+
+  /* Borders */
+  --support-border-color: #334155;
+  --support-border-light: #1e293b;
+
+  /* Shadows (reduced in dark mode) */
+  --support-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --support-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --support-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --support-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  --support-shadow-focus: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  --support-shadow-error-focus: 0 0 0 2px rgba(239, 68, 68, 0.25);
+
+/* Timer */
+  --support-timer-running-bg: #450a0a;
+  --support-timer-running-border: #7f1d1d;
+
+  /* Search */
+  --support-search-highlight-bg: #854d0e;
+  --support-search-highlight-text: #fef08a;
+
+  /* Scrollbar */
+  --support-scrollbar-thumb: #475569;
+  --support-scrollbar-thumb-hover: #64748b;
+
+  /* Snooze */
+  --support-snooze-bg: #1e3a5f;
+  --support-snooze-border: #1d4ed8;
+  --support-snooze-text: #93c5fd;
+
+  /* Merge */
+  --support-merge-bg: #083344;
+  --support-merge-border: #0891b2;
+  --support-merge-text: #67e8f9;
+
+  /* Scheduled */
+  --support-scheduled-bg: #2e1065;
+  --support-scheduled-border: #7c3aed;
+  --support-scheduled-text: #c4b5fd;
+
+  /* Email tracking */
+  --support-email-pending: #64748b;
+
+  /* CSAT */
+  --support-csat-bg: #14532d;
+
+  /* Activity log */
+  --support-activity-line-color: #334155;
+
+  /* Notification */
+  --support-notification-dot: #ef4444;
+  --support-typing-dot-color: #64748b;
+}

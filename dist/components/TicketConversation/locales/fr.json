@@ -1,0 +1,878 @@
+{
+  "common": {
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "loading": "Chargement...",
+    "search": "Rechercher",
+    "send": "Envoyer",
+    "back": "Retour",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "none": "Aucun",
+    "error": "Erreur",
+    "success": "Succès",
+    "networkError": "Erreur réseau",
+    "unknownError": "Erreur inconnue",
+    "sessionExpired": "Session expirée. Rechargez la page pour vous reconnecter.",
+    "copied": "Copié",
+    "stable": "stable",
+    "noData": "Pas de données",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "now": "maintenant",
+    "justNow": "a l'instant",
+    "agoMinutes": "il y a {{count}}min",
+    "agoHours": "il y a {{count}}h",
+    "agoDays": "il y a {{count}}j",
+    "agoWeeks": "il y a {{count}}sem",
+    "agoMonths": "Il y a {{count}} mois",
+    "file": "Fichier",
+    "attachment": "PJ",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page",
+    "results": "résultats",
+    "all": "Tous",
+    "or": "OU",
+    "required": "obligatoire",
+    "optional": "optionnel"
+  },
+  "ticket": {
+    "title": "Ticket",
+    "tickets": "Tickets",
+    "newTicket": "Nouveau ticket",
+    "createTicket": "Créer le ticket",
+    "creating": "Création...",
+    "subject": "Sujet",
+    "description": "Description",
+    "message": "Message",
+    "messages": "Messages",
+    "noMessages": "Aucun message.",
+    "messageDeleted": "Ce message a ete supprime.",
+    "messageDeletedShort": "Message supprimé",
+    "conversation": "Conversation",
+    "selectTicket": "Sélectionnez un ticket depuis la liste",
+    "notFound": "Ticket introuvable",
+    "saveToSee": "Enregistrez le ticket pour voir le tableau de bord.",
+    "status": {
+      "open": "Ouvert",
+      "waiting_client": "En attente",
+      "resolved": "Résolu",
+      "label": "Statut"
+    },
+    "priority": {
+      "low": "Basse",
+      "normal": "Normale",
+      "high": "Haute",
+      "urgent": "Urgente",
+      "label": "Priorité"
+    },
+    "category": {
+      "bug": "Bug",
+      "bugFull": "Bug / Dysfonctionnement",
+      "content": "Contenu",
+      "contentFull": "Modification de contenu",
+      "feature": "Fonctionnalité",
+      "featureFull": "Nouvelle fonctionnalité",
+      "question": "Question",
+      "questionFull": "Question / Aide",
+      "hosting": "Hébergement",
+      "hostingFull": "Hébergement / Domaine",
+      "label": "Catégorie",
+      "select": "-- Selectionner --"
+    },
+    "source": {
+      "email": "Email",
+      "liveChat": "Live Chat",
+      "portal": "Portail",
+      "admin": "Admin",
+      "label": "Source"
+    },
+    "details": "Details",
+    "assigned": "Assigne",
+    "project": "Projet",
+    "noProject": "-- Aucun --",
+    "allProjects": "Tous les projets",
+    "noProjectLabel": "Sans projet"
+  },
+  "inbox": {
+    "title": "Tickets",
+    "searchPlaceholder": "Rechercher...",
+    "newTicketBtn": "Nouveau ticket",
+    "tabs": {
+      "all": "Tous",
+      "open": "Ouverts",
+      "waiting": "Attente",
+      "resolved": "Resolus"
+    },
+    "sort": {
+      "newest": "Tri : Recents",
+      "oldest": "Tri : Anciens",
+      "created": "Tri : Creation",
+      "priority": "Tri : Priorite"
+    },
+    "selected": "{{count}} selectionne",
+    "selectedPlural": "{{count}} selectionnes",
+    "closeAction": "Fermer",
+    "reopenAction": "Rouvrir",
+    "moreActions": "Plus...",
+    "changePriority": "Changer priorite",
+    "deleteAction": "Supprimer",
+    "deselect": "Désélectionner",
+    "empty": "Aucun ticket trouve",
+    "keyboardNavigate": "naviguer",
+    "keyboardOpen": "ouvrir"
+  },
+  "dashboard": {
+    "title": "Dashboard Support",
+    "subtitle": "Vue d'ensemble des métriques du support client",
+    "loadingMetrics": "Chargement des métriques...",
+    "loadError": "Erreur de chargement",
+    "cannotLoadStats": "Impossible de charger les statistiques du support.",
+    "openTickets": "Tickets ouverts",
+    "waitingClient": "Attente client",
+    "responseTime": "Temps de réponse",
+    "satisfaction": "Satisfaction",
+    "activeTickets": "Tickets actifs",
+    "noActiveTickets": "Aucun ticket actif",
+    "volume7days": "Volume (7 jours)",
+    "csat": "CSAT",
+    "csatNoData": "Pas de données",
+    "csatReviews": "{{count}} avis recueillis",
+    "csatNoReviews": "Aucun avis",
+    "newTicketAction": "+ Nouveau ticket",
+    "pendingEmails": "Emails en attente",
+    "crm": "CRM",
+    "preBilling": "Pré-facturation",
+    "exportCsv": "Export CSV",
+    "tableHeaders": {
+      "status": "Statut",
+      "number": "N\u00b0",
+      "subject": "Sujet",
+      "client": "Client",
+      "modified": "Modifié"
+    },
+    "weekDays": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "sun": "Dim"
+    }
+  },
+  "composer": {
+    "placeholder": "Écrire une réponse au client...",
+    "placeholderInternal": "Note interne...",
+    "placeholderReplyTo": "Répondre à {{name}}...",
+    "sendReply": "Send \u2192",
+    "sending": "Envoi...",
+    "addNote": "Ajouter note",
+    "sendAndNotify": "Envoyer + Notifier",
+    "saveOnly": "Sauvegarder",
+    "internalNote": "Note interne",
+    "notifyClient": "Envoyer au client",
+    "internal": "Internal",
+    "notify": "Notify",
+    "sendAsSupport": "En tant que : Support",
+    "sendAsClient": "En tant que : Client",
+    "attachment": "+ Piece jointe",
+    "canned": "Canned",
+    "cannedSelect": "Réponse rapide...",
+    "cannedVariablesHint": "Variables disponibles : {{client.firstName}}, {{client.lastName}}, {{client.company}}, {{client.email}}, {{ticket.number}}, {{ticket.subject}}, {{agent.name}}",
+    "quickReplies": {
+      "received": "Bien reçu, je regarde ça !",
+      "fixed": "C'est corrigé !",
+      "clarify": "Pouvez-vous préciser ?",
+      "backSoon": "Je reviens vers vous rapidement",
+      "screenshot": "Pouvez-vous m'envoyer une capture d'ecran ?"
+    },
+    "schedule": {
+      "label": "Programmer pour :",
+      "button": "Programmer",
+      "tooltip": "Programmer l'envoi a une date/heure precise"
+    },
+    "shortcuts": {
+      "sendHint": "\u2318Enter pour envoyer",
+      "noteHint": "\u2318\u21e7N note interne"
+    }
+  },
+  "settings": {
+    "title": "Configuration du module Support",
+    "subtitle": "{{enabled}}/{{total}} fonctionnalites activees",
+    "resetAll": "Tout réactiver",
+    "saved": "\u2713 Sauvegarde",
+    "description": "Activez ou désactivez les fonctionnalités du module de support. Les fonctionnalités désactivées sont complètement masquées de l'interface. Les changements prennent effet immédiatement après sauvegarde (rechargez la page du ticket).",
+    "categories": {
+      "core": "Fonctionnalités de base",
+      "communication": "Communication",
+      "productivity": "Productivité",
+      "advanced": "Avancé"
+    },
+    "features": {
+      "canned": {
+        "label": "Réponses rapides",
+        "description": "Templates de réponses pré-enregistrées avec variables dynamiques"
+      },
+      "scheduledReplies": {
+        "label": "Réponses programmées",
+        "description": "Envoyer une réponse à une date/heure future"
+      },
+      "activityLog": {
+        "label": "Journal d'activité",
+        "description": "Timeline des actions sur chaque ticket (changements de statut, assignation...)"
+      },
+      "emailTracking": {
+        "label": "Suivi des emails",
+        "description": "Tracking d'envoi et d'ouverture des notifications email"
+      },
+      "chat": {
+        "label": "Live Chat",
+        "description": "Chat en temps réel avec conversion en ticket"
+      },
+      "externalMessages": {
+        "label": "Messages externes",
+        "description": "Ajouter manuellement des messages reçus par email, SMS, WhatsApp..."
+      },
+      "ai": {
+        "label": "Intelligence Artificielle",
+        "description": "Analyse de sentiment, synthèse, suggestion de réponse, reformulation"
+      },
+      "timeTracking": {
+        "label": "Suivi du temps",
+        "description": "Timer, entrées manuelles, facturation"
+      },
+      "codeSnippets": {
+        "label": "Partage de code / secrets",
+        "description": "Snippets chiffrés AES-256 avec expiration et burn-after-reading"
+      },
+      "satisfaction": {
+        "label": "Enquêtes satisfaction",
+        "description": "Score CSAT après résolution du ticket"
+      },
+      "merge": {
+        "label": "Fusion de tickets",
+        "description": "Combiner deux tickets en un seul"
+      },
+      "splitTicket": {
+        "label": "Extraction de message",
+        "description": "Extraire un message en nouveau ticket lié"
+      },
+      "snooze": {
+        "label": "Snooze",
+        "description": "Masquer temporairement un ticket et rappel automatique"
+      },
+      "clientHistory": {
+        "label": "Historique client",
+        "description": "Tickets passés, projets et notes internes du client"
+      }
+    }
+  },
+  "ai": {
+    "suggest": "Suggestion IA",
+    "suggesting": "Génération...",
+    "rewrite": "Reformuler",
+    "rewriting": "Reformulation...",
+    "summary": "Synthèse IA",
+    "summaryHide": "Masquer la synthèse IA",
+    "summaryTitle": "Synthèse IA",
+    "regenerate": "Régénérer",
+    "regenerating": "Génération...",
+    "saveAsNote": "Sauvegarder (note interne)",
+    "saving": "Sauvegarde...",
+    "saved": "Sauvegardé",
+    "analyzing": "Analyse de la conversation en cours...",
+    "clickRegenerate": "Cliquez sur \"Regenerer\" pour lancer l'analyse",
+    "tooltipSuggest": "Suggestion IA",
+    "tooltipRewrite": "Reformuler",
+    "codeSnippet": "Code / Secret",
+    "sentiment": {
+      "label": "Sentiment",
+      "frustrated": "Frustré",
+      "unhappy": "Mécontent",
+      "urgent": "Urgent",
+      "neutral": "Neutre",
+      "satisfied": "Satisfait"
+    }
+  },
+  "timer": {
+    "title": "Temps",
+    "total": "total",
+    "start": "Démarrer",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "save": "Sauvegarder",
+    "discard": "Annuler",
+    "recording": "Enregistrement en cours -- session maintenue active",
+    "minRequired": "Minimum 1 minute",
+    "saveMinutes": "Sauvegarder {{count}} min",
+    "manualEntry": {
+      "minutes": "Min",
+      "description": "Description",
+      "placeholder": "Travail effectué...",
+      "addTime": "+ Temps"
+    },
+    "tableHeaders": {
+      "date": "Date",
+      "duration": "Durée",
+      "description": "Description"
+    }
+  },
+  "client": {
+    "title": "Client",
+    "clientCard": "Fiche client",
+    "viewAsClient": "Voir en tant que client",
+    "clientPortal": "Portail",
+    "clientSheet": "Fiche",
+    "copyAdminLink": "Copier le lien admin",
+    "copyClientLink": "Copier le lien client",
+    "history": {
+      "title": "Historique client",
+      "ticketCount": "{{count}} ticket",
+      "ticketCountPlural": "{{count}} tickets",
+      "projectCount": "{{count}} projet",
+      "projectCountPlural": "{{count}} projets",
+      "pastTickets": "Derniers tickets",
+      "noOtherTickets": "Aucun autre ticket",
+      "projects": "Projets",
+      "noProjects": "Aucun projet",
+      "internalNotes": "Notes internes",
+      "notesPlaceholder": "Notes sur ce client...",
+      "saveNotes": "Sauvegarder les notes",
+      "savingNotes": "Sauvegarde...",
+      "notesSaved": "Sauvegarde OK"
+    }
+  },
+  "activity": {
+    "title": "Historique",
+    "noActivity": "Aucune activité enregistrée.",
+    "activityLabel": "Activité"
+  },
+  "actions": {
+    "waitingClient": "Attente client",
+    "resolved": "Résolu",
+    "reopen": "Rouvrir",
+    "merge": "Fusionner",
+    "addReceivedMessage": "+ Message recu",
+    "snooze": "Snooze",
+    "nextTicket": "Ticket suivant",
+    "cancelSnooze": "Annuler snooze",
+    "nextTicketLabel": "Ticket suivant :",
+    "noMoreTickets": "Aucun ticket suivant",
+    "editMessage": "Modifier",
+    "deleteMessage": "Supprimer",
+    "resendEmail": "Renvoyer email",
+    "resending": "Envoi...",
+    "resent": "Envoyé !",
+    "extractMessage": "Extraire",
+    "extractToNewTicket": "Extraire en nouveau ticket",
+    "saveEdit": "Enregistrer",
+    "cancelEdit": "Annuler",
+    "payloadView": "Vue Payload",
+    "clientView": "Vue client",
+    "copyLink": "Copier le lien",
+    "deleteConfirm": "Supprimer ?"
+  },
+  "merge": {
+    "title": "Fusionner ce ticket dans un autre",
+    "placeholder": "TK-0001",
+    "search": "Rechercher",
+    "confirm": "Confirmer la fusion",
+    "merging": "Fusion..."
+  },
+  "externalMessage": {
+    "title": "Ajouter un message recu (email, SMS, WhatsApp...)",
+    "placeholder": "Coller le contenu du message reçu...",
+    "sentByClient": "Envoyé par le client",
+    "sentBySupport": "Envoyé par le support",
+    "addAttachment": "+ PJ",
+    "adding": "Ajout...",
+    "addWithoutNotification": "Ajouter (sans notification)"
+  },
+  "snooze": {
+    "title": "Snooze -- masquer temporairement",
+    "oneDay": "1 jour",
+    "threeDays": "3 jours",
+    "oneWeek": "1 semaine",
+    "snoozed": "Snooze"
+  },
+  "collapse": {
+    "showPrevious": "Voir les {{count}} message précédent",
+    "showPreviousPlural": "Voir les {{count}} messages précédents",
+    "hideOld": "Masquer les anciens messages"
+  },
+  "messageStatus": {
+    "internal": "Interne",
+    "solution": "Solution",
+    "chat": "Chat",
+    "email": "Email",
+    "support": "Support",
+    "edited": "(modifié)",
+    "sent": "Envoyé",
+    "read": "Lu",
+    "opened": "Ouvert",
+    "sentTo": "Envoyé à {{to}}",
+    "openedAt": "Ouvert {{date}}",
+    "scheduled": "Programmé le {{created}} -- redige le {{scheduled}}",
+    "scheduledPending": "Rédigé le {{created}} -- envoi programme le {{scheduled}}"
+  },
+  "newTicket": {
+    "title": "Nouveau ticket",
+    "subtitle": "Créer un ticket de support pour un client",
+    "backToInbox": "Retour à l'inbox",
+    "clientLabel": "Client",
+    "clientSearchPlaceholder": "Rechercher par nom, email, entreprise...",
+    "subjectLabel": "Sujet",
+    "subjectPlaceholder": "Décrivez brièvement le problème",
+    "categoryLabel": "Catégorie",
+    "priorityLabel": "Priorité",
+    "projectLabel": "Projet",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Détaillez le problème ou la demande...",
+    "submitButton": "Créer le ticket",
+    "submitting": "Création...",
+    "errors": {
+      "subjectRequired": "Le sujet est obligatoire",
+      "clientRequired": "Sélectionnez un client",
+      "creationError": "Erreur lors de la création",
+      "networkError": "Erreur réseau"
+    }
+  },
+  "commandPalette": {
+    "placeholder": "Rechercher tickets, clients, messages...",
+    "searching": "Recherche...",
+    "noResults": "Aucun résultat pour \"{{query}}\"",
+    "sections": {
+      "tickets": "Tickets",
+      "clients": "Clients",
+      "messages": "Messages",
+      "knowledgeBase": "Base de connaissances"
+    },
+    "keyboard": {
+      "navigate": "naviguer",
+      "open": "ouvrir",
+      "close": "fermer"
+    }
+  },
+  "chat": {
+    "title": "Chat en direct",
+    "sessionCount": "{{count}} session active",
+    "sessionCountPlural": "{{count}} sessions actives",
+    "tabs": {
+      "active": "Actifs",
+      "closed": "Fermés"
+    },
+    "noSession": "Aucune session",
+    "noSessionActive": "Aucune session active",
+    "noSessionClosed": "Aucune session fermée",
+    "selectSession": "Sélectionnez une session pour commencer",
+    "closeChat": "Fermer le chat",
+    "quickReply": "Réponse rapide...",
+    "inputPlaceholder": "Tapez votre réponse...",
+    "sendButton": "Envoyer",
+    "clientReview": "Avis client",
+    "you": "Vous",
+    "agent": "Agent",
+    "clientLabel": "Client",
+    "msg": "msg"
+  },
+  "crm": {
+    "title": "CRM Clients",
+    "subtitle": "Fiche client complète avec historique tickets, projets et temps passé",
+    "searchPlaceholder": "Rechercher un client...",
+    "noClientFound": "Aucun client trouvé",
+    "selectClient": "Sélectionnez un client pour voir sa fiche",
+    "editButton": "Modifier",
+    "mergeButton": "Fusionner",
+    "mergeTitle": "Fusionner ce client dans un autre",
+    "mergeDescription": "Tous les tickets, messages, projets et enquetes de {{company}} seront transferes vers le client cible. Le client actuel sera supprimé.",
+    "mergeSearchPlaceholder": "Rechercher le client cible (nom, email, entreprise)...",
+    "mergeConfirm": "Fusionner \"{{source}}\" dans \"{{target}}\" ?\n\nTous les tickets, messages et projets seront transférés.\nLe client \"{{source}}\" sera supprimé.\n\nCette action est irréversible.",
+    "mergeNoClient": "Aucun client trouvé",
+    "stats": {
+      "totalTickets": "Total tickets",
+      "openTickets": "Ouverts",
+      "resolvedTickets": "Résolus",
+      "timeSpent": "Temps passé",
+      "lastActivity": "Dernière activité"
+    },
+    "sections": {
+      "projects": "Projets",
+      "tickets": "Tickets",
+      "viewAll": "Voir tout"
+    },
+    "noTickets": "Aucun ticket",
+    "tableHeaders": {
+      "number": "N\u00b0",
+      "subject": "Sujet",
+      "status": "Statut",
+      "date": "Date"
+    },
+    "projectStatus": {
+      "active": "Actif",
+      "paused": "En pause",
+      "completed": "Terminé"
+    }
+  },
+  "pendingEmails": {
+    "title": "Emails en attente",
+    "subtitle": "File d'attente des emails entrants -- Validez, rattachez ou ignorez",
+    "pendingCount": "{{count}} en attente",
+    "tabs": {
+      "pending": "En attente",
+      "processed": "Traites",
+      "ignored": "Ignorés"
+    },
+    "empty": {
+      "pending": "Aucun email en attente",
+      "processed": "Aucun email traite",
+      "ignored": "Aucun email ignore"
+    },
+    "actions": {
+      "createTicket": "Créer un ticket",
+      "linkToTicket": "Rattacher a un ticket",
+      "ignore": "Ignorer"
+    },
+    "status": {
+      "ticketCreated": "Ticket créé",
+      "messageAdded": "Rattaché",
+      "ignored": "Ignoré"
+    },
+    "similarTo": "Similaire a {{ticket}} ({{score}}%)",
+    "expand": "Voir tout",
+    "collapse": "Réduire",
+    "linkModal": {
+      "title": "Rattacher a un ticket",
+      "suggestions": "Suggestions",
+      "searchPlaceholder": "Rechercher un ticket (TK-0042, sujet...)...",
+      "searching": "Recherche...",
+      "noTicketFound": "Aucun ticket trouvé"
+    },
+    "clientModal": {
+      "title": "Choisir un client",
+      "detected": "Client détecté",
+      "useButton": "Utiliser",
+      "searchPlaceholder": "Rechercher un client (nom, email, entreprise)...",
+      "searching": "Recherche...",
+      "noClientFound": "Aucun client trouvé",
+      "createNew": "Créer un nouveau client",
+      "cancelCreate": "Annuler la création",
+      "firstName": "Prénom *",
+      "lastName": "Nom",
+      "email": "Email *",
+      "company": "Entreprise *",
+      "requiredFields": "Email, prenom et entreprise sont obligatoires",
+      "creating": "Création...",
+      "createAndUse": "Créer et utiliser",
+      "createError": "Erreur lors de la création"
+    }
+  },
+  "emailTracking": {
+    "title": "Suivi des emails",
+    "tabs": {
+      "all": "Tous",
+      "success": "Succès",
+      "errors": "Erreurs",
+      "ignored": "Ignorés"
+    },
+    "stats": {
+      "emailsSent": "Emails envoyés",
+      "successRate": "Taux de succès",
+      "errors": "Erreurs",
+      "avgTime": "Temps moyen"
+    },
+    "status": {
+      "success": "Succès",
+      "error": "Erreur",
+      "ignored": "Ignoré"
+    },
+    "tableHeaders": {
+      "date": "Date",
+      "recipient": "Destinataire",
+      "subject": "Sujet",
+      "ticket": "Ticket",
+      "status": "Statut",
+      "action": "Action",
+      "time": "Temps"
+    },
+    "noLogs": "Aucun log pour cette période",
+    "searchPlaceholder": "Email, sujet..."
+  },
+  "billing": {
+    "title": "Pré-facturation",
+    "subtitle": "Agrégation du temps par projet pour préparer la facturation",
+    "filters": {
+      "thisMonth": "Ce mois",
+      "lastMonth": "Mois précédent",
+      "thisQuarter": "Ce trimestre",
+      "lastQuarter": "Trimestre précédent",
+      "from": "Du",
+      "to": "Au",
+      "project": "Projet",
+      "hourlyRate": "Taux horaire",
+      "rateUnit": "EUR/h",
+      "load": "Charger",
+      "loading": "Chargement..."
+    },
+    "empty": "Aucun ticket facturable avec des entrées de temps sur cette période.",
+    "table": {
+      "checkbox": "Tout cocher/decocher",
+      "ticketNumber": "N\u00b0 Ticket",
+      "subject": "Sujet",
+      "date": "Date",
+      "duration": "Durée",
+      "description": "Description",
+      "amount": "Montant",
+      "billed": "Facture",
+      "markBilled": "Marquer comme facture",
+      "markUnbilled": "Marquer comme non facture",
+      "billedLabel": "facture",
+      "timeLabel": "(temps)",
+      "flatRate": "(forfait)"
+    },
+    "totals": {
+      "billableTickets": "{{count}} ticket facturable",
+      "billableTicketsPlural": "{{count}} tickets facturables",
+      "checked": "{{count}} coche",
+      "checkedPlural": "{{count}} coches",
+      "total": "Total",
+      "uncheckAll": "Tout decocher",
+      "checkAll": "Tout cocher",
+      "copyRecap": "Copier le recapitulatif",
+      "copiedRecap": "Copié !"
+    },
+    "recap": {
+      "header": "PRE-FACTURATION -- Du {{from}} au {{to}}",
+      "hourlyRate": "Taux horaire : {{rate}} EUR/h",
+      "project": "PROJET : {{name}}",
+      "client": "Client : {{company}}",
+      "subtotal": "Sous-total",
+      "projectTotal": "Total projet",
+      "grandTotal": "TOTAL GENERAL"
+    }
+  },
+  "timeDashboard": {
+    "title": "Tableau de bord du temps",
+    "subtitle": "Analyse et suivi du temps passé par période, projet et ticket",
+    "newEntry": "+ Nouvelle entree",
+    "filters": {
+      "thisMonth": "Ce mois",
+      "lastMonth": "Mois précédent",
+      "twoMonthsAgo": "-2 mois",
+      "from": "Du",
+      "to": "Au",
+      "groupBy": "Grouper par",
+      "day": "Jour",
+      "week": "Semaine",
+      "project": "Projet"
+    },
+    "kpis": {
+      "totalTime": "Temps total",
+      "entries": "Entrées",
+      "dailyAverage": "Moyenne/jour"
+    },
+    "chart": {
+      "title": "Temps par jour"
+    },
+    "empty": "Aucune entrée de temps sur cette période.",
+    "weekLabel": "Semaine {{number}}"
+  },
+  "logs": {
+    "title": "Journal des emails",
+    "titleAuth": "Journal d'authentification",
+    "tabs": {
+      "email": "Emails",
+      "auth": "Authentification"
+    },
+    "purge7": "Purger +7j",
+    "purge30": "Purger +30j",
+    "purgeAll": "Tout purger",
+    "purgeConfirm": "Supprimer {{label}} ({{collection}}) ? Cette action est irreversible.",
+    "purgeAllLabel": "TOUS les logs",
+    "purgeDaysLabel": "les logs de plus de {{days}} jours",
+    "purgeResult": "{{count}} log(s) supprime(s)",
+    "noLogs": "Aucun log",
+    "tableHeaders": {
+      "date": "Date",
+      "status": "Statut",
+      "recipient": "Destinataire",
+      "subject": "Sujet",
+      "action": "Action",
+      "time": "Temps",
+      "email": "Email",
+      "ip": "IP",
+      "userAgent": "User Agent"
+    },
+    "statusSuccess": "Succes",
+    "statusError": "Erreur",
+    "statusIgnored": "Ignore",
+    "statusFailed": "Echec"
+  },
+  "import": {
+    "title": "Importer une conversation",
+    "newImport": "Nouvel import",
+    "dropzoneText": "Glisser un fichier .md ici ou cliquer pour parcourir",
+    "dropzoneLoaded": "Fichier charge -- cliquer pour en choisir un autre",
+    "acceptedFormats": "Formats acceptes : .md, .txt",
+    "formatError": "Format accepte : .md ou .txt",
+    "sizeError": "Fichier trop volumineux (max 500 Ko)",
+    "preview": "Apercu",
+    "analyzing": "Analyse...",
+    "importButton": "Importer {{count}} messages",
+    "importing": "Import en cours...",
+    "client": "Client",
+    "name": "Nom",
+    "email": "Email",
+    "company": "Entreprise",
+    "parsing": "Parsing",
+    "parsingRegex": "Regex",
+    "parsingAi": "IA",
+    "messages": "messages",
+    "resultTitle": "Conversation importee",
+    "resultTicket": "Ticket",
+    "resultClient": "Client",
+    "resultCompany": "Entreprise",
+    "resultMessages": "Messages",
+    "resultImported": "{{count}} importes",
+    "resultNew": "Nouveau"
+  },
+  "detail": {
+    "backLabel": "Retour",
+    "copyLink": "Copier le lien",
+    "payloadView": "Vue Payload",
+    "clientView": "Vue client",
+    "viewingAlso": "{{names}} est aussi en train de voir ce ticket",
+    "viewingAlsoPlural": "{{names}} sont aussi en train de voir ce ticket",
+    "typing": "{{name}} est en train d'ecrire...",
+    "internalNote": "Note interne",
+    "notify": "Notifier",
+    "sendNote": "Ajouter note",
+    "sendReply": "Envoyer ->",
+    "sending": "Envoi...",
+    "iaSuggestion": "IA Suggestion",
+    "rewrite": "Reformuler",
+    "file": "Fichier",
+    "macros": "Macros",
+    "applyingMacro": "Application...",
+    "cannedResponses": "Reponses types",
+    "details": "Details",
+    "priority": "Priorite",
+    "category": "Categorie",
+    "source": "Source",
+    "assigned": "Assigne",
+    "tags": "Tags",
+    "time": "Temps",
+    "total": "total",
+    "manualAdd": "+ Ajouter",
+    "manualEntry": "Saisie manuelle",
+    "activity": "Activite",
+    "messageDeleted": "Message supprime",
+    "undo": "Annuler",
+    "extractTitle": "Extraire dans un nouveau ticket",
+    "extractSubjectPlaceholder": "Sujet du nouveau ticket...",
+    "statusOpen": "Ouvert",
+    "statusWaiting": "En attente",
+    "statusResolved": "Resolu",
+    "selectTicket": "Selectionnez un ticket depuis la liste",
+    "notFound": "Ticket introuvable"
+  },
+  "settingsView": {
+    "configTitle": "Configuration du module Support",
+    "features": "Fonctionnalités",
+    "featuresDescription": "Activez ou desactivez les fonctionnalites du module. Les fonctionnalites desactivees sont completement masquees de l'interface.",
+    "emailConfig": "Configuration Email",
+    "emailDescription": "Parametres d'envoi des notifications email. L'adresse SMTP est configuree via les variables d'environnement du serveur.",
+    "senderAddress": "Adresse expediteur",
+    "senderAddressDesc": "Adresse email affichee dans le champ From",
+    "senderName": "Nom expediteur",
+    "senderNameDesc": "Nom affiche a cote de l'adresse email",
+    "replyTo": "Adresse Reply-To",
+    "replyToDesc": "Si differente de l'adresse expediteur",
+    "smtpServer": "Serveur SMTP",
+    "smtpServerDesc": "Configure via variables d'environnement",
+    "smtpPort": "Port SMTP",
+    "aiTitle": "Intelligence Artificielle",
+    "aiDescription": "Configurez le fournisseur d'IA et activez/desactivez chaque fonctionnalite independamment.",
+    "aiProvider": "Fournisseur",
+    "aiProviderDesc": "Service d'IA utilise pour l'analyse",
+    "aiApiKey": "Cle API",
+    "aiApiKeyDesc": "Cle secrete du fournisseur (non stockee en clair)",
+    "aiModel": "Modele",
+    "aiModelDesc": "Nom du modele a utiliser",
+    "aiSubFeatures": "Fonctionnalités IA individuelles",
+    "aiSentiment": "Analyse de sentiment",
+    "aiSentimentDesc": "Detecte le niveau de frustration ou satisfaction du client",
+    "aiSynthesis": "Synthese automatique",
+    "aiSynthesisDesc": "Resume les conversations longues en quelques phrases",
+    "aiSuggestion": "Suggestion de reponse",
+    "aiSuggestionDesc": "Propose un brouillon de reponse base sur le contexte",
+    "aiRewrite": "Reformulation",
+    "aiRewriteDesc": "Reformule un message pour le rendre plus professionnel",
+    "showKey": "Afficher",
+    "hideKey": "Masquer",
+    "active": "Active",
+    "inactive": "Inactive",
+    "slaTitle": "SLA (Accords de niveau de service)",
+    "slaDescription": "Definissez les delais de reponse et de resolution attendus.",
+    "slaFirstResponse": "Premiere reponse",
+    "slaFirstResponseDesc": "Délai maximum en minutes (défaut : 120 = 2h)",
+    "slaResolution": "Résolution",
+    "slaResolutionDesc": "Délai maximum en minutes (défaut : 1440 = 24h)",
+    "minutes": "minutes",
+    "businessHoursOnly": "Heures ouvrables uniquement",
+    "businessHoursDesc": "Le decompte SLA est suspendu en dehors des heures de bureau (Lun-Ven, 9h-18h)",
+    "escalationEmail": "Email d'escalade",
+    "escalationEmailDesc": "Adresse notifiee en cas de depassement SLA",
+    "autoCloseTitle": "Fermeture automatique",
+    "autoCloseDescription": "Les tickets en attente client sans reponse seront automatiquement resolus apres le delai configure.",
+    "autoCloseEnable": "Activer la fermeture automatique",
+    "autoCloseDelay": "Delai avant fermeture",
+    "autoCloseDelayDesc": "Nombre de jours sans reponse du client",
+    "days": "jours",
+    "autoCloseReminder": "Rappel avant fermeture",
+    "autoCloseReminderDesc": "Email de rappel envoye X jours avant",
+    "daysBeforeReminder": "jours avant (rappel a J-{{count}})",
+    "myPreferences": "Mes preferences",
+    "myPreferencesDesc": "Ces reglages sont propres a votre compte et ne s'appliquent qu'a vous.",
+    "localeTitle": "Langue et localisation",
+    "localeDescription": "Langue de l'interface du module de support et des notifications email envoyees aux clients.",
+    "language": "Langue",
+    "languageDesc": "Langue principale du module",
+    "french": "Francais",
+    "english": "English",
+    "signatureTitle": "Signature email",
+    "signatureDescription": "Signature ajoutee automatiquement en bas de chaque reponse email envoyee au client.",
+    "signaturePlaceholder": "Cordialement,\nL'equipe ConsilioWEB",
+    "purgeTitle": "Purge des logs",
+    "purgeDescription": "Supprimez les anciens logs pour libérer de l'espace. Cette action est irréversible.",
+    "purgeEmailLogs": "Logs Email",
+    "purgeAuthLogs": "Logs Auth",
+    "purge7days": "7 jours",
+    "purge30days": "30 jours",
+    "purge90days": "90 jours",
+    "purgeAllLabel": "Tout",
+    "purgeConfirm": "Supprimer les logs {{collection}} de plus de {{days}} jours ?",
+    "purgeDone": "{{count}} log(s) supprimé(s)",
+    "resetAll": "Réinitialiser tout",
+    "saving": "Sauvegarde...",
+    "saved": "\u2713 Sauvegardé",
+    "saveChanges": "Sauvegarder les modifications",
+    "reset": "Reinitialiser",
+    "intro": "Configurez le module de support : fonctionnalités, email, IA, SLA et fermeture automatique. Les changements prennent effet immédiatement après sauvegarde (rechargez la page du ticket)."
+  },
+  "sla": {
+    "title": "SLA",
+    "loading": "SLA: Chargement...",
+    "breached": "En breach",
+    "atRisk": "A risque",
+    "noBreached": "Aucun ticket en breach",
+    "noAtRisk": "Aucun ticket a risque",
+    "remaining": "{{time}} restant"
+  }
+}
