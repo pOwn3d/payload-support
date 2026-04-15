@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
-import s from '../../styles/SupportDashboard.module.scss'
+import styles from '../../styles/SupportDashboard.module.scss'
 
-// ---- Types ----
+// ─── Types ──────────────────────────────────────────────────
 
 interface Stats {
   total: number
@@ -51,7 +51,7 @@ interface ActiveTicket {
   updatedAt: string
 }
 
-// ---- Helpers ----
+// ─── Helpers ────────────────────────────────────────────────
 
 function formatResponseTime(hours: number | null): string {
   if (hours == null) return '--'
@@ -74,6 +74,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 7)}sem`
 }
 
+/** Compute trend percentage from two values */
 function computeTrend(current: number, previous: number): { pct: number; dir: 'up' | 'down' | 'neutral' } {
   if (previous === 0 && current === 0) return { pct: 0, dir: 'neutral' }
   if (previous === 0) return { pct: 100, dir: 'up' }
@@ -82,29 +83,105 @@ function computeTrend(current: number, previous: number): { pct: number; dir: 'u
   return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : 'down' }
 }
 
-// ---- Sub-components ----
+// ─── Sub-components ─────────────────────────────────────────
 
-function StatCard({ label, value, trend, accentColor }: {
+function StatCard({ label, value, trend, accentColor, onClick }: {
   label: string
   value: string
   trend?: { pct: number; dir: 'up' | 'down' | 'neutral' }
   accentColor?: string
+  onClick?: () => void
 }) {
+  const style = accentColor ? { '--stat-accent': accentColor } as React.CSSProperties : undefined
+  const Tag = onClick ? 'button' : 'div'
+
   return (
-    <div style={{ padding: '16px 20px', borderRadius: 10, border: '1px solid var(--theme-elevation-150)', background: 'var(--theme-elevation-0)', borderLeft: `3px solid ${accentColor || '#2563eb'}` }}>
-      <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--theme-text)' }}>{value}</div>
+    <Tag
+      className={styles.statCard}
+      style={style}
+      onClick={onClick}
+      type={onClick ? 'button' : undefined}
+    >
+      <div className={styles.statLabel}>{label}</div>
+      <div className={styles.statValueRow}>
+        <span className={styles.statValue}>{value}</span>
+      </div>
       {trend && trend.dir !== 'neutral' && (
-        <div style={{ fontSize: 11, color: trend.dir === 'up' ? '#dc2626' : '#16a34a', marginTop: 4 }}>
-          {trend.dir === 'up' ? '↑' : '↓'} {trend.pct}%
+        <div className={`${styles.statTrend} ${styles[trend.dir]}`}>
+          <span className={styles.trendArrow}>{trend.dir === 'up' ? '↑' : '↓'}</span>
+          {trend.pct}%
         </div>
       )}
       {trend && trend.dir === 'neutral' && (
-        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>-- stable</div>
+        <div className={`${styles.statTrend} ${styles.neutral}`}>
+          — stable
+        </div>
       )}
+    </Tag>
+  )
+}
+
+function VolumeChart({ data }: { data: { label: string; value: number }[] }) {
+  const max = Math.max(...data.map(d => d.value), 1)
+  return (
+    <div>
+      <div className={styles.volumeChart}>
+        {data.map((d, i) => (
+          <div
+            key={i}
+            className={styles.volumeBar}
+            style={{ height: `${Math.max((d.value / max) * 100, 5)}%` }}
+            title={`${d.label}: ${d.value}`}
+          />
+        ))}
+      </div>
+      <div className={styles.volumeLabels}>
+        <span>{data[0]?.label}</span>
+        <span>{data[data.length - 1]?.label}</span>
+      </div>
     </div>
   )
 }
+
+function CSATRing({ score, count }: { score: number; count: number }) {
+  // Ring progress: score is out of 5
+  const pct = score > 0 ? (score / 5) * 100 : 0
+  const radius = 42
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (pct / 100) * circumference
+  const color = score >= 4 ? '#22c55e' : score >= 3 ? '#f59e0b' : score > 0 ? '#ef4444' : '#94a3b8'
+
+  return (
+    <div className={styles.csatContainer}>
+      <div className={styles.csatRing}>
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--theme-elevation-150, #e2e8f0)" strokeWidth="6" />
+          <circle
+            cx="50" cy="50" r={radius} fill="none"
+            stroke={color} strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            transform="rotate(-90 50 50)"
+            style={{ transition: 'stroke-dashoffset 600ms ease' }}
+          />
+        </svg>
+        <div className={styles.csatValue}>
+          {score > 0 ? score.toFixed(1) : '--'}
+        </div>
+      </div>
+      <div className={styles.csatMeta}>
+        <div className={styles.csatLabel}>
+          {score > 0 ? `${score.toFixed(1)} / 5` : 'Pas de données'}
+        </div>
+        <div className={styles.csatSub}>
+          {count > 0 ? `${count} avis recueillis` : 'Aucun avis'}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SLA Section ────────────────────────────────────────────
 
 function formatSlaTime(minutes: number): string {
   const absMin = Math.abs(minutes)
@@ -118,7 +195,6 @@ function formatSlaTime(minutes: number): string {
 }
 
 function SlaSection() {
-  const { t } = useTranslation()
   const [sla, setSla] = useState<SlaData | null>(null)
   const [slaLoading, setSlaLoading] = useState(true)
 
@@ -126,7 +202,9 @@ function SlaSection() {
     const fetchSla = async () => {
       try {
         const res = await fetch('/api/support/sla-check')
-        if (res.ok) setSla(await res.json())
+        if (res.ok) {
+          setSla(await res.json())
+        }
       } catch { /* ignore */ }
       setSlaLoading(false)
     }
@@ -135,32 +213,62 @@ function SlaSection() {
     return () => clearInterval(interval)
   }, [])
 
-  if (slaLoading) return <div style={{ padding: 16, color: '#94a3b8', fontSize: 13 }}>{t('sla.loading')}</div>
+  if (slaLoading) {
+    return (
+      <div className={styles.slaSection}>
+        <h2 className={styles.slaSectionTitle}>SLA</h2>
+        <div className={styles.slaLoading}>Chargement...</div>
+      </div>
+    )
+  }
+
   if (!sla) return null
 
+  const navigateToTicket = (id: string) => {
+    window.location.href = `/admin/support/ticket?id=${id}`
+  }
+
   return (
-    <div style={{ marginTop: 24 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--theme-text)' }}>{t('sla.title')}</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    <div className={styles.slaSection}>
+      <h2 className={styles.slaSectionTitle}>SLA</h2>
+      <div className={styles.slaGrid}>
         {/* Breached */}
-        <div style={{ padding: 16, borderRadius: 10, border: '1px solid #fecaca', background: '#fef2f2' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#dc2626', margin: 0 }}>{t('sla.breached')}</h3>
-            <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fecaca', color: '#dc2626', fontSize: 12, fontWeight: 700 }}>{sla.breached.length}</span>
+        <div className={`${styles.slaCard} ${styles.slaBreach}`}>
+          <div className={styles.slaCardHeader}>
+            <h3 className={`${styles.slaCardTitle} ${styles.slaCardTitleBreach}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              En breach
+            </h3>
+            <span className={`${styles.slaCount} ${styles.slaCountBreach}`}>
+              {sla.breached.length}
+            </span>
           </div>
           {sla.breached.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6b7280' }}>{t('sla.noBreached')}</div>
+            <div className={styles.slaEmpty}>Aucun ticket en breach</div>
           ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul className={styles.slaList}>
               {sla.breached.map((ticket) => {
-                const overdueMin = Math.round((Date.now() - new Date(ticket.createdAt).getTime()) / 60000)
+                // Compute overdue time from createdAt (approximate)
+                const now = new Date()
+                const created = new Date(ticket.createdAt)
+                const overdueMin = Math.round((now.getTime() - created.getTime()) / 60000)
                 return (
-                  <li key={ticket.id} style={{ padding: '6px 0', borderBottom: '1px solid #fecaca', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }} onClick={() => { window.location.href = `/admin/support/ticket?id=${ticket.id}` }}>
-                    <div>
-                      <span style={{ fontWeight: 600 }}>#{ticket.ticketNumber}</span>{' '}
-                      <span style={{ color: '#6b7280' }}>{ticket.subject}</span>
+                  <li
+                    key={ticket.id}
+                    className={styles.slaItem}
+                    onClick={() => navigateToTicket(ticket.id)}
+                  >
+                    <div className={styles.slaItemLeft}>
+                      <span className={styles.slaItemNum}>#{ticket.ticketNumber}</span>
+                      <span className={styles.slaItemSubject}>{ticket.subject}</span>
                     </div>
-                    <span style={{ color: '#dc2626', fontWeight: 600, fontSize: 12 }}>+{formatSlaTime(overdueMin)}</span>
+                    <span className={`${styles.slaItemTime} ${styles.slaTimeBreach}`}>
+                      +{formatSlaTime(overdueMin)}
+                    </span>
                   </li>
                 )
               })}
@@ -169,26 +277,44 @@ function SlaSection() {
         </div>
 
         {/* At Risk */}
-        <div style={{ padding: 16, borderRadius: 10, border: '1px solid #fde68a', background: '#fefce8' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#d97706', margin: 0 }}>{t('sla.atRisk')}</h3>
-            <span style={{ padding: '2px 8px', borderRadius: 10, background: '#fde68a', color: '#d97706', fontSize: 12, fontWeight: 700 }}>{sla.atRisk.length}</span>
+        <div className={`${styles.slaCard} ${styles.slaRisk}`}>
+          <div className={styles.slaCardHeader}>
+            <h3 className={`${styles.slaCardTitle} ${styles.slaCardTitleRisk}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              À risque
+            </h3>
+            <span className={`${styles.slaCount} ${styles.slaCountRisk}`}>
+              {sla.atRisk.length}
+            </span>
           </div>
           {sla.atRisk.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6b7280' }}>{t('sla.noAtRisk')}</div>
+            <div className={styles.slaEmpty}>Aucun ticket à risque</div>
           ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul className={styles.slaList}>
               {sla.atRisk.map((ticket) => {
-                const elapsedMin = Math.round((Date.now() - new Date(ticket.createdAt).getTime()) / 60000)
+                // Approximate remaining time (from created, not exact SLA deadline)
+                const now = new Date()
+                const created = new Date(ticket.createdAt)
+                const elapsedMin = Math.round((now.getTime() - created.getTime()) / 60000)
+                // At risk means ~80%+ elapsed, so remaining is roughly 20% of elapsed/0.8
                 const estimatedTotalMin = Math.round(elapsedMin / 0.8)
                 const remainingMin = Math.max(estimatedTotalMin - elapsedMin, 0)
                 return (
-                  <li key={ticket.id} style={{ padding: '6px 0', borderBottom: '1px solid #fde68a', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }} onClick={() => { window.location.href = `/admin/support/ticket?id=${ticket.id}` }}>
-                    <div>
-                      <span style={{ fontWeight: 600 }}>#{ticket.ticketNumber}</span>{' '}
-                      <span style={{ color: '#6b7280' }}>{ticket.subject}</span>
+                  <li
+                    key={ticket.id}
+                    className={styles.slaItem}
+                    onClick={() => navigateToTicket(ticket.id)}
+                  >
+                    <div className={styles.slaItemLeft}>
+                      <span className={styles.slaItemNum}>#{ticket.ticketNumber}</span>
+                      <span className={styles.slaItemSubject}>{ticket.subject}</span>
                     </div>
-                    <span style={{ color: '#d97706', fontWeight: 600, fontSize: 12 }}>{t('sla.remaining', { time: formatSlaTime(remainingMin) })}</span>
+                    <span className={`${styles.slaItemTime} ${styles.slaTimeRisk}`}>
+                      {formatSlaTime(remainingMin)} restant
+                    </span>
                   </li>
                 )
               })}
@@ -200,7 +326,7 @@ function SlaSection() {
   )
 }
 
-// ---- Main Dashboard ----
+// ─── Main Dashboard ─────────────────────────────────────────
 
 export const SupportDashboardClient: React.FC = () => {
   const { t } = useTranslation()
@@ -238,6 +364,7 @@ export const SupportDashboardClient: React.FC = () => {
     return () => clearInterval(interval)
   }, [fetchData, sessionExpired])
 
+  // Refresh on window focus
   useEffect(() => {
     if (sessionExpired) return
     const onFocus = () => fetchData()
@@ -245,43 +372,62 @@ export const SupportDashboardClient: React.FC = () => {
     return () => window.removeEventListener('focus', onFocus)
   }, [fetchData, sessionExpired])
 
+  // Generate fake daily volume from available stats (7 synthetic bars)
   const volumeData = useMemo(() => {
     if (!stats) return []
     const avg = stats.createdLast7Days
-    const days = [t('dashboard.weekDays.mon'), t('dashboard.weekDays.tue'), t('dashboard.weekDays.wed'), t('dashboard.weekDays.thu'), t('dashboard.weekDays.fri'), t('dashboard.weekDays.sat'), t('dashboard.weekDays.sun')]
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+    // Distribute the 7-day total across days with some variation
     const base = Math.max(Math.floor(avg / 7), 0)
     return days.map((label, i) => ({
       label,
+      // Simple deterministic variation based on index
       value: Math.max(base + ((i * 3 + 1) % 5) - 2, 0),
     }))
-  }, [stats, t])
+  }, [stats])
 
+  // ── Loading state ──
   if (loading) {
     return (
-      <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700 }}>{t('dashboard.title')}</h1>
-        <p style={{ color: '#94a3b8' }}>{t('dashboard.loadingMetrics')}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 20 }}>
-          {[0, 1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 10, background: '#f1f5f9' }} />)}
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>{t('dashboard.title')}</h1>
+          <p className={styles.subtitle}>{t('dashboard.loadingMetrics')}</p>
+        </div>
+        <div className={styles.statsRow}>
+          {[0, 1, 2, 3].map(i => <div key={i} className={styles.skeletonCard} />)}
+        </div>
+        <div className={styles.middleGrid}>
+          <div className={styles.skeletonTable} />
+          <div className={styles.rightColumn}>
+            <div className={styles.skeletonChart} />
+            <div className={styles.skeletonChart} />
+          </div>
         </div>
       </div>
     )
   }
 
+  // ── Error / session expired ──
   if (!stats) {
     return (
-      <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ padding: 40, textAlign: 'center', color: '#dc2626' }}>
+      <div className={styles.page}>
+        <div className={styles.errorState}>
           <strong>{t('dashboard.loadError')}</strong>
-          <p>{sessionExpired ? t('common.sessionExpired') : t('dashboard.cannotLoadStats')}</p>
+          {sessionExpired
+            ? t('common.sessionExpired')
+            : t('dashboard.cannotLoadStats')}
         </div>
       </div>
     )
   }
 
+  // ── Computed values ──
   const openCount = stats.byStatus.open || 0
   const waitingCount = stats.byStatus.waiting_client || 0
   const trendOpen = computeTrend(stats.createdLast7Days, Math.round(stats.createdLast30Days / 4))
+
+  // For "waiting client" trend, approximate: if waiting > 30% of open, trending up
   const waitingTrend: { pct: number; dir: 'up' | 'down' | 'neutral' } =
     waitingCount === 0
       ? { pct: 0, dir: 'neutral' }
@@ -295,67 +441,88 @@ export const SupportDashboardClient: React.FC = () => {
     return ticket.client.company || ticket.client.firstName || '--'
   }
 
-  const statusDotColor = (status: string) => {
+  const getStatusDotClass = (status: string): string => {
     switch (status) {
-      case 'open': return '#22c55e'
-      case 'waiting_client': return '#eab308'
-      case 'resolved': return '#94a3b8'
-      default: return '#94a3b8'
+      case 'open': return styles.statusDotOpen
+      case 'waiting_client': return styles.statusDotWaiting
+      case 'resolved': return styles.statusDotResolved
+      default: return ''
     }
   }
 
-  const maxVolume = Math.max(...volumeData.map(d => d.value), 1)
-
-  // CSAT ring
-  const csatScore = stats.satisfactionAvg
-  const csatPct = csatScore > 0 ? (csatScore / 5) * 100 : 0
-  const csatRadius = 42
-  const csatCircumference = 2 * Math.PI * csatRadius
-  const csatStrokeDashoffset = csatCircumference - (csatPct / 100) * csatCircumference
-  const csatColor = csatScore >= 4 ? '#22c55e' : csatScore >= 3 ? '#f59e0b' : csatScore > 0 ? '#ef4444' : '#94a3b8'
-
   return (
-    <div style={{ padding: '20px 30px', maxWidth: 1100, margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('dashboard.title')}</h1>
-        <p style={{ color: 'var(--theme-elevation-500)', margin: '4px 0 0', fontSize: 14 }}>{t('dashboard.subtitle')}</p>
+    <div className={styles.page}>
+      {/* ── Header ── */}
+      <div className={styles.header}>
+        <h1 className={styles.title}>{t('dashboard.title')}</h1>
+        <p className={styles.subtitle}>{t('dashboard.subtitle')}</p>
       </div>
 
-      {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard label={t('dashboard.openTickets')} value={String(openCount)} trend={trendOpen} accentColor="#3b82f6" />
-        <StatCard label={t('dashboard.waitingClient')} value={String(waitingCount)} trend={waitingTrend} accentColor="#f59e0b" />
-        <StatCard label={t('dashboard.responseTime')} value={formatResponseTime(stats.avgResponseTimeHours)} accentColor={stats.avgResponseTimeHours != null && stats.avgResponseTimeHours > 24 ? '#ef4444' : '#22c55e'} />
-        <StatCard label={t('dashboard.satisfaction')} value={stats.satisfactionAvg > 0 ? `${stats.satisfactionAvg}/5` : '--'} accentColor={stats.satisfactionAvg >= 4 ? '#22c55e' : stats.satisfactionAvg >= 3 ? '#f59e0b' : '#94a3b8'} />
+      {/* ── Stat Cards ── */}
+      <div className={styles.statsRow}>
+        <StatCard
+          label={t('dashboard.openTickets')}
+          value={String(openCount)}
+          trend={trendOpen}
+          accentColor="#3b82f6"
+        />
+        <StatCard
+          label={t('dashboard.waitingClient')}
+          value={String(waitingCount)}
+          trend={waitingTrend}
+          accentColor="#f59e0b"
+        />
+        <StatCard
+          label={t('dashboard.responseTime')}
+          value={formatResponseTime(stats.avgResponseTimeHours)}
+          accentColor={
+            stats.avgResponseTimeHours != null && stats.avgResponseTimeHours > 24
+              ? '#ef4444'
+              : '#22c55e'
+          }
+        />
+        <StatCard
+          label={t('dashboard.satisfaction')}
+          value={stats.satisfactionAvg > 0 ? `${stats.satisfactionAvg}/5` : '--'}
+          accentColor={
+            stats.satisfactionAvg >= 4 ? '#22c55e' : stats.satisfactionAvg >= 3 ? '#f59e0b' : '#94a3b8'
+          }
+        />
       </div>
 
-      {/* Middle Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20, marginBottom: 24 }}>
+      {/* ── Middle Grid ── */}
+      <div className={styles.middleGrid}>
         {/* Left: Active Tickets */}
-        <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.activeTickets')}</h2>
+        <div className={styles.panel}>
+          <h2 className={styles.panelTitle}>{t('dashboard.activeTickets')}</h2>
           {tickets.length === 0 ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('dashboard.noActiveTickets')}</div>
+            <div className={styles.emptyTable}>{t('dashboard.noActiveTickets')}</div>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className={styles.ticketTable}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.status')}</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.number')}</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.subject')}</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.client')}</th>
-                  <th style={{ textAlign: 'left', padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-200)', fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('dashboard.tableHeaders.modified')}</th>
+                  <th>{t('dashboard.tableHeaders.status')}</th>
+                  <th>{t('dashboard.tableHeaders.number')}</th>
+                  <th>{t('dashboard.tableHeaders.subject')}</th>
+                  <th>{t('dashboard.tableHeaders.client')}</th>
+                  <th>{t('dashboard.tableHeaders.modified')}</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.map((tk) => (
-                  <tr key={tk.id} style={{ cursor: 'pointer' }} onClick={() => { window.location.href = `/admin/support/ticket?id=${tk.id}` }}>
-                    <td style={{ padding: '8px' }}><span style={{ width: 8, height: 8, borderRadius: '50%', display: 'inline-block', backgroundColor: statusDotColor(tk.status) }} /></td>
-                    <td style={{ padding: '8px', fontWeight: 600, fontSize: 12 }}>#{tk.ticketNumber}</td>
-                    <td style={{ padding: '8px', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tk.subject}</td>
-                    <td style={{ padding: '8px', color: 'var(--theme-elevation-500)', fontSize: 12 }}>{getClientName(tk)}</td>
-                    <td style={{ padding: '8px', color: 'var(--theme-elevation-400)', fontSize: 12 }}>{timeAgo(tk.updatedAt)}</td>
+                  <tr
+                    key={tk.id}
+                    onClick={() => { window.location.href = `/admin/support/ticket?id=${tk.id}` }}
+                  >
+                    <td>
+                      <span className={`${styles.statusDot} ${getStatusDotClass(tk.status)}`} />
+                    </td>
+                    <td className={styles.ticketNum}>#{tk.ticketNumber}</td>
+                    <td className={styles.ticketSubject}>{tk.subject}</td>
+                    <td className={styles.ticketClient}>{getClientName(tk)}</td>
+                    <td className={styles.ticketTime}>{timeAgo(tk.updatedAt)}</td>
+                    <td className={styles.ticketArrow}>&rarr;</td>
                   </tr>
                 ))}
               </tbody>
@@ -364,60 +531,53 @@ export const SupportDashboardClient: React.FC = () => {
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className={styles.rightColumn}>
           {/* Volume chart */}
-          <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.volume7days')}</h2>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
-              {volumeData.map((d, i) => (
-                <div key={i} style={{ flex: 1, background: '#3b82f6', borderRadius: '3px 3px 0 0', height: `${Math.max((d.value / maxVolume) * 100, 5)}%` }} title={`${d.label}: ${d.value}`} />
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--theme-elevation-400)', marginTop: 4 }}>
-              <span>{volumeData[0]?.label}</span>
-              <span>{volumeData[volumeData.length - 1]?.label}</span>
-            </div>
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>{t('dashboard.volume7days')}</h2>
+            <VolumeChart data={volumeData} />
           </div>
 
           {/* CSAT ring */}
-          <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--theme-text)' }}>{t('dashboard.csat')}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ position: 'relative', width: 80, height: 80 }}>
-                <svg width="80" height="80" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r={csatRadius} fill="none" stroke="var(--theme-elevation-150, #e2e8f0)" strokeWidth="6" />
-                  <circle cx="50" cy="50" r={csatRadius} fill="none" stroke={csatColor} strokeWidth="6" strokeLinecap="round" strokeDasharray={csatCircumference} strokeDashoffset={csatStrokeDashoffset} transform="rotate(-90 50 50)" style={{ transition: 'stroke-dashoffset 600ms ease' }} />
-                </svg>
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16 }}>
-                  {csatScore > 0 ? csatScore.toFixed(1) : '--'}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{csatScore > 0 ? `${csatScore.toFixed(1)} / 5` : t('dashboard.csatNoData')}</div>
-                <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{stats.satisfactionCount > 0 ? t('dashboard.csatReviews', { count: String(stats.satisfactionCount) }) : t('dashboard.csatNoReviews')}</div>
-              </div>
-            </div>
+          <div className={styles.panel}>
+            <h2 className={styles.panelTitle}>{t('dashboard.csat')}</h2>
+            <CSATRing score={stats.satisfactionAvg} count={stats.satisfactionCount} />
           </div>
         </div>
       </div>
 
-      {/* SLA */}
+      {/* ── SLA ── */}
       <SlaSection />
 
-      {/* Quick Actions */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-        <Link href="/admin/support/new-ticket" style={{ padding: '8px 16px', borderRadius: 8, background: '#2563eb', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>{t('dashboard.newTicketAction')}</Link>
-        <Link href="/admin/support/emails" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+      {/* ── Quick Actions ── */}
+      <div className={styles.actionsRow}>
+        <Link href="/admin/support/new-ticket" className={styles.actionBtn}>
+          {t('dashboard.newTicketAction')}
+        </Link>
+        <Link href="/admin/support/emails" className={styles.actionBtn}>
           {t('dashboard.pendingEmails')}
           {stats.pendingEmailsCount > 0 ? (
-            <span style={{ padding: '1px 6px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 700 }}>{stats.pendingEmailsCount}</span>
+            <span className={`${styles.badge} ${styles.badgeRed}`}>
+              {stats.pendingEmailsCount}
+            </span>
           ) : (
-            <span style={{ padding: '1px 6px', borderRadius: 10, background: '#dcfce7', color: '#16a34a', fontSize: 11, fontWeight: 700 }}>0</span>
+            <span className={`${styles.badge} ${styles.badgeGreen}`}>0</span>
           )}
         </Link>
-        <Link href="/admin/support/crm" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>{t('dashboard.crm')}</Link>
-        <Link href="/admin/support/billing" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }}>{t('dashboard.preBilling')}</Link>
-        <a href="/api/support/export-csv" style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, fontWeight: 500, textDecoration: 'none', color: 'var(--theme-text)' }} target="_blank" rel="noopener noreferrer">{t('dashboard.exportCsv')}</a>
+        <Link href="/admin/support/crm" className={styles.actionBtn}>
+          {t('dashboard.crm')}
+        </Link>
+        <Link href="/admin/support/billing" className={styles.actionBtn}>
+          {t('dashboard.preBilling')}
+        </Link>
+        <a
+          href="/api/support/export-csv"
+          className={styles.actionBtn}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t('dashboard.exportCsv')}
+        </a>
       </div>
     </div>
   )

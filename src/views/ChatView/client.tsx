@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
-import s from '../../styles/ChatView.module.scss'
+import styles from '../../styles/ChatView.module.scss'
 
 interface ChatSession {
   session: string
@@ -32,65 +32,58 @@ export const ChatViewClient: React.FC = () => {
   const [sending, setSending] = useState(false)
   const [showClosed, setShowClosed] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [cannedResponses, setCannedResponses] = useState<{ id: string | number; title: string; body: string }[]>([])
+  const [cannedResponses, setCannedResponses] = useState<{ id: string | number; title: string; body: string; category?: string }[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const lastFetchRef = useRef<string | null>(null)
-  const [sessionExpired, setSessionExpired] = useState(false)
-  const sessionsESRef = useRef<EventSource | null>(null)
-  const messagesESRef = useRef<EventSource | null>(null)
+  const sessionsPollInterval = useRef(5000)
+  const sessionsPollTimeout = useRef<NodeJS.Timeout>(undefined)
+  const messagesPollInterval = useRef(3000)
+  const messagesPollTimeout = useRef<NodeJS.Timeout>(undefined)
 
+  // Fetch sessions list
+  const [sessionExpired, setSessionExpired] = useState(false)
   const fetchSessions = useCallback(async () => {
+    let hadChanges = false
     try {
       const res = await fetch('/api/support/admin-chat')
       if (res.status === 401 || res.status === 403) { setSessionExpired(true); return }
       if (res.ok) {
         const data = await res.json()
-        setSessions({ active: data.active || [], closed: data.closed || [] })
+        setSessions((prev) => {
+          const newActive = data.active || []
+          const newClosed = data.closed || []
+          if (JSON.stringify(prev.active) !== JSON.stringify(newActive) || JSON.stringify(prev.closed) !== JSON.stringify(newClosed)) {
+            hadChanges = true
+            return { active: newActive, closed: newClosed }
+          }
+          return prev
+        })
       }
     } catch { /* ignore */ }
     setLoading(false)
+    if (hadChanges) {
+      sessionsPollInterval.current = 5000
+    } else {
+      sessionsPollInterval.current = Math.min(sessionsPollInterval.current + 2000, 15000)
+    }
   }, [])
 
-  // SSE for session list with polling fallback
   useEffect(() => {
+    fetchSessions()
     if (sessionExpired) return
 
-    // Always fetch once for initial data
-    fetchSessions()
-
-    if (typeof EventSource !== 'undefined') {
-      const es = new EventSource('/api/support/admin-chat-stream')
-      sessionsESRef.current = es
-
-      es.onmessage = (event) => {
-        try {
-          const parsed = JSON.parse(event.data)
-          if (parsed.type === 'sessions' && parsed.data) {
-            setSessions({ active: parsed.data.active || [], closed: parsed.data.closed || [] })
-            setLoading(false)
-          }
-        } catch { /* ignore parse errors */ }
-      }
-
-      es.onerror = () => {
-        // SSE failed, fall back to polling
-        es.close()
-        sessionsESRef.current = null
-        const iv = setInterval(fetchSessions, 5000)
-        return () => clearInterval(iv)
-      }
-
-      return () => {
-        es.close()
-        sessionsESRef.current = null
-      }
+    const schedulePoll = () => {
+      sessionsPollTimeout.current = setTimeout(async () => {
+        await fetchSessions()
+        schedulePoll()
+      }, sessionsPollInterval.current)
     }
+    schedulePoll()
 
-    // Fallback: polling
-    const iv = setInterval(fetchSessions, 5000)
-    return () => clearInterval(iv)
+    return () => clearTimeout(sessionsPollTimeout.current)
   }, [fetchSessions, sessionExpired])
 
+  // Fetch canned responses
   useEffect(() => {
     fetch('/api/canned-responses?sort=sortOrder&limit=50&depth=0', { credentials: 'include' })
       .then((res) => res.ok ? res.json() : null)
@@ -98,11 +91,12 @@ export const ChatViewClient: React.FC = () => {
       .catch(() => {})
   }, [])
 
-  // SSE for messages in selected session with polling fallback
+  // Fetch messages for selected session (polling)
   useEffect(() => {
     if (!selectedSession) return
 
     const fetchMessages = async () => {
+      let hadNewMessages = false
       try {
         const after = lastFetchRef.current || ''
         const url = `/api/support/admin-chat?session=${selectedSession}${after ? `&after=${after}` : ''}`
@@ -110,73 +104,65 @@ export const ChatViewClient: React.FC = () => {
         if (res.ok) {
           const data = await res.json()
           if (!lastFetchRef.current) {
+            // Initial load
             setMessages(data.messages || [])
+            hadNewMessages = (data.messages?.length || 0) > 0
           } else if (data.messages?.length > 0) {
             setMessages((prev) => {
               const ids = new Set(prev.map((m) => m.id))
               const newMsgs = data.messages.filter((m: ChatMessage) => !ids.has(m.id))
               return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev
             })
+            hadNewMessages = true
           }
           if (data.messages?.length > 0) {
             lastFetchRef.current = data.messages[data.messages.length - 1].createdAt
           }
         }
       } catch { /* ignore */ }
+      if (hadNewMessages) {
+        messagesPollInterval.current = 3000
+      } else {
+        messagesPollInterval.current = Math.min(messagesPollInterval.current + 1000, 10000)
+      }
     }
 
-    // Always load initial messages via REST
     lastFetchRef.current = null
+    messagesPollInterval.current = 3000
     fetchMessages()
 
-    // Then try SSE for real-time updates
-    if (typeof EventSource !== 'undefined') {
-      const es = new EventSource(`/api/support/admin-chat-stream?session=${selectedSession}`)
-      messagesESRef.current = es
-
-      es.onmessage = (event) => {
-        try {
-          const parsed = JSON.parse(event.data)
-          if (parsed.type === 'messages' && parsed.data?.length > 0) {
-            setMessages((prev) => {
-              const ids = new Set(prev.map((m) => m.id))
-              const newMsgs = parsed.data.filter((m: ChatMessage) => !ids.has(m.id))
-              return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev
-            })
-          }
-        } catch { /* ignore parse errors */ }
-      }
-
-      es.onerror = () => {
-        // SSE failed, fall back to polling
-        es.close()
-        messagesESRef.current = null
-        const iv = setInterval(fetchMessages, 3000)
-        // Store interval for cleanup — use a local ref
-        ;(fetchMessages as any)._fallbackIv = iv
-      }
-
-      return () => {
-        es.close()
-        messagesESRef.current = null
-        if ((fetchMessages as any)._fallbackIv) clearInterval((fetchMessages as any)._fallbackIv)
-      }
+    const schedulePoll = () => {
+      messagesPollTimeout.current = setTimeout(async () => {
+        await fetchMessages()
+        schedulePoll()
+      }, messagesPollInterval.current)
     }
+    schedulePoll()
 
-    // Fallback: polling
-    const iv = setInterval(fetchMessages, 3000)
-    return () => clearInterval(iv)
+    return () => clearTimeout(messagesPollTimeout.current)
   }, [selectedSession])
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || !selectedSession || sending) return
+
     setSending(true)
     try {
-      const res = await fetch('/api/support/admin-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'send', session: selectedSession, message: input.trim() }) })
-      if (res.ok) { const data = await res.json(); setMessages((prev) => [...prev, data.message]); lastFetchRef.current = data.message.createdAt; setInput('') }
+      const res = await fetch('/api/support/admin-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', session: selectedSession, message: input.trim() }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setMessages((prev) => [...prev, data.message])
+        lastFetchRef.current = data.message.createdAt
+        setInput('')
+      }
     } catch { /* ignore */ }
     setSending(false)
   }
@@ -184,7 +170,11 @@ export const ChatViewClient: React.FC = () => {
   const closeSession = async () => {
     if (!selectedSession) return
     try {
-      await fetch('/api/support/admin-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'close', session: selectedSession }) })
+      await fetch('/api/support/admin-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'close', session: selectedSession }),
+      })
       setSelectedSession(null)
       fetchSessions()
     } catch { /* ignore */ }
@@ -197,92 +187,187 @@ export const ChatViewClient: React.FC = () => {
     return client.email || `Client #${client.id}`
   }
 
-  const displayedSessions = showClosed ? sessions.closed : sessions.active
-
-  const S: Record<string, React.CSSProperties> = {
-    page: { padding: '20px 30px', maxWidth: 1200, margin: '0 auto' },
-    container: { display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, minHeight: 'calc(100vh - 300px)' },
-    sidebar: { borderRight: '1px solid var(--theme-elevation-200)' },
-    sessionItem: { display: 'block', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' as const, borderBottom: '1px solid var(--theme-elevation-100)', fontSize: 13 },
-    sessionActive: { background: 'var(--theme-elevation-50)' },
-    chatPanel: { display: 'flex', flexDirection: 'column' as const },
-    messagesArea: { flex: 1, overflowY: 'auto' as const, padding: '12px 0' },
-    bubble: { maxWidth: '70%', padding: '8px 12px', borderRadius: 10, marginBottom: 8, fontSize: 14 },
-    bubbleAgent: { background: '#dbeafe', color: '#1e3a5f', marginLeft: 'auto' },
-    bubbleClient: { background: 'var(--theme-elevation-100)', color: 'var(--theme-text)' },
-    bubbleSystem: { margin: '4px auto', padding: '4px 12px', fontSize: 11, color: '#6b7280', textAlign: 'center' as const },
-    composer: { borderTop: '1px solid var(--theme-elevation-200)', padding: '8px 0' },
-    composerInput: { flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--theme-elevation-200)', fontSize: 13, background: 'var(--theme-elevation-0)', color: 'var(--theme-text)' },
-    sendBtn: { padding: '8px 16px', borderRadius: 8, background: '#2563eb', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 13 },
-    tabsRow: { display: 'flex', gap: 4, padding: '8px 14px', borderBottom: '1px solid var(--theme-elevation-200)' },
-    tab: { padding: '4px 10px', borderRadius: 6, border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--theme-elevation-500)' },
-    tabActive: { background: 'var(--theme-elevation-100)', fontWeight: 700, color: 'var(--theme-text)' },
+  const getClientCompany = (client: ChatSession['client']): string => {
+    if (typeof client === 'number') return ''
+    return client.company || ''
   }
 
+  const displayedSessions = showClosed ? sessions.closed : sessions.active
+
   return (
-    <div style={S.page}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--theme-text)' }}>{t('chat.title')}</h1>
-        <p style={{ color: 'var(--theme-elevation-500)', fontSize: 13, margin: '4px 0 0' }}>{sessions.active.length !== 1 ? t('chat.sessionCountPlural', { count: String(sessions.active.length) }) : t('chat.sessionCount', { count: String(sessions.active.length) })}</p>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>{t('chat.title')}</h1>
+          <p className={styles.subtitle}>
+            {sessions.active.length !== 1 ? t('chat.sessionCountPlural', { count: String(sessions.active.length) }) : t('chat.sessionCount', { count: String(sessions.active.length) })}
+          </p>
+        </div>
       </div>
 
-      <div style={S.container}>
-        <div style={S.sidebar}>
-          <div style={S.tabsRow}>
-            <button onClick={() => setShowClosed(false)} style={{ ...S.tab, ...(!showClosed ? S.tabActive : {}) }}>{t('chat.tabs.active')} ({sessions.active.length})</button>
-            <button onClick={() => setShowClosed(true)} style={{ ...S.tab, ...(showClosed ? S.tabActive : {}) }}>{t('chat.tabs.closed')} ({sessions.closed.length})</button>
+      <div className={styles.container}>
+        {/* Sessions sidebar */}
+        <div className={styles.sidebar}>
+          {/* Tabs */}
+          <div className={styles.tabs}>
+            <button
+              onClick={() => setShowClosed(false)}
+              className={`${styles.tab} ${!showClosed ? styles.tabActive : ''}`}
+            >
+              {t('chat.tabs.active')} ({sessions.active.length})
+            </button>
+            <button
+              onClick={() => setShowClosed(true)}
+              className={`${styles.tab} ${showClosed ? styles.tabActive : ''}`}
+            >
+              {t('chat.tabs.closed')} ({sessions.closed.length})
+            </button>
           </div>
-          <div>
-            {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div>
-              : displayedSessions.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>{showClosed ? t('chat.noSessionClosed') : t('chat.noSessionActive')}</div>
-              : displayedSessions.map((s) => (
-                <button key={s.session} onClick={() => setSelectedSession(s.session)} style={{ ...S.sessionItem, ...(selectedSession === s.session ? S.sessionActive : {}) }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600 }}>{getClientName(s.client)}</span>
-                    {s.unreadCount > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700 }}>{s.unreadCount}</span>}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--theme-elevation-500)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.lastMessage}</div>
-                  <div style={{ fontSize: 11, color: 'var(--theme-elevation-400)', marginTop: 2 }}>{new Date(s.lastMessageAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} -- {s.messageCount} {t('chat.msg')}</div>
-                </button>
-              ))}
+
+          {/* Session list */}
+          <div className={styles.sessionList}>
+            {loading ? (
+              <div className={styles.loadingState}>
+                <div className={styles.emptyState}>{t('common.loading')}</div>
+              </div>
+            ) : displayedSessions.length === 0 ? (
+              <div className={styles.emptyState}>
+                {showClosed ? t('chat.noSessionClosed') : t('chat.noSessionActive')}
+              </div>
+            ) : displayedSessions.map((s) => (
+              <button
+                key={s.session}
+                onClick={() => setSelectedSession(s.session)}
+                className={`${styles.sessionItem} ${selectedSession === s.session ? styles.sessionItemActive : ''}`}
+              >
+                <div className={styles.sessionHeader}>
+                  <span className={styles.sessionName}>{getClientName(s.client)}</span>
+                  {s.unreadCount > 0 && (
+                    <span className={styles.unreadBadge}>{s.unreadCount}</span>
+                  )}
+                </div>
+                {getClientCompany(s.client) && (
+                  <div className={styles.sessionCompany}>{getClientCompany(s.client)}</div>
+                )}
+                <div className={styles.sessionPreview}>
+                  {s.lastMessage.startsWith('Note:') ? (
+                    <span className={styles.sessionRating}>{s.lastMessage.match(/[★☆]+/)?.[0] || '⭐'}</span>
+                  ) : s.lastMessage}
+                </div>
+                <div className={styles.sessionMeta}>
+                  {new Date(s.lastMessageAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  {' · '}{s.messageCount} {t('chat.msg')}
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div style={S.chatPanel}>
+        {/* Chat area */}
+        <div className={styles.chatPanel}>
           {!selectedSession ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 14 }}>{t('chat.selectSession')}</div>
+            <div className={styles.chatEmpty}>
+              {t('chat.selectSession')}
+            </div>
           ) : (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid var(--theme-elevation-200)' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--theme-elevation-500)' }}>{selectedSession}</span>
-                <button onClick={closeSession} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #dc2626', background: 'none', color: '#dc2626', fontSize: 12, cursor: 'pointer' }}>{t('chat.closeChat')}</button>
+              {/* Chat header */}
+              <div className={styles.chatHeader}>
+                <span className={styles.chatSessionId}>{selectedSession}</span>
+                <button onClick={closeSession} className={styles.closeBtn}>
+                  {t('chat.closeChat')}
+                </button>
               </div>
-              <div style={S.messagesArea}>
+
+              {/* Messages */}
+              <div className={styles.messagesArea}>
                 {messages.map((msg) => (
-                  <div key={msg.id} style={{ display: 'flex', flexDirection: msg.senderType === 'agent' ? 'row-reverse' : 'row', padding: '2px 14px' }}>
+                  <div
+                    key={msg.id}
+                    className={`${styles.messageRow} ${
+                      msg.senderType === 'agent'
+                        ? styles.messageRowAgent
+                        : msg.senderType === 'system'
+                          ? styles.messageRowSystem
+                          : styles.messageRowClient
+                    }`}
+                  >
                     {msg.senderType === 'system' ? (
-                      <div style={S.bubbleSystem}>{msg.message}</div>
+                      msg.message.startsWith('Note:') || msg.message.startsWith('Commentaire:') ? (
+                        <div className={styles.bubbleRating}>
+                          {msg.message.includes('★') && (
+                            <div className={styles.ratingStars}>
+                              {msg.message.match(/[★☆]+/)?.[0] || ''}
+                            </div>
+                          )}
+                          <div className={styles.ratingComment}>
+                            {msg.message.includes('—')
+                              ? msg.message.split('—').slice(1).join('—').trim()
+                              : msg.message.replace(/Note:\s*[★☆]+\s*\(\d\/5\)\s*/, '').replace('Commentaire: ', '')}
+                          </div>
+                          <div className={styles.ratingMeta}>
+                            {t('chat.clientReview')} · {new Date(msg.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={styles.bubbleSystem}>
+                          {msg.message}
+                        </div>
+                      )
                     ) : (
-                      <div style={{ ...S.bubble, ...(msg.senderType === 'agent' ? S.bubbleAgent : S.bubbleClient) }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 2 }}>{msg.senderType === 'agent' ? t('chat.you') : t('chat.clientLabel')}</div>
-                        <div>{msg.message}</div>
-                        <div style={{ fontSize: 10, color: msg.senderType === 'agent' ? '#1e40af' : 'var(--theme-elevation-400)', marginTop: 2 }}>{new Date(msg.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+                      <div className={`${styles.bubble} ${msg.senderType === 'agent' ? styles.bubbleAgent : styles.bubbleClient}`}>
+                        <div className={styles.bubbleSender}>
+                          {msg.senderType === 'agent'
+                            ? (msg.agent ? `${(msg.agent as { firstName?: string }).firstName || t('chat.agent')}` : t('chat.you'))
+                            : t('chat.clientLabel')}
+                        </div>
+                        <div className={styles.bubbleBody}>
+                          {msg.message}
+                        </div>
+                        <div className={styles.bubbleTime}>
+                          {new Date(msg.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </div>
                     )}
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
               </div>
-              <form onSubmit={sendMessage} style={S.composer}>
+
+              {/* Reply input */}
+              <form onSubmit={sendMessage} className={styles.composer}>
                 {cannedResponses.length > 0 && (
-                  <select onChange={(e) => { const cr = cannedResponses.find((c) => String(c.id) === e.target.value); if (cr) setInput(cr.body); e.target.value = '' }} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 11, marginBottom: 6, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}>
+                  <select
+                    onChange={(e) => {
+                      const cr = cannedResponses.find((c) => String(c.id) === e.target.value)
+                      if (cr) setInput(cr.body)
+                      e.target.value = ''
+                    }}
+                    className={styles.cannedSelect}
+                  >
                     <option value="">{t('chat.quickReply')}</option>
-                    {cannedResponses.map((cr) => <option key={cr.id} value={String(cr.id)}>{cr.title}</option>)}
+                    {cannedResponses.map((cr) => (
+                      <option key={cr.id} value={String(cr.id)}>{cr.title}</option>
+                    ))}
                   </select>
                 )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t('chat.inputPlaceholder')} maxLength={2000} style={S.composerInput} autoFocus />
-                  <button type="submit" disabled={!input.trim() || sending} style={S.sendBtn}>{t('chat.sendButton')}</button>
+                <div className={styles.composerRow}>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder={t('chat.inputPlaceholder')}
+                    maxLength={2000}
+                    className={styles.composerInput}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || sending}
+                    className={styles.sendBtn}
+                  >
+                    {t('chat.sendButton')}
+                  </button>
                 </div>
               </form>
             </>

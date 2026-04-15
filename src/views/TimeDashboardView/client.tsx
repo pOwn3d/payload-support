@@ -1,8 +1,10 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { SkeletonDashboard } from '../shared/Skeleton'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
-import s from '../../styles/TimeDashboard.module.scss'
+import styles from '../../styles/TimeDashboard.module.scss'
 
 interface TimeEntry {
   id: number
@@ -12,11 +14,32 @@ interface TimeEntry {
   date: string
 }
 
-interface GroupedData { label: string; entries: TimeEntry[]; totalMinutes: number }
+interface GroupedData {
+  label: string
+  entries: TimeEntry[]
+  totalMinutes: number
+}
 
-function formatDuration(minutes: number): string { const h = Math.floor(minutes / 60); const m = minutes % 60; if (h === 0) return `${m}min`; if (m === 0) return `${h}h`; return `${h}h${m}m` }
-function getWeekNumber(d: Date): number { const oneJan = new Date(d.getFullYear(), 0, 1); return Math.ceil(((d.getTime() - oneJan.getTime()) / 86400000 + oneJan.getDay() + 1) / 7) }
-function getMonthRange(offset: number): { from: string; to: string } { const now = new Date(); const start = new Date(now.getFullYear(), now.getMonth() + offset, 1); const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0); return { from: start.toISOString().split('T')[0], to: end.toISOString().split('T')[0] } }
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m}min`
+  if (m === 0) return `${h}h`
+  return `${h}h${m}m`
+}
+
+function getWeekNumber(d: Date): number {
+  const oneJan = new Date(d.getFullYear(), 0, 1)
+  return Math.ceil(((d.getTime() - oneJan.getTime()) / 86400000 + oneJan.getDay() + 1) / 7)
+}
+
+function getMonthRange(offset: number): { from: string; to: string } {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0)
+  return { from: start.toISOString().split('T')[0], to: end.toISOString().split('T')[0] }
+}
+
 const MONTHS_FR = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export const TimeDashboardClient: React.FC = () => {
@@ -30,113 +53,205 @@ export const TimeDashboardClient: React.FC = () => {
   const fetchEntries = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: '500', depth: '2', sort: '-date' })
+      const params = new URLSearchParams({
+        limit: '500',
+        depth: '2',
+        sort: '-date',
+      })
       if (from) params.set('where[date][greater_than_equal]', from)
       if (to) params.set('where[date][less_than_equal]', to)
+
       const res = await fetch(`/api/time-entries?${params}`)
-      if (res.ok) { const json = await res.json(); setEntries(json.docs || []) }
+      if (res.ok) {
+        const json = await res.json()
+        setEntries(json.docs || [])
+      }
     } catch { /* silent */ }
     setLoading(false)
   }, [from, to])
 
-  useEffect(() => { fetchEntries() }, [fetchEntries])
+  useEffect(() => {
+    fetchEntries()
+  }, [fetchEntries])
 
   const totalMinutes = entries.reduce((sum, e) => sum + (e.duration || 0), 0)
+  const totalEntries = entries.length
 
+  // Group entries
   const grouped: GroupedData[] = React.useMemo(() => {
     const map = new Map<string, TimeEntry[]>()
+
     for (const entry of entries) {
       let key: string
-      if (groupBy === 'day') { key = entry.date ? entry.date.split('T')[0] : 'Sans date' }
-      else if (groupBy === 'week') { const d = new Date(entry.date); key = `Semaine ${getWeekNumber(d)} (${MONTHS_FR[d.getMonth()]} ${d.getFullYear()})` }
-      else { const ticket = typeof entry.ticket === 'object' ? entry.ticket : null; const project = ticket && typeof ticket.project === 'object' ? ticket.project : null; key = project?.name || 'Sans projet' }
+      if (groupBy === 'day') {
+        key = entry.date ? entry.date.split('T')[0] : 'Sans date'
+      } else if (groupBy === 'week') {
+        const d = new Date(entry.date)
+        key = `Semaine ${getWeekNumber(d)} (${MONTHS_FR[d.getMonth()]} ${d.getFullYear()})`
+      } else {
+        const ticket = typeof entry.ticket === 'object' ? entry.ticket : null
+        const project = ticket && typeof ticket.project === 'object' ? ticket.project : null
+        key = project?.name || 'Sans projet'
+      }
+
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(entry)
     }
-    return Array.from(map.entries()).map(([label, items]) => ({ label, entries: items, totalMinutes: items.reduce((sum, e) => sum + (e.duration || 0), 0) }))
+
+    return Array.from(map.entries()).map(([label, items]) => ({
+      label,
+      entries: items,
+      totalMinutes: items.reduce((sum, e) => sum + (e.duration || 0), 0),
+    }))
   }, [entries, groupBy])
 
+  // Daily chart data (last 30 days)
   const dailyChart = React.useMemo(() => {
     const dayMap = new Map<string, number>()
-    for (const entry of entries) { const day = entry.date ? entry.date.split('T')[0] : null; if (day) dayMap.set(day, (dayMap.get(day) || 0) + (entry.duration || 0)) }
-    return Array.from(dayMap.entries()).sort(([a], [b]) => a.localeCompare(b)).slice(-30).map(([day, mins]) => ({ day, minutes: mins }))
+    for (const entry of entries) {
+      const day = entry.date ? entry.date.split('T')[0] : null
+      if (day) {
+        dayMap.set(day, (dayMap.get(day) || 0) + (entry.duration || 0))
+      }
+    }
+    return Array.from(dayMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-30)
+      .map(([day, mins]) => ({ day, minutes: mins }))
   }, [entries])
 
   const maxDailyMinutes = Math.max(...dailyChart.map((d) => d.minutes), 1)
-  const setPeriod = (range: { from: string; to: string }) => { setFrom(range.from); setTo(range.to) }
 
-  const S: Record<string, React.CSSProperties> = {
-    page: { padding: '20px 30px', maxWidth: 1100, margin: '0 auto' },
-    btn: { padding: '6px 12px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, cursor: 'pointer', background: 'var(--theme-elevation-0)', color: 'var(--theme-text)' },
-    btnPrimary: { padding: '6px 12px', borderRadius: 6, border: 'none', fontSize: 12, cursor: 'pointer', background: '#2563eb', color: '#fff', fontWeight: 600 },
-    kpis: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 },
-    kpiCard: { padding: '16px 20px', borderRadius: 10, border: '1px solid var(--theme-elevation-150)' },
-    groupCard: { marginBottom: 12, borderRadius: 10, border: '1px solid var(--theme-elevation-150)', overflow: 'hidden' },
-    groupHeader: { display: 'flex', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--theme-elevation-50)', borderBottom: '1px solid var(--theme-elevation-150)' },
-    table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 },
-    td: { padding: '6px 8px', borderBottom: '1px solid var(--theme-elevation-100)' },
+  const setPeriod = (range: { from: string; to: string }) => {
+    setFrom(range.from)
+    setTo(range.to)
   }
 
   return (
-    <div style={S.page}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('timeDashboard.title')}</h1>
-          <p style={{ fontSize: 13, color: 'var(--theme-elevation-500)', margin: '4px 0 0' }}>{t('timeDashboard.subtitle')}</p>
+    <div className={styles.page}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>{t('timeDashboard.title')}</h1>
+          <p className={styles.subtitle}>{t('timeDashboard.subtitle')}</p>
         </div>
-        <a href="/admin/collections/time-entries/create" style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}>{t('timeDashboard.newEntry')}</a>
+        <a href="/admin/collections/time-entries/create" className={styles.newEntryBtn}>
+          {t('timeDashboard.newEntry')}
+        </a>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          <button style={S.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>{t('timeDashboard.filters.thisMonth')}</button>
-          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-1))}>{t('timeDashboard.filters.lastMonth')}</button>
-          <button style={S.btn} onClick={() => setPeriod(getMonthRange(-2))}>{t('timeDashboard.filters.twoMonthsAgo')}</button>
+      {/* Filters */}
+      <div className={styles.filters}>
+        <div className={styles.quickPeriod}>
+          <button className={styles.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>{t('timeDashboard.filters.thisMonth')}</button>
+          <button className={styles.btnSecondary} onClick={() => setPeriod(getMonthRange(-1))}>{t('timeDashboard.filters.lastMonth')}</button>
+          <button className={styles.btnAmber} onClick={() => setPeriod(getMonthRange(-2))}>{t('timeDashboard.filters.twoMonthsAgo')}</button>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.from')}</label><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.to')}</label><input type="date" value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} /></div>
-          <div><label style={{ fontSize: 11, fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.filters.groupBy')}</label><select value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }}><option value="day">{t('timeDashboard.filters.day')}</option><option value="week">{t('timeDashboard.filters.week')}</option><option value="project">{t('timeDashboard.filters.project')}</option></select></div>
+        <div className={styles.filterRow}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>{t('timeDashboard.filters.from')}</label>
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>{t('timeDashboard.filters.to')}</label>
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>{t('timeDashboard.filters.groupBy')}</label>
+            <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} className={styles.select}>
+              <option value="day">{t('timeDashboard.filters.day')}</option>
+              <option value="week">{t('timeDashboard.filters.week')}</option>
+              <option value="project">{t('timeDashboard.filters.project')}</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('common.loading')}</div> : (
+      {loading ? (
+        <div className={styles.loading}>
+          <SkeletonDashboard />
+        </div>
+      ) : (
         <>
-          <div style={S.kpis}>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.totalTime')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb' }}>{formatDuration(totalMinutes)}</div></div>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.entries')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#d97706' }}>{entries.length}</div></div>
-            <div style={S.kpiCard}><div style={{ fontSize: 11, color: 'var(--theme-elevation-500)' }}>{t('timeDashboard.kpis.dailyAverage')}</div><div style={{ fontSize: 24, fontWeight: 700, color: '#ea580c' }}>{dailyChart.length > 0 ? formatDuration(Math.round(totalMinutes / dailyChart.length)) : '-'}</div></div>
+          {/* KPIs */}
+          <div className={styles.kpis}>
+            <div className={styles.kpiCardPrimary}>
+              <div className={styles.kpiLabel}>{t('timeDashboard.kpis.totalTime')}</div>
+              <div className={styles.kpiPrimary}>{formatDuration(totalMinutes)}</div>
+            </div>
+            <div className={styles.kpiCardAmber}>
+              <div className={styles.kpiLabel}>{t('timeDashboard.kpis.entries')}</div>
+              <div className={styles.kpiAmber}>{totalEntries}</div>
+            </div>
+            <div className={styles.kpiCardOrange}>
+              <div className={styles.kpiLabel}>{t('timeDashboard.kpis.dailyAverage')}</div>
+              <div className={styles.kpiOrange}>
+                {dailyChart.length > 0 ? formatDuration(Math.round(totalMinutes / dailyChart.length)) : '-'}
+              </div>
+            </div>
           </div>
 
+          {/* Chart */}
           {dailyChart.length > 0 && (
-            <div style={{ padding: 16, borderRadius: 10, border: '1px solid var(--theme-elevation-150)', marginBottom: 20 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{t('timeDashboard.chart.title')}</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
-                {dailyChart.map((d) => <div key={d.day} style={{ flex: 1, background: '#3b82f6', borderRadius: '3px 3px 0 0', height: `${Math.max((d.minutes / maxDailyMinutes) * 100, 4)}%` }} title={`${d.day}: ${formatDuration(d.minutes)}`} />)}
+            <div className={styles.chartWrap}>
+              <div className={styles.chartHeader}>
+                {t('timeDashboard.chart.title')}
+              </div>
+              <div className={styles.chartBars}>
+                {dailyChart.map((d) => (
+                  <div
+                    key={d.day}
+                    className={styles.chartBar}
+                    style={{ height: `${Math.max((d.minutes / maxDailyMinutes) * 100, 4)}%` }}
+                    title={`${d.day}: ${formatDuration(d.minutes)}`}
+                  />
+                ))}
               </div>
             </div>
           )}
 
-          {grouped.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>{t('timeDashboard.empty')}</div> : grouped.map((group) => (
-            <div key={group.label} style={S.groupCard}>
-              <div style={S.groupHeader}><span style={{ fontWeight: 700 }}>{group.label}</span><span style={{ fontWeight: 700, color: '#2563eb' }}>{formatDuration(group.totalMinutes)}</span></div>
-              <table style={S.table}>
-                <tbody>
-                  {group.entries.map((entry) => {
-                    const ticket = typeof entry.ticket === 'object' ? entry.ticket : null
-                    return (
-                      <tr key={entry.id}>
-                        <td style={S.td}>{ticket ? <a href={`/admin/collections/tickets/${ticket.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>{ticket.ticketNumber || `#${ticket.id}`}</a> : '-'}</td>
-                        <td style={S.td}>{ticket?.subject || ''}</td>
-                        <td style={{ ...S.td, color: 'var(--theme-elevation-500)' }}>{entry.description || '-'}</td>
-                        <td style={{ ...S.td, textAlign: 'right', fontWeight: 600 }}>{formatDuration(entry.duration)}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+          {/* Grouped entries */}
+          {grouped.length === 0 ? (
+            <div className={styles.empty}>
+              {t('timeDashboard.empty')}
             </div>
-          ))}
+          ) : (
+            grouped.map((group) => (
+              <div key={group.label} className={styles.groupCard}>
+                <div className={styles.groupHeader}>
+                  <span className={styles.groupLabel}>{group.label}</span>
+                  <span className={styles.groupTotal}>{formatDuration(group.totalMinutes)}</span>
+                </div>
+                <table className={styles.table}>
+                  <tbody>
+                    {group.entries.map((entry) => {
+                      const ticket = typeof entry.ticket === 'object' ? entry.ticket : null
+                      return (
+                        <tr key={entry.id} className={styles.entryRow}>
+                          <td className={styles.tdTicket}>
+                            {ticket ? (
+                              <a href={`/admin/collections/tickets/${ticket.id}`} className={styles.ticketLink}>
+                                {ticket.ticketNumber || `#${ticket.id}`}
+                              </a>
+                            ) : '-'}
+                          </td>
+                          <td className={styles.tdSubject}>
+                            {ticket?.subject || ''}
+                          </td>
+                          <td className={styles.tdDescription}>
+                            {entry.description || '-'}
+                          </td>
+                          <td className={styles.tdDuration}>
+                            {formatDuration(entry.duration)}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          )}
         </>
       )}
     </div>

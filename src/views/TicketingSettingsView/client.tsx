@@ -5,7 +5,8 @@ import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from 'lucide-
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
 import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../../components/TicketConversation/config'
-import ts from './TicketingSettings.module.scss'
+import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
+import ts from '../../styles/TicketingSettings.module.scss'
 
 /* ============================================
  * Types
@@ -293,6 +294,7 @@ const FieldRow: React.FC<{
  * ============================================ */
 
 export const TicketingSettingsClient: React.FC = () => {
+  const { t } = useTranslation()
   const [features, setFeatures] = useState<TicketingFeatures>(() => getFeatures())
   const [settings, setSettings] = useState<AllSettings>(DEFAULT_SETTINGS)
   const [signature, setSignature] = useState('')
@@ -379,34 +381,33 @@ export const TicketingSettingsClient: React.FC = () => {
     <div className={ts.page}>
       <AdminViewHeader
         icon={<Settings size={24} />}
-        title="Configuration du module Support"
-        subtitle={`${enabledCount}/${totalCount} fonctionnalites activees`}
+        title={t('settingsView.configTitle')}
+        subtitle={t('settings.subtitle', { enabled: String(enabledCount), total: String(totalCount) })}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleReset} style={btnStyle('var(--theme-elevation-400)', { small: true })}>
-              Reinitialiser
+              {t('settingsView.reset')}
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
               style={btnStyle(saved ? V.green : V.blue, { small: true })}
             >
-              {saving ? '...' : saved ? '\u2713 Sauvegarde' : 'Sauvegarder'}
+              {saving ? '...' : saved ? t('settingsView.saved') : t('common.save')}
             </button>
           </div>
         }
       />
 
       <p className={ts.intro}>
-        Configurez le module de support : fonctionnalités, email, IA, SLA et fermeture automatique.
-        Les changements prennent effet immédiatement après sauvegarde (rechargez la page du ticket).
+        {t('settingsView.intro')}
       </p>
 
       {/* ========================================
        * SECTION 1 — Feature Flags
        * ======================================== */}
       <CollapsibleSection
-        title="Fonctionnalités"
+        title={t('settingsView.features')}
         icon={<Settings size={16} />}
         color={V.blue}
         badge={
@@ -416,7 +417,7 @@ export const TicketingSettingsClient: React.FC = () => {
         }
       >
         <p className={ts.sectionDescription}>
-          Activez ou desactivez les fonctionnalites du module. Les fonctionnalites desactivees sont completement masquees de l&apos;interface.
+          {t('settingsView.featuresDescription')}
         </p>
 
         {CATEGORIES.map((cat) => {
