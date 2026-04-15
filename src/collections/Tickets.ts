@@ -343,6 +343,17 @@ function createFireTicketWebhooks(slugs: CollectionSlugs): CollectionAfterChange
           subject: doc.subject,
           previousStatus: previousDoc.status,
         })
+
+        // Invalidate client summary cache so it refreshes on next view
+        const clientId = typeof doc.client === 'object' ? doc.client?.id : doc.client
+        if (clientId) {
+          payload.update({
+            collection: 'client-summaries',
+            where: { client: { equals: clientId } },
+            data: { generatedAt: new Date(0).toISOString() }, // Force cache expiry
+            overrideAccess: true,
+          }).catch(() => { /* silent — collection might not exist yet */ })
+        }
       }
 
       // ticket_assigned

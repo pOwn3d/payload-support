@@ -3,6 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import type { SupportFeatures } from '../types'
 
 import { createAiEndpoint } from './ai'
+import { createClientIntelligenceEndpoint } from './client-intelligence'
 import { createSearchEndpoint } from './search'
 import { createBulkActionEndpoint } from './bulk-action'
 import { createMergeTicketsEndpoint } from './merge-tickets'
@@ -117,7 +118,10 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   ]
 
   // Conditional endpoints based on feature flags
-  if (!f || f.ai !== false) endpoints.push(createAiEndpoint(slugs))
+  if (!f || f.ai !== false) {
+    endpoints.push(createAiEndpoint(slugs))
+    endpoints.push(...createClientIntelligenceEndpoint(slugs))
+  }
   if (!f || f.bulkActions !== false) endpoints.push(createBulkActionEndpoint(slugs))
   if (!f || f.merge !== false) endpoints.push(createMergeTicketsEndpoint(slugs))
   if (!f || f.splitTicket !== false) endpoints.push(createSplitTicketEndpoint(slugs))

@@ -20,6 +20,7 @@ import {
   createSlaPoliciesCollection,
   createMacrosCollection,
   createTicketStatusesCollection,
+  createClientSummariesCollection,
 } from './collections'
 
 function viewConfig(component: string, path: string): AdminViewConfig {
@@ -99,6 +100,7 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     if (features.customStatuses !== false) supportCollections.push(createTicketStatusesCollection(slugs))
     if (features.chat) supportCollections.push(createChatMessagesCollection(slugs))
     if (features.pendingEmails) supportCollections.push(createPendingEmailsCollection(slugs))
+    if (features.ai !== false) supportCollections.push(createClientSummariesCollection(slugs))
 
     // ─── Admin Views ─────────────────────────────────────
 
