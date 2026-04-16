@@ -145,9 +145,12 @@ function CodeBlockRenderer({ text }) {
     return null;
   }) });
 }
+function htmlToText(html) {
+  return html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6]|tr|pre)>/gi, "\n").replace(/<\/?(ul|ol|table|tbody|thead)[^>]*>/gi, "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, "\n\n").trim();
+}
 function CodeBlockRendererHtml({ html }) {
-  const stripped = html.replace(/<[^>]+>/g, "");
-  return /* @__PURE__ */ jsxRuntime.jsx(CodeBlockRenderer, { text: stripped });
+  const text = htmlToText(html);
+  return /* @__PURE__ */ jsxRuntime.jsx(CodeBlockRenderer, { text });
 }
 
 exports.CodeBlockRenderer = CodeBlockRenderer;

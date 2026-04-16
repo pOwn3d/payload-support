@@ -676,10 +676,7 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                       return /* @__PURE__ */ jsxRuntime.jsx("span", { style: { color: "#94a3b8" }, children: "\u2713" });
                     })() })
                   ] }),
-                  msg.deletedAt ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml ? /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
-                    /* @__PURE__ */ jsxRuntime.jsx("div", { className: `${s__default.default.messageBody} ${s__default.default.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }),
-                    /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.CodeBlockRendererHtml, { html: msg.bodyHtml })
-                  ] }) : CodeBlock.hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, children: msg.body }),
+                  msg.deletedAt ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && CodeBlock.hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: `${s__default.default.messageBody} ${s__default.default.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : CodeBlock.hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, children: msg.body }),
                   Array.isArray(msg.attachments) && msg.attachments.length > 0 && /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.attachments, children: msg.attachments.map((att, i) => {
                     const file = typeof att.file === "object" ? att.file : null;
                     if (!file) return null;

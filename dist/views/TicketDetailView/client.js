@@ -4,7 +4,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { RichTextEditor } from '../../components/RichTextEditor.js';
-import { CodeBlockRendererHtml, hasCodeBlocks, MessageWithCodeBlocks } from '../../components/TicketConversation/components/CodeBlock.js';
+import { hasCodeBlocks, CodeBlockRendererHtml, MessageWithCodeBlocks } from '../../components/TicketConversation/components/CodeBlock.js';
 import { CodeBlockInserter } from '../../components/TicketConversation/components/CodeBlockInserter.js';
 import { getFeatures } from '../shared/config.js';
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation.js';
@@ -669,10 +669,7 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                       return /* @__PURE__ */ jsx("span", { style: { color: "#94a3b8" }, children: "\u2713" });
                     })() })
                   ] }),
-                  msg.deletedAt ? /* @__PURE__ */ jsx("div", { className: s.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml ? /* @__PURE__ */ jsxs(Fragment, { children: [
-                    /* @__PURE__ */ jsx("div", { className: `${s.messageBody} ${s.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }),
-                    /* @__PURE__ */ jsx(CodeBlockRendererHtml, { html: msg.bodyHtml })
-                  ] }) : hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsx("div", { className: s.messageBody, children: msg.body }),
+                  msg.deletedAt ? /* @__PURE__ */ jsx("div", { className: s.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsx(CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsx("div", { className: `${s.messageBody} ${s.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsx("div", { className: s.messageBody, children: msg.body }),
                   Array.isArray(msg.attachments) && msg.attachments.length > 0 && /* @__PURE__ */ jsx("div", { className: s.attachments, children: msg.attachments.map((att, i) => {
                     const file = typeof att.file === "object" ? att.file : null;
                     if (!file) return null;
