@@ -1454,7 +1454,23 @@ function emailRichContent(html, config) {
       return `<${tag}${cleanAttrs} style="${style}">`;
     });
   }
+  function convertFencedCodeBlocks(input) {
+    if (!input.includes("```")) return input;
+    const normalized = input.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div)>\s*<(p|div)[^>]*>/gi, "\n").replace(/<(p|div)[^>]*>/gi, "").replace(/<\/(p|div)>/gi, "\n");
+    return normalized.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
+      const cleanCode = escapeHtml((code || "").replace(/\n$/, ""));
+      const label = lang ? lang.trim() : "code";
+      return `<div style="margin: 16px 0; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; background: #0f172a;">
+        <div style="padding: 6px 14px; background: #1e293b; border-bottom: 1px solid #334155; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(label)}</div>
+        <pre style="margin: 0; padding: 14px 16px; overflow-x: auto; background: #0f172a; color: #e2e8f0; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 13px; line-height: 1.6; white-space: pre;"><code style="background: transparent; padding: 0; color: inherit; font-family: inherit; font-size: inherit;">${cleanCode}</code></pre>
+      </div>`;
+    }).split(/(<div style="margin: 16px 0[\s\S]*?<\/div>)/g).map((chunk) => {
+      if (chunk.startsWith('<div style="margin: 16px 0')) return chunk;
+      return chunk.split("\n").map((line) => line.trim() ? `<p>${line}</p>` : "").join("");
+    }).join("");
+  }
   let result = html.replace(/src="\/([^"]+)"/g, `src="${baseUrl}/$1"`);
+  result = convertFencedCodeBlocks(result);
   result = styleTag(result, "blockquote", `border-left: 4px solid ${c.brandColor}; margin: 16px 0; padding: 12px 20px; background: #f0f9fa; border-radius: 0 8px 8px 0;`);
   result = styleTag(result, "img", "max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block;");
   result = styleTag(result, "a", `color: ${c.brandColor}; text-decoration: underline; font-weight: 600;`);
