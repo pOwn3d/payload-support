@@ -610,11 +610,10 @@ const [clientTyping, setClientTyping] = useState(false)
                       </div>
                       {(msg as unknown as { deletedAt?: string }).deletedAt ? (
                         <div className={s.messageBody} style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('detail.messageDeleted')}</div>
+                      ) : msg.bodyHtml && hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, '')) ? (
+                        <CodeBlockRendererHtml html={msg.bodyHtml} />
                       ) : msg.bodyHtml ? (
-                        <>
-                          <div className={`${s.messageBody} ${s.rteDisplay}`} dangerouslySetInnerHTML={{ __html: msg.bodyHtml }} />
-                          <CodeBlockRendererHtml html={msg.bodyHtml} />
-                        </>
+                        <div className={`${s.messageBody} ${s.rteDisplay}`} dangerouslySetInnerHTML={{ __html: msg.bodyHtml }} />
                       ) : hasCodeBlocks(msg.body) ? (
                         <MessageWithCodeBlocks text={msg.body} style={{ fontSize: '13px', lineHeight: 1.5 }} />
                       ) : (

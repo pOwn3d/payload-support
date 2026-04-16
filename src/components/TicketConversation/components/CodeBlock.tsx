@@ -176,11 +176,29 @@ export function CodeBlockRenderer({ text }: { text: string }) {
 }
 
 /**
+ * Converts HTML to plain text while preserving line breaks from block-level tags.
+ */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6]|tr|pre)>/gi, '\n')
+    .replace(/<\/?(ul|ol|table|tbody|thead)[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
  * For HTML content, parses <pre><code> blocks from the RTE.
  * Also handles ```lang blocks that survived as text in HTML.
  */
 export function CodeBlockRendererHtml({ html }: { html: string }) {
-  // Check for fenced code blocks in raw text within HTML
-  const stripped = html.replace(/<[^>]+>/g, '')
-  return <CodeBlockRenderer text={stripped} />
+  const text = htmlToText(html)
+  return <CodeBlockRenderer text={text} />
 }
