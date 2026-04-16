@@ -149,17 +149,21 @@ function SingleCodeBlock({ lang, code }: { lang: string; code: string }) {
 }
 
 /**
- * Renders text with fenced code blocks (```lang ... ```) styled per language.
- * Non-code text is passed through as-is.
+ * Checks if text contains fenced code blocks.
  */
-export function CodeBlockRenderer({ text }: { text: string }) {
-  // Match ```lang\n...\n``` blocks
+export function hasCodeBlocks(text: string): boolean {
+  return /```[\s\S]*?```/.test(text)
+}
+
+/**
+ * Renders the FULL message text, replacing fenced code blocks with styled components.
+ * Use this INSTEAD of rendering msg.body directly when code blocks are present.
+ */
+export function MessageWithCodeBlocks({ text, style }: { text: string; style?: React.CSSProperties }) {
   const parts = text.split(/(```[\s\S]*?```)/g)
-  const hasCodeBlock = parts.some((p) => p.startsWith('```'))
-  if (!hasCodeBlock) return null
 
   return (
-    <>
+    <div style={style}>
       {parts.map((part, i) => {
         if (part.startsWith('```')) {
           const match = part.match(/^```(\w*)\n?([\s\S]*?)```$/)
@@ -169,9 +173,11 @@ export function CodeBlockRenderer({ text }: { text: string }) {
             return <SingleCodeBlock key={i} lang={lang} code={code} />
           }
         }
-        return null
+        // Render plain text parts
+        if (!part) return null
+        return <span key={i} style={{ whiteSpace: 'pre-wrap' }}>{part}</span>
       })}
-    </>
+    </div>
   )
 }
 
@@ -180,24 +186,39 @@ export function CodeBlockRenderer({ text }: { text: string }) {
  */
 function htmlToText(html: string): string {
   return html
+    // Convert line breaks first (before stripping)
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|li|h[1-6]|tr|pre)>/gi, '\n')
     .replace(/<\/?(ul|ol|table|tbody|thead)[^>]*>/gi, '')
+    // Strip remaining tags
     .replace(/<[^>]+>/g, '')
+    // Decode common HTML entities
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    // Collapse 3+ newlines into 2
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 
 /**
- * For HTML content, parses <pre><code> blocks from the RTE.
- * Also handles ```lang blocks that survived as text in HTML.
+ * For HTML content: strips tags (preserving newlines), then renders with code blocks.
  */
+export function MessageWithCodeBlocksHtml({ html, style }: { html: string; style?: React.CSSProperties }) {
+  const text = htmlToText(html)
+  if (!hasCodeBlocks(text)) return null
+  return <MessageWithCodeBlocks text={text} style={style} />
+}
+
+// Keep old exports for backwards compat (but they're no longer used in message rendering)
+export function CodeBlockRenderer({ text }: { text: string }) {
+  if (!hasCodeBlocks(text)) return null
+  return <MessageWithCodeBlocks text={text} />
+}
+
 export function CodeBlockRendererHtml({ html }: { html: string }) {
   const text = htmlToText(html)
   return <CodeBlockRenderer text={text} />

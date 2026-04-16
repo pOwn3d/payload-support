@@ -3,7 +3,7 @@ import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { RichTextEditor } from '../../components/RichTextEditor.js';
+import { RichTextEditor } from '../../components/RichTextEditor/index.js';
 import { hasCodeBlocks, CodeBlockRendererHtml, MessageWithCodeBlocks } from '../../components/TicketConversation/components/CodeBlock.js';
 import { CodeBlockInserter } from '../../components/TicketConversation/components/CodeBlockInserter.js';
 import { getFeatures } from '../shared/config.js';

@@ -4,7 +4,7 @@ var jsxRuntime = require('react/jsx-runtime');
 var React = require('react');
 var navigation = require('next/navigation');
 var Link = require('next/link');
-var RichTextEditor = require('../../components/RichTextEditor');
+var index = require('../../components/RichTextEditor/index');
 var CodeBlock = require('../../components/TicketConversation/components/CodeBlock');
 var CodeBlockInserter = require('../../components/TicketConversation/components/CodeBlockInserter');
 var config = require('../shared/config');
@@ -776,7 +776,7 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                   cannedResponses.map((cr) => /* @__PURE__ */ jsxRuntime.jsx("option", { value: String(cr.id), children: cr.title }, cr.id))
                 ] })
               ] }),
-              /* @__PURE__ */ jsxRuntime.jsx(RichTextEditor.RichTextEditor, { ref: editorRef, onChange: (html, text) => {
+              /* @__PURE__ */ jsxRuntime.jsx(index.RichTextEditor, { ref: editorRef, onChange: (html, text) => {
                 setReplyHtml(html);
                 setReplyBody(text);
               }, placeholder: isInternal ? t("composer.placeholderInternal") : t("composer.placeholderReplyTo", { name: client?.firstName || "client" }), minHeight: 100, borderColor: "transparent" }),

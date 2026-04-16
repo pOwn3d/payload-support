@@ -1,5 +1,5 @@
 "use client";
-import { jsx, Fragment, jsxs } from 'react/jsx-runtime';
+import { jsx, jsxs } from 'react/jsx-runtime';
 import { useState } from 'react';
 
 const LANG_CONFIG = {
@@ -128,11 +128,12 @@ function SingleCodeBlock({ lang, code }) {
     ] })
   ] });
 }
-function CodeBlockRenderer({ text }) {
+function hasCodeBlocks(text) {
+  return /```[\s\S]*?```/.test(text);
+}
+function MessageWithCodeBlocks({ text, style }) {
   const parts = text.split(/(```[\s\S]*?```)/g);
-  const hasCodeBlock = parts.some((p) => p.startsWith("```"));
-  if (!hasCodeBlock) return null;
-  return /* @__PURE__ */ jsx(Fragment, { children: parts.map((part, i) => {
+  return /* @__PURE__ */ jsx("div", { style, children: parts.map((part, i) => {
     if (part.startsWith("```")) {
       const match = part.match(/^```(\w*)\n?([\s\S]*?)```$/);
       if (match) {
@@ -141,15 +142,25 @@ function CodeBlockRenderer({ text }) {
         return /* @__PURE__ */ jsx(SingleCodeBlock, { lang, code }, i);
       }
     }
-    return null;
+    if (!part) return null;
+    return /* @__PURE__ */ jsx("span", { style: { whiteSpace: "pre-wrap" }, children: part }, i);
   }) });
 }
 function htmlToText(html) {
   return html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6]|tr|pre)>/gi, "\n").replace(/<\/?(ul|ol|table|tbody|thead)[^>]*>/gi, "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, "\n\n").trim();
+}
+function MessageWithCodeBlocksHtml({ html, style }) {
+  const text = htmlToText(html);
+  if (!hasCodeBlocks(text)) return null;
+  return /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text, style });
+}
+function CodeBlockRenderer({ text }) {
+  if (!hasCodeBlocks(text)) return null;
+  return /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text });
 }
 function CodeBlockRendererHtml({ html }) {
   const text = htmlToText(html);
   return /* @__PURE__ */ jsx(CodeBlockRenderer, { text });
 }
 
-export { CodeBlockRenderer, CodeBlockRendererHtml };
+export { CodeBlockRenderer, CodeBlockRendererHtml, MessageWithCodeBlocks, MessageWithCodeBlocksHtml, hasCodeBlocks };

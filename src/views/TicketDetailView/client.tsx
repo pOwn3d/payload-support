@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { RichTextEditor, type RichTextEditorHandle } from '../../components/RichTextEditor'
+import { RichTextEditor, type RichTextEditorHandle } from '../../components/RichTextEditor/index'
 import { hasCodeBlocks, MessageWithCodeBlocks, CodeBlockRendererHtml } from '../../components/TicketConversation/components/CodeBlock'
 import { CodeBlockInserter } from '../../components/TicketConversation/components/CodeBlockInserter'
 import { getFeatures } from '../shared/config'

@@ -107,11 +107,11 @@ export default defineConfig([
       'src/views/**/*.ts',
       'src/views/**/*.scss',
       'src/views/**/*.css',
-      'src/components/TicketConversation/**/*.tsx',
-      'src/components/TicketConversation/**/*.ts',
-      'src/components/TicketConversation/**/*.json',
-      'src/components/TicketConversation/**/*.scss',
-      'src/components/TicketConversation/**/*.css',
+      'src/components/**/*.tsx',
+      'src/components/**/*.ts',
+      'src/components/**/*.json',
+      'src/components/**/*.scss',
+      'src/components/**/*.css',
       'src/styles/**/*.css',
       'src/styles/**/*.scss',
       '!src/**/*.d.ts',
@@ -188,6 +188,7 @@ export default defineConfig([
         f === 'ErrorBoundary.js' || f === 'Skeleton.js' || f === 'AdminViewHeader.js'
       )
       processDir('dist/components/TicketConversation', () => true)
+      processDir('dist/components/RichTextEditor', () => true)
       console.log('✓ Fixed .js extensions + prepended "use client"')
     },
   },
