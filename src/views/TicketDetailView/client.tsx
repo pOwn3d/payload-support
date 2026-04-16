@@ -133,6 +133,10 @@ export const TicketDetailClient: React.FC = () => {
   const [isInternal, setIsInternal] = useState(false)
   const [notifyClient, setNotifyClient] = useState(true)
   const [sendAsClient, setSendAsClient] = useState(false)
+  // Inline message edit
+  const [editingMsgId, setEditingMsgId] = useState<string | number | null>(null)
+  const [editingBody, setEditingBody] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
   const [sending, setSending] = useState(false)
 
   const [showMenu, setShowMenu] = useState(false)
@@ -441,6 +445,37 @@ const [clientTyping, setClientTyping] = useState(false)
     }
   }
 
+  // Inline edit message (body only, clears bodyHtml so the edit shows as plain text)
+  const startEditMessage = (msg: Message) => {
+    setEditingMsgId(msg.id)
+    setEditingBody(msg.body || '')
+  }
+
+  const cancelEditMessage = () => {
+    setEditingMsgId(null)
+    setEditingBody('')
+  }
+
+  const saveEditMessage = async () => {
+    if (editingMsgId === null) return
+    setEditSaving(true)
+    try {
+      const res = await fetch(`/api/ticket-messages/${editingMsgId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ body: editingBody, bodyHtml: null, skipNotification: true }),
+      })
+      if (res.ok) {
+        setEditingMsgId(null)
+        setEditingBody('')
+        fetchAll()
+      }
+    } catch { /* silent */ } finally {
+      setEditSaving(false)
+    }
+  }
+
   // #2 — Split ticket with modal
   const handleSplitConfirm = async () => {
     if (!splitModal || !splitSubject.trim()) return
@@ -617,7 +652,20 @@ const [clientTyping, setClientTyping] = useState(false)
                           })()}
                         </span>
                       </div>
-                      {(msg as unknown as { deletedAt?: string }).deletedAt ? (
+                      {editingMsgId === msg.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          <textarea
+                            value={editingBody}
+                            onChange={(e) => setEditingBody(e.target.value)}
+                            style={{ width: '100%', minHeight: 120, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit', border: '1px solid var(--theme-elevation-200)', borderRadius: 6, background: 'var(--theme-elevation-0)', color: 'var(--theme-text)' }}
+                            autoFocus
+                          />
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button onClick={cancelEditMessage} disabled={editSaving} style={{ padding: '5px 12px', fontSize: 12, borderRadius: 5, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-0)', color: 'var(--theme-text)', cursor: 'pointer' }}>Annuler</button>
+                            <button onClick={saveEditMessage} disabled={editSaving || !editingBody.trim()} style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, borderRadius: 5, border: 'none', background: '#2563eb', color: '#fff', cursor: editSaving ? 'wait' : 'pointer', opacity: editSaving ? 0.6 : 1 }}>{editSaving ? 'Sauvegarde…' : 'Enregistrer'}</button>
+                          </div>
+                        </div>
+                      ) : (msg as unknown as { deletedAt?: string }).deletedAt ? (
                         <div className={s.messageBody} style={{ color: '#94a3b8', fontStyle: 'italic' }}>{t('detail.messageDeleted')}</div>
                       ) : msg.bodyHtml && hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, '')) ? (
                         <CodeBlockRendererHtml html={msg.bodyHtml} />
@@ -641,13 +689,16 @@ const [clientTyping, setClientTyping] = useState(false)
                       )}
                     </div>
                     {/* Hover actions — icon buttons with aria-labels (#7) */}
-                    <div className={s.messageActions}>
-                      {/* #2 — Undo toast instead of confirm() */}
-                      <button className={`${s.actionIcon} ${s.danger}`} title={t('actions.deleteMessage')} aria-label={t('actions.deleteMessage')} onClick={() => handleDeleteMessage(msg.id)} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.deleteMessage')}</button>
-                      {/* #2 — Split modal instead of prompt() */}
-                      {features.splitTicket && !msg.isInternal && <button className={s.actionIcon} title={t('actions.extractMessage')} aria-label={t('actions.extractToNewTicket')} onClick={() => { setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) }); setSplitSubject(`Split: ${ticket.subject}`) }} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.extractMessage')}</button>}
-                      {isAdmin && !msg.isInternal && <button className={s.actionIcon} title={t('actions.resendEmail')} aria-label={t('actions.resendEmail')} onClick={() => fetch('/api/support/resend-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ messageId: msg.id }) })} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.resendEmail')}</button>}
-                    </div>
+                    {editingMsgId !== msg.id && !(msg as unknown as { deletedAt?: string }).deletedAt && (
+                      <div className={s.messageActions}>
+                        <button className={s.actionIcon} title="Éditer" aria-label="Éditer le message" onClick={() => startEditMessage(msg)} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>Éditer</button>
+                        {/* #2 — Undo toast instead of confirm() */}
+                        <button className={`${s.actionIcon} ${s.danger}`} title={t('actions.deleteMessage')} aria-label={t('actions.deleteMessage')} onClick={() => handleDeleteMessage(msg.id)} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.deleteMessage')}</button>
+                        {/* #2 — Split modal instead of prompt() */}
+                        {features.splitTicket && !msg.isInternal && <button className={s.actionIcon} title={t('actions.extractMessage')} aria-label={t('actions.extractToNewTicket')} onClick={() => { setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) }); setSplitSubject(`Split: ${ticket.subject}`) }} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.extractMessage')}</button>}
+                        {isAdmin && !msg.isInternal && <button className={s.actionIcon} title={t('actions.resendEmail')} aria-label={t('actions.resendEmail')} onClick={() => fetch('/api/support/resend-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ messageId: msg.id }) })} style={{ fontSize: 11, width: 'auto', padding: '4px 8px' }}>{t('actions.resendEmail')}</button>}
+                      </div>
+                    )}
                   </div>
                 </React.Fragment>
               )

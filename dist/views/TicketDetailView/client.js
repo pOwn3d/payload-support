@@ -132,6 +132,9 @@ const TicketDetailClient = () => {
   const [isInternal, setIsInternal] = useState(false);
   const [notifyClient, setNotifyClient] = useState(true);
   const [sendAsClient, setSendAsClient] = useState(false);
+  const [editingMsgId, setEditingMsgId] = useState(null);
+  const [editingBody, setEditingBody] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [clientTyping, setClientTyping] = useState(false);
@@ -470,6 +473,34 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
       setUndoToast(null);
     }
   };
+  const startEditMessage = (msg) => {
+    setEditingMsgId(msg.id);
+    setEditingBody(msg.body || "");
+  };
+  const cancelEditMessage = () => {
+    setEditingMsgId(null);
+    setEditingBody("");
+  };
+  const saveEditMessage = async () => {
+    if (editingMsgId === null) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/ticket-messages/${editingMsgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ body: editingBody, bodyHtml: null, skipNotification: true })
+      });
+      if (res.ok) {
+        setEditingMsgId(null);
+        setEditingBody("");
+        fetchAll();
+      }
+    } catch {
+    } finally {
+      setEditSaving(false);
+    }
+  };
   const handleSplitConfirm = async () => {
     if (!splitModal || !splitSubject.trim()) return;
     try {
@@ -679,7 +710,21 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                       return /* @__PURE__ */ jsx("span", { style: { color: "#94a3b8" }, children: "\u2713" });
                     })() })
                   ] }),
-                  msg.deletedAt ? /* @__PURE__ */ jsx("div", { className: s.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsx(CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsx("div", { className: `${s.messageBody} ${s.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsx("div", { className: s.messageBody, children: msg.body }),
+                  editingMsgId === msg.id ? /* @__PURE__ */ jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
+                    /* @__PURE__ */ jsx(
+                      "textarea",
+                      {
+                        value: editingBody,
+                        onChange: (e) => setEditingBody(e.target.value),
+                        style: { width: "100%", minHeight: 120, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: "inherit", border: "1px solid var(--theme-elevation-200)", borderRadius: 6, background: "var(--theme-elevation-0)", color: "var(--theme-text)" },
+                        autoFocus: true
+                      }
+                    ),
+                    /* @__PURE__ */ jsxs("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" }, children: [
+                      /* @__PURE__ */ jsx("button", { onClick: cancelEditMessage, disabled: editSaving, style: { padding: "5px 12px", fontSize: 12, borderRadius: 5, border: "1px solid var(--theme-elevation-200)", background: "var(--theme-elevation-0)", color: "var(--theme-text)", cursor: "pointer" }, children: "Annuler" }),
+                      /* @__PURE__ */ jsx("button", { onClick: saveEditMessage, disabled: editSaving || !editingBody.trim(), style: { padding: "5px 12px", fontSize: 12, fontWeight: 600, borderRadius: 5, border: "none", background: "#2563eb", color: "#fff", cursor: editSaving ? "wait" : "pointer", opacity: editSaving ? 0.6 : 1 }, children: editSaving ? "Sauvegarde\u2026" : "Enregistrer" })
+                    ] })
+                  ] }) : msg.deletedAt ? /* @__PURE__ */ jsx("div", { className: s.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsx(CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsx("div", { className: `${s.messageBody} ${s.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsx(MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsx("div", { className: s.messageBody, children: msg.body }),
                   Array.isArray(msg.attachments) && msg.attachments.length > 0 && /* @__PURE__ */ jsx("div", { className: s.attachments, children: msg.attachments.map((att, i) => {
                     const file = typeof att.file === "object" ? att.file : null;
                     if (!file) return null;
@@ -689,7 +734,8 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                     ] }, i);
                   }) })
                 ] }),
-                /* @__PURE__ */ jsxs("div", { className: s.messageActions, children: [
+                editingMsgId !== msg.id && !msg.deletedAt && /* @__PURE__ */ jsxs("div", { className: s.messageActions, children: [
+                  /* @__PURE__ */ jsx("button", { className: s.actionIcon, title: "\xC9diter", "aria-label": "\xC9diter le message", onClick: () => startEditMessage(msg), style: { fontSize: 11, width: "auto", padding: "4px 8px" }, children: "\xC9diter" }),
                   /* @__PURE__ */ jsx("button", { className: `${s.actionIcon} ${s.danger}`, title: t("actions.deleteMessage"), "aria-label": t("actions.deleteMessage"), onClick: () => handleDeleteMessage(msg.id), style: { fontSize: 11, width: "auto", padding: "4px 8px" }, children: t("actions.deleteMessage") }),
                   features.splitTicket && !msg.isInternal && /* @__PURE__ */ jsx("button", { className: s.actionIcon, title: t("actions.extractMessage"), "aria-label": t("actions.extractToNewTicket"), onClick: () => {
                     setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) });

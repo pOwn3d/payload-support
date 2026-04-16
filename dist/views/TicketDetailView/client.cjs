@@ -139,6 +139,9 @@ const TicketDetailClient = () => {
   const [isInternal, setIsInternal] = React.useState(false);
   const [notifyClient, setNotifyClient] = React.useState(true);
   const [sendAsClient, setSendAsClient] = React.useState(false);
+  const [editingMsgId, setEditingMsgId] = React.useState(null);
+  const [editingBody, setEditingBody] = React.useState("");
+  const [editSaving, setEditSaving] = React.useState(false);
   const [sending, setSending] = React.useState(false);
   const [showMenu, setShowMenu] = React.useState(false);
   const [clientTyping, setClientTyping] = React.useState(false);
@@ -477,6 +480,34 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
       setUndoToast(null);
     }
   };
+  const startEditMessage = (msg) => {
+    setEditingMsgId(msg.id);
+    setEditingBody(msg.body || "");
+  };
+  const cancelEditMessage = () => {
+    setEditingMsgId(null);
+    setEditingBody("");
+  };
+  const saveEditMessage = async () => {
+    if (editingMsgId === null) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/ticket-messages/${editingMsgId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ body: editingBody, bodyHtml: null, skipNotification: true })
+      });
+      if (res.ok) {
+        setEditingMsgId(null);
+        setEditingBody("");
+        fetchAll();
+      }
+    } catch {
+    } finally {
+      setEditSaving(false);
+    }
+  };
   const handleSplitConfirm = async () => {
     if (!splitModal || !splitSubject.trim()) return;
     try {
@@ -686,7 +717,21 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                       return /* @__PURE__ */ jsxRuntime.jsx("span", { style: { color: "#94a3b8" }, children: "\u2713" });
                     })() })
                   ] }),
-                  msg.deletedAt ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && CodeBlock.hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: `${s__default.default.messageBody} ${s__default.default.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : CodeBlock.hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, children: msg.body }),
+                  editingMsgId === msg.id ? /* @__PURE__ */ jsxRuntime.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
+                    /* @__PURE__ */ jsxRuntime.jsx(
+                      "textarea",
+                      {
+                        value: editingBody,
+                        onChange: (e) => setEditingBody(e.target.value),
+                        style: { width: "100%", minHeight: 120, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: "inherit", border: "1px solid var(--theme-elevation-200)", borderRadius: 6, background: "var(--theme-elevation-0)", color: "var(--theme-text)" },
+                        autoFocus: true
+                      }
+                    ),
+                    /* @__PURE__ */ jsxRuntime.jsxs("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" }, children: [
+                      /* @__PURE__ */ jsxRuntime.jsx("button", { onClick: cancelEditMessage, disabled: editSaving, style: { padding: "5px 12px", fontSize: 12, borderRadius: 5, border: "1px solid var(--theme-elevation-200)", background: "var(--theme-elevation-0)", color: "var(--theme-text)", cursor: "pointer" }, children: "Annuler" }),
+                      /* @__PURE__ */ jsxRuntime.jsx("button", { onClick: saveEditMessage, disabled: editSaving || !editingBody.trim(), style: { padding: "5px 12px", fontSize: 12, fontWeight: 600, borderRadius: 5, border: "none", background: "#2563eb", color: "#fff", cursor: editSaving ? "wait" : "pointer", opacity: editSaving ? 0.6 : 1 }, children: editSaving ? "Sauvegarde\u2026" : "Enregistrer" })
+                    ] })
+                  ] }) : msg.deletedAt ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, style: { color: "#94a3b8", fontStyle: "italic" }, children: t("detail.messageDeleted") }) : msg.bodyHtml && CodeBlock.hasCodeBlocks(msg.bodyHtml.replace(/<[^>]+>/g, "")) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.CodeBlockRendererHtml, { html: msg.bodyHtml }) : msg.bodyHtml ? /* @__PURE__ */ jsxRuntime.jsx("div", { className: `${s__default.default.messageBody} ${s__default.default.rteDisplay}`, dangerouslySetInnerHTML: { __html: msg.bodyHtml } }) : CodeBlock.hasCodeBlocks(msg.body) ? /* @__PURE__ */ jsxRuntime.jsx(CodeBlock.MessageWithCodeBlocks, { text: msg.body, style: { fontSize: "13px", lineHeight: 1.5 } }) : /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.messageBody, children: msg.body }),
                   Array.isArray(msg.attachments) && msg.attachments.length > 0 && /* @__PURE__ */ jsxRuntime.jsx("div", { className: s__default.default.attachments, children: msg.attachments.map((att, i) => {
                     const file = typeof att.file === "object" ? att.file : null;
                     if (!file) return null;
@@ -696,7 +741,8 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                     ] }, i);
                   }) })
                 ] }),
-                /* @__PURE__ */ jsxRuntime.jsxs("div", { className: s__default.default.messageActions, children: [
+                editingMsgId !== msg.id && !msg.deletedAt && /* @__PURE__ */ jsxRuntime.jsxs("div", { className: s__default.default.messageActions, children: [
+                  /* @__PURE__ */ jsxRuntime.jsx("button", { className: s__default.default.actionIcon, title: "\xC9diter", "aria-label": "\xC9diter le message", onClick: () => startEditMessage(msg), style: { fontSize: 11, width: "auto", padding: "4px 8px" }, children: "\xC9diter" }),
                   /* @__PURE__ */ jsxRuntime.jsx("button", { className: `${s__default.default.actionIcon} ${s__default.default.danger}`, title: t("actions.deleteMessage"), "aria-label": t("actions.deleteMessage"), onClick: () => handleDeleteMessage(msg.id), style: { fontSize: 11, width: "auto", padding: "4px 8px" }, children: t("actions.deleteMessage") }),
                   features.splitTicket && !msg.isInternal && /* @__PURE__ */ jsxRuntime.jsx("button", { className: s__default.default.actionIcon, title: t("actions.extractMessage"), "aria-label": t("actions.extractToNewTicket"), onClick: () => {
                     setSplitModal({ messageId: msg.id, preview: msg.body.slice(0, 200) });
