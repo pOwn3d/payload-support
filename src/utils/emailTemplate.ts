@@ -88,19 +88,19 @@ export function emailRichContent(html: string, config?: EmailTemplateConfig): st
       .replace(/<(p|div)[^>]*>/gi, '')
       .replace(/<\/(p|div)>/gi, '\n')
 
-    return normalized.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
-      const cleanCode = escapeHtml((code || '').replace(/\n$/, ''))
-      const label = lang ? lang.trim() : 'code'
-      return `<div style="margin: 16px 0; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; background: #0f172a;">
-        <div style="padding: 6px 14px; background: #1e293b; border-bottom: 1px solid #334155; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(label)}</div>
-        <pre style="margin: 0; padding: 14px 16px; overflow-x: auto; background: #0f172a; color: #e2e8f0; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 13px; line-height: 1.6; white-space: pre;"><code style="background: transparent; padding: 0; color: inherit; font-family: inherit; font-size: inherit;">${cleanCode}</code></pre>
-      </div>`
+    // Replace code blocks with markers to protect them from paragraph wrapping
+    const codeBlocks: string[] = []
+    const withMarkers = normalized.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
+      codeBlocks.push(renderCodeBlockHtml(lang || '', code || ''))
+      return `\x00CODEBLOCK_${codeBlocks.length - 1}\x00`
     })
-      // Re-wrap non-code text chunks in paragraphs (split by our <div> blocks)
-      .split(/(<div style="margin: 16px 0[\s\S]*?<\/div>)/g)
+
+    // Wrap non-marker text lines in <p>, then restore code blocks
+    return withMarkers
+      .split(/(\x00CODEBLOCK_\d+\x00)/g)
       .map((chunk) => {
-        if (chunk.startsWith('<div style="margin: 16px 0')) return chunk
-        // Non-code chunk: wrap text lines in <p>
+        const markerMatch = chunk.match(/^\x00CODEBLOCK_(\d+)\x00$/)
+        if (markerMatch) return codeBlocks[parseInt(markerMatch[1], 10)]
         return chunk
           .split('\n')
           .map((line) => line.trim() ? `<p>${line}</p>` : '')
@@ -165,11 +165,52 @@ export function emailButton(text: string, url: string, color: ButtonColor = 'pri
 }
 
 /**
- * Quote block for message previews
+ * Render a single fenced code block as styled email HTML.
+ * Email clients don't run JS so we just use a nice static layout.
+ */
+function renderCodeBlockHtml(lang: string, code: string): string {
+  const cleanCode = escapeHtml(code.replace(/\n$/, ''))
+  const label = lang ? lang.trim() : 'code'
+  return `<div style="margin: 12px 0; border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; background: #0f172a;">
+    <div style="padding: 6px 14px; background: #1e293b; border-bottom: 1px solid #334155; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(label)}</div>
+    <pre style="margin: 0; padding: 14px 16px; overflow-x: auto; background: #0f172a; color: #e2e8f0; font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 13px; line-height: 1.6; white-space: pre;"><code style="background: transparent; padding: 0; color: inherit; font-family: inherit; font-size: inherit;">${cleanCode}</code></pre>
+  </div>`
+}
+
+/**
+ * Quote block for message previews — supports fenced code blocks.
  */
 export function emailQuote(content: string, borderColor?: string, config?: EmailTemplateConfig): string {
   const c = resolveConfig(config)
   const color = borderColor || c.brandColor
+
+  // If content has fenced code blocks, render them as styled blocks
+  if (content && content.includes('```')) {
+    const parts: string[] = []
+    const regex = /```(\w*)\n?([\s\S]*?)```/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(content)) !== null) {
+      // Text before the code block
+      const textBefore = content.slice(lastIndex, match.index).trim()
+      if (textBefore) {
+        parts.push(`<p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #333333; white-space: pre-wrap;">${escapeHtml(textBefore)}</p>`)
+      }
+      parts.push(renderCodeBlockHtml(match[1] || '', match[2] || ''))
+      lastIndex = match.index + match[0].length
+    }
+    // Remaining text after the last code block
+    const textAfter = content.slice(lastIndex).trim()
+    if (textAfter) {
+      parts.push(`<p style="margin: 12px 0 0 0; font-size: 15px; line-height: 1.75; color: #333333; white-space: pre-wrap;">${escapeHtml(textAfter)}</p>`)
+    }
+    return `
+      <div style="margin: 24px 0; padding: 20px 24px; background: #f8f9fa; border-left: 4px solid ${color}; border-radius: 0 8px 8px 0;">
+        ${parts.join('')}
+      </div>
+    `
+  }
+
   return `
     <div style="margin: 24px 0; padding: 20px 24px; background: #f8f9fa; border-left: 4px solid ${color}; border-radius: 0 8px 8px 0;">
       <p style="margin: 0; font-size: 15px; line-height: 1.75; color: #333333; white-space: pre-wrap;">${escapeHtml(content)}</p>
