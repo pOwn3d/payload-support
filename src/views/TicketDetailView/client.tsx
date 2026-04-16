@@ -132,6 +132,7 @@ export const TicketDetailClient: React.FC = () => {
   const [replyHtml, setReplyHtml] = useState('')
   const [isInternal, setIsInternal] = useState(false)
   const [notifyClient, setNotifyClient] = useState(true)
+  const [sendAsClient, setSendAsClient] = useState(false)
   const [sending, setSending] = useState(false)
 
   const [showMenu, setShowMenu] = useState(false)
@@ -396,8 +397,16 @@ const [clientTyping, setClientTyping] = useState(false)
       const finalHtml = uploadedLinks.length > 0 ? `${replyHtml || replyBody.trim()}<br/><br/>${uploadedLinks.map((l) => l.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')).join('<br/>')}` : (replyHtml || undefined)
 
       const res = await fetch('/api/ticket-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ ticket: Number(ticketId), body: finalBody, ...(finalHtml ? { bodyHtml: finalHtml } : {}), authorType: 'admin', isInternal, skipNotification: isInternal || !notifyClient }) })
-      if (res.ok) { setReplyBody(''); setReplyHtml(''); setIsInternal(false); setPendingFiles([]); editorRef.current?.clear(); fetchAll() }
+        body: JSON.stringify({
+          ticket: Number(ticketId),
+          body: finalBody,
+          ...(finalHtml ? { bodyHtml: finalHtml } : {}),
+          authorType: sendAsClient ? 'client' : 'admin',
+          ...(sendAsClient && client ? { authorClient: client.id } : {}),
+          isInternal: sendAsClient ? false : isInternal,
+          skipNotification: sendAsClient || isInternal || !notifyClient,
+        }) })
+      if (res.ok) { setReplyBody(''); setReplyHtml(''); setIsInternal(false); setSendAsClient(false); setPendingFiles([]); editorRef.current?.clear(); fetchAll() }
     } catch {} finally { setSending(false) }
   }
 
@@ -718,13 +727,27 @@ const [clientTyping, setClientTyping] = useState(false)
             )}
             <div className={s.composerFooter}>
               <div className={s.composerOptions}>
-                {/* #9 — "Internal" -> "Note interne", "Notify" -> "Notifier" */}
-                <label><input type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} /> {t('detail.internalNote')}</label>
-                <label><input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} disabled={isInternal} /> {t('detail.notify')}</label>
+                <select
+                  value={sendAsClient ? 'client' : 'admin'}
+                  onChange={(e) => {
+                    const asClient = e.target.value === 'client'
+                    setSendAsClient(asClient)
+                    if (asClient) { setIsInternal(false); setNotifyClient(false) }
+                  }}
+                  style={{ fontSize: '12px', padding: '4px 8px', fontWeight: 600, borderRadius: 6, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-0)', color: 'var(--theme-text)' }}
+                >
+                  <option value="admin">En tant que : Support</option>
+                  <option value="client">En tant que : Client</option>
+                </select>
+                {!sendAsClient && (
+                  <>
+                    <label><input type="checkbox" checked={isInternal} onChange={(e) => setIsInternal(e.target.checked)} /> {t('detail.internalNote')}</label>
+                    <label><input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} disabled={isInternal} /> {t('detail.notify')}</label>
+                  </>
+                )}
               </div>
-              {/* #9 — "Send ->" -> "Envoyer ->" */}
               <button className={`${s.sendBtn} ${isInternal ? s.sendBtnInternal : ''}`} onClick={handleSend} disabled={sending || !replyBody.trim()} data-action="send-reply">
-                {sending ? t('detail.sending') : isInternal ? t('detail.sendNote') : t('detail.sendReply')}
+                {sending ? t('detail.sending') : sendAsClient ? 'Ajouter message client' : isInternal ? t('detail.sendNote') : t('detail.sendReply')}
               </button>
             </div>
           </div>

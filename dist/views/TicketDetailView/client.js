@@ -131,6 +131,7 @@ const TicketDetailClient = () => {
   const [replyHtml, setReplyHtml] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [notifyClient, setNotifyClient] = useState(true);
+  const [sendAsClient, setSendAsClient] = useState(false);
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [clientTyping, setClientTyping] = useState(false);
@@ -412,12 +413,21 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ ticket: Number(ticketId), body: finalBody, ...finalHtml ? { bodyHtml: finalHtml } : {}, authorType: "admin", isInternal, skipNotification: isInternal || !notifyClient })
+        body: JSON.stringify({
+          ticket: Number(ticketId),
+          body: finalBody,
+          ...finalHtml ? { bodyHtml: finalHtml } : {},
+          authorType: sendAsClient ? "client" : "admin",
+          ...sendAsClient && client ? { authorClient: client.id } : {},
+          isInternal: sendAsClient ? false : isInternal,
+          skipNotification: sendAsClient || isInternal || !notifyClient
+        })
       });
       if (res.ok) {
         setReplyBody("");
         setReplyHtml("");
         setIsInternal(false);
+        setSendAsClient(false);
         setPendingFiles([]);
         editorRef.current?.clear();
         fetchAll();
@@ -782,18 +792,39 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
               ] }, i)) }),
               /* @__PURE__ */ jsxs("div", { className: s.composerFooter, children: [
                 /* @__PURE__ */ jsxs("div", { className: s.composerOptions, children: [
-                  /* @__PURE__ */ jsxs("label", { children: [
-                    /* @__PURE__ */ jsx("input", { type: "checkbox", checked: isInternal, onChange: (e) => setIsInternal(e.target.checked) }),
-                    " ",
-                    t("detail.internalNote")
-                  ] }),
-                  /* @__PURE__ */ jsxs("label", { children: [
-                    /* @__PURE__ */ jsx("input", { type: "checkbox", checked: notifyClient, onChange: (e) => setNotifyClient(e.target.checked), disabled: isInternal }),
-                    " ",
-                    t("detail.notify")
+                  /* @__PURE__ */ jsxs(
+                    "select",
+                    {
+                      value: sendAsClient ? "client" : "admin",
+                      onChange: (e) => {
+                        const asClient = e.target.value === "client";
+                        setSendAsClient(asClient);
+                        if (asClient) {
+                          setIsInternal(false);
+                          setNotifyClient(false);
+                        }
+                      },
+                      style: { fontSize: "12px", padding: "4px 8px", fontWeight: 600, borderRadius: 6, border: "1px solid var(--theme-elevation-200)", background: "var(--theme-elevation-0)", color: "var(--theme-text)" },
+                      children: [
+                        /* @__PURE__ */ jsx("option", { value: "admin", children: "En tant que : Support" }),
+                        /* @__PURE__ */ jsx("option", { value: "client", children: "En tant que : Client" })
+                      ]
+                    }
+                  ),
+                  !sendAsClient && /* @__PURE__ */ jsxs(Fragment, { children: [
+                    /* @__PURE__ */ jsxs("label", { children: [
+                      /* @__PURE__ */ jsx("input", { type: "checkbox", checked: isInternal, onChange: (e) => setIsInternal(e.target.checked) }),
+                      " ",
+                      t("detail.internalNote")
+                    ] }),
+                    /* @__PURE__ */ jsxs("label", { children: [
+                      /* @__PURE__ */ jsx("input", { type: "checkbox", checked: notifyClient, onChange: (e) => setNotifyClient(e.target.checked), disabled: isInternal }),
+                      " ",
+                      t("detail.notify")
+                    ] })
                   ] })
                 ] }),
-                /* @__PURE__ */ jsx("button", { className: `${s.sendBtn} ${isInternal ? s.sendBtnInternal : ""}`, onClick: handleSend, disabled: sending || !replyBody.trim(), "data-action": "send-reply", children: sending ? t("detail.sending") : isInternal ? t("detail.sendNote") : t("detail.sendReply") })
+                /* @__PURE__ */ jsx("button", { className: `${s.sendBtn} ${isInternal ? s.sendBtnInternal : ""}`, onClick: handleSend, disabled: sending || !replyBody.trim(), "data-action": "send-reply", children: sending ? t("detail.sending") : sendAsClient ? "Ajouter message client" : isInternal ? t("detail.sendNote") : t("detail.sendReply") })
               ] })
             ]
           }
