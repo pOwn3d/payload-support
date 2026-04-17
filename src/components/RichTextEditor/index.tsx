@@ -129,6 +129,49 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [onFileUpload, emitChange])
 
+  const handleClearFormat = useCallback(() => {
+    document.execCommand('removeFormat')
+    document.execCommand('formatBlock', false, 'p')
+    editorRef.current?.focus()
+    setTimeout(emitChange, 0)
+  }, [emitChange])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter' || e.shiftKey) return
+    const sel = window.getSelection()
+    if (!sel || sel.rangeCount === 0) return
+    // Find closest blockquote ancestor of the caret
+    let node: Node | null = sel.anchorNode
+    let blockquote: HTMLElement | null = null
+    while (node && node !== editorRef.current) {
+      if ((node as HTMLElement).nodeName === 'BLOCKQUOTE') {
+        blockquote = node as HTMLElement
+        break
+      }
+      node = node.parentNode
+    }
+    if (!blockquote) return
+    // Exit on Enter when the last line of the blockquote is empty
+    const text = blockquote.innerText || ''
+    if (text.replace(/\n+$/, '').length === 0 || text.endsWith('\n\n') || text.endsWith('\n')) {
+      e.preventDefault()
+      // Insert a paragraph after the blockquote and move caret into it
+      const p = document.createElement('p')
+      p.innerHTML = '<br>'
+      blockquote.after(p)
+      // Clean trailing empty <br> inside blockquote
+      if (blockquote.lastChild && (blockquote.lastChild as HTMLElement).nodeName === 'BR') {
+        blockquote.removeChild(blockquote.lastChild)
+      }
+      const range = document.createRange()
+      range.setStart(p, 0)
+      range.collapse(true)
+      sel.removeAllRanges()
+      sel.addRange(range)
+      setTimeout(emitChange, 0)
+    }
+  }, [emitChange])
+
   const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
     if (!onFileUpload) return
     const items = e.clipboardData?.items
@@ -215,6 +258,10 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
         <button type="button" style={btn} onMouseDown={(e) => { e.preventDefault(); handleImageClick() }} title="Insérer une image">
           &#128444;&#65039;
         </button>
+        <span style={sep} />
+        <button type="button" style={{ ...btn, fontSize: '13px' }} onMouseDown={(e) => { e.preventDefault(); handleClearFormat() }} title="Effacer la mise en forme">
+          T<span style={{ fontSize: '10px', verticalAlign: 'super' }}>&times;</span>
+        </button>
       </div>
 
       {/* Editor area */}
@@ -233,6 +280,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); emitChange() }}
           onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
           style={{
             minHeight: `${minHeight}px`,
             padding: '14px 16px',

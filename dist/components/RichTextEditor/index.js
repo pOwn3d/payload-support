@@ -98,6 +98,43 @@ const RichTextEditor = forwardRef(function RichTextEditor2({
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [onFileUpload, emitChange]);
+  const handleClearFormat = useCallback(() => {
+    document.execCommand("removeFormat");
+    document.execCommand("formatBlock", false, "p");
+    editorRef.current?.focus();
+    setTimeout(emitChange, 0);
+  }, [emitChange]);
+  const handleKeyDown = useCallback((e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node = sel.anchorNode;
+    let blockquote = null;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === "BLOCKQUOTE") {
+        blockquote = node;
+        break;
+      }
+      node = node.parentNode;
+    }
+    if (!blockquote) return;
+    const text = blockquote.innerText || "";
+    if (text.replace(/\n+$/, "").length === 0 || text.endsWith("\n\n") || text.endsWith("\n")) {
+      e.preventDefault();
+      const p = document.createElement("p");
+      p.innerHTML = "<br>";
+      blockquote.after(p);
+      if (blockquote.lastChild && blockquote.lastChild.nodeName === "BR") {
+        blockquote.removeChild(blockquote.lastChild);
+      }
+      const range = document.createRange();
+      range.setStart(p, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      setTimeout(emitChange, 0);
+    }
+  }, [emitChange]);
   const handlePaste = useCallback(async (e) => {
     if (!onFileUpload) return;
     const items = e.clipboardData?.items;
@@ -185,7 +222,15 @@ const RichTextEditor = forwardRef(function RichTextEditor2({
       /* @__PURE__ */ jsx("button", { type: "button", style: btn, onMouseDown: (e) => {
         e.preventDefault();
         handleImageClick();
-      }, title: "Ins\xE9rer une image", children: "\u{1F5BC}\uFE0F" })
+      }, title: "Ins\xE9rer une image", children: "\u{1F5BC}\uFE0F" }),
+      /* @__PURE__ */ jsx("span", { style: sep }),
+      /* @__PURE__ */ jsxs("button", { type: "button", style: { ...btn, fontSize: "13px" }, onMouseDown: (e) => {
+        e.preventDefault();
+        handleClearFormat();
+      }, title: "Effacer la mise en forme", children: [
+        "T",
+        /* @__PURE__ */ jsx("span", { style: { fontSize: "10px", verticalAlign: "super" }, children: "\xD7" })
+      ] })
     ] }),
     /* @__PURE__ */ jsxs("div", { style: { position: "relative" }, children: [
       isEmpty && /* @__PURE__ */ jsx("div", { style: { position: "absolute", top: 0, left: 0, right: 0, padding: "14px 16px", color: "#9ca3af", fontSize: "14px", pointerEvents: "none", userSelect: "none" }, children: placeholder }),
@@ -203,6 +248,7 @@ const RichTextEditor = forwardRef(function RichTextEditor2({
             emitChange();
           },
           onPaste: handlePaste,
+          onKeyDown: handleKeyDown,
           style: {
             minHeight: `${minHeight}px`,
             padding: "14px 16px",

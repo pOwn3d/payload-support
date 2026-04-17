@@ -99,6 +99,43 @@ const RichTextEditor = react.forwardRef(function RichTextEditor2({
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [onFileUpload, emitChange]);
+  const handleClearFormat = react.useCallback(() => {
+    document.execCommand("removeFormat");
+    document.execCommand("formatBlock", false, "p");
+    editorRef.current?.focus();
+    setTimeout(emitChange, 0);
+  }, [emitChange]);
+  const handleKeyDown = react.useCallback((e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node = sel.anchorNode;
+    let blockquote = null;
+    while (node && node !== editorRef.current) {
+      if (node.nodeName === "BLOCKQUOTE") {
+        blockquote = node;
+        break;
+      }
+      node = node.parentNode;
+    }
+    if (!blockquote) return;
+    const text = blockquote.innerText || "";
+    if (text.replace(/\n+$/, "").length === 0 || text.endsWith("\n\n") || text.endsWith("\n")) {
+      e.preventDefault();
+      const p = document.createElement("p");
+      p.innerHTML = "<br>";
+      blockquote.after(p);
+      if (blockquote.lastChild && blockquote.lastChild.nodeName === "BR") {
+        blockquote.removeChild(blockquote.lastChild);
+      }
+      const range = document.createRange();
+      range.setStart(p, 0);
+      range.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      setTimeout(emitChange, 0);
+    }
+  }, [emitChange]);
   const handlePaste = react.useCallback(async (e) => {
     if (!onFileUpload) return;
     const items = e.clipboardData?.items;
@@ -186,7 +223,15 @@ const RichTextEditor = react.forwardRef(function RichTextEditor2({
       /* @__PURE__ */ jsxRuntime.jsx("button", { type: "button", style: btn, onMouseDown: (e) => {
         e.preventDefault();
         handleImageClick();
-      }, title: "Ins\xE9rer une image", children: "\u{1F5BC}\uFE0F" })
+      }, title: "Ins\xE9rer une image", children: "\u{1F5BC}\uFE0F" }),
+      /* @__PURE__ */ jsxRuntime.jsx("span", { style: sep }),
+      /* @__PURE__ */ jsxRuntime.jsxs("button", { type: "button", style: { ...btn, fontSize: "13px" }, onMouseDown: (e) => {
+        e.preventDefault();
+        handleClearFormat();
+      }, title: "Effacer la mise en forme", children: [
+        "T",
+        /* @__PURE__ */ jsxRuntime.jsx("span", { style: { fontSize: "10px", verticalAlign: "super" }, children: "\xD7" })
+      ] })
     ] }),
     /* @__PURE__ */ jsxRuntime.jsxs("div", { style: { position: "relative" }, children: [
       isEmpty && /* @__PURE__ */ jsxRuntime.jsx("div", { style: { position: "absolute", top: 0, left: 0, right: 0, padding: "14px 16px", color: "#9ca3af", fontSize: "14px", pointerEvents: "none", userSelect: "none" }, children: placeholder }),
@@ -204,6 +249,7 @@ const RichTextEditor = react.forwardRef(function RichTextEditor2({
             emitChange();
           },
           onPaste: handlePaste,
+          onKeyDown: handleKeyDown,
           style: {
             minHeight: `${minHeight}px`,
             padding: "14px 16px",
