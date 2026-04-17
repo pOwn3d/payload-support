@@ -764,7 +764,24 @@ const [clientTyping, setClientTyping] = useState(false)
                 </select>
               )}
             </div>
-            <RichTextEditor ref={editorRef} onChange={(html, text) => { setReplyHtml(html); setReplyBody(text) }} placeholder={isInternal ? t('composer.placeholderInternal') : t('composer.placeholderReplyTo', { name: client?.firstName || 'client' })} minHeight={100} borderColor="transparent" />
+            <RichTextEditor
+              ref={editorRef}
+              onChange={(html, text) => { setReplyHtml(html); setReplyBody(text) }}
+              placeholder={isInternal ? t('composer.placeholderInternal') : t('composer.placeholderReplyTo', { name: client?.firstName || 'client' })}
+              minHeight={100}
+              borderColor="transparent"
+              onFileUpload={async (file) => {
+                try {
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  formData.append('_payload', JSON.stringify({ alt: file.name }))
+                  const ur = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData })
+                  if (!ur.ok) return null
+                  const ud = await ur.json()
+                  return ud.doc?.url || null
+                } catch { return null }
+              }}
+            />
             {/* #5 — File upload preview */}
             {pendingFiles.length > 0 && (
               <div className={s.uploadPreview}>
