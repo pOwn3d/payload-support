@@ -134,7 +134,9 @@ const TicketDetailClient = () => {
   const [sendAsClient, setSendAsClient] = useState(false);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editingBody, setEditingBody] = useState("");
+  const [editingHtml, setEditingHtml] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const editEditorRef = useRef(null);
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [clientTyping, setClientTyping] = useState(false);
@@ -476,10 +478,12 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
   const startEditMessage = (msg) => {
     setEditingMsgId(msg.id);
     setEditingBody(msg.body || "");
+    setEditingHtml(msg.bodyHtml || (msg.body || "").replace(/\n/g, "<br/>"));
   };
   const cancelEditMessage = () => {
     setEditingMsgId(null);
     setEditingBody("");
+    setEditingHtml("");
   };
   const saveEditMessage = async () => {
     if (editingMsgId === null) return;
@@ -489,11 +493,12 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ body: editingBody, bodyHtml: null, skipNotification: true })
+        body: JSON.stringify({ body: editingBody, bodyHtml: editingHtml || null, skipNotification: true })
       });
       if (res.ok) {
         setEditingMsgId(null);
         setEditingBody("");
+        setEditingHtml("");
         fetchAll();
       }
     } catch {
@@ -712,12 +717,29 @@ ${uploadedLinks.join("\n")}` : replyBody.trim() || "[Contenu enrichi]";
                   ] }),
                   editingMsgId === msg.id ? /* @__PURE__ */ jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [
                     /* @__PURE__ */ jsx(
-                      "textarea",
+                      RichTextEditor,
                       {
-                        value: editingBody,
-                        onChange: (e) => setEditingBody(e.target.value),
-                        style: { width: "100%", minHeight: 120, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: "inherit", border: "1px solid var(--theme-elevation-200)", borderRadius: 6, background: "var(--theme-elevation-0)", color: "var(--theme-text)" },
-                        autoFocus: true
+                        ref: editEditorRef,
+                        initialValue: editingHtml,
+                        onChange: (html, text) => {
+                          setEditingHtml(html);
+                          setEditingBody(text);
+                        },
+                        placeholder: "\xC9diter le message...",
+                        minHeight: 120,
+                        onFileUpload: async (file) => {
+                          try {
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            formData.append("_payload", JSON.stringify({ alt: file.name }));
+                            const ur = await fetch("/api/media", { method: "POST", credentials: "include", body: formData });
+                            if (!ur.ok) return null;
+                            const ud = await ur.json();
+                            return ud.doc?.url || null;
+                          } catch {
+                            return null;
+                          }
+                        }
                       }
                     ),
                     /* @__PURE__ */ jsxs("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" }, children: [

@@ -89,22 +89,46 @@ export function useAI(
 
   const handleAiRewrite = async (style: string = 'auto') => {
     if (!replyBody.trim()) return
+    // Detect selection inside the editor — if present, rewrite only the selected text
+    const sel = typeof window !== 'undefined' ? window.getSelection() : null
+    const selectedText = sel?.toString().trim() || ''
+    const hasSelection = selectedText.length > 3
+    const textToRewrite = hasSelection ? selectedText : replyBody
+
     setAiRewriting(true)
     try {
       const res = await fetch('/api/support/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ action: 'rewrite', text: replyBody, style }),
+        body: JSON.stringify({ action: 'rewrite', text: textToRewrite, style }),
       })
       if (res.ok) {
         const data = await res.json()
         const rewritten = data.rewritten || ''
         if (rewritten) {
-          setReplyBody(rewritten)
-          setReplyHtml(rewritten.replace(/\n/g, '<br/>'))
-          if (replyEditorRef.current?.setContent) {
-            replyEditorRef.current.setContent(rewritten.replace(/\n/g, '<br/>'))
+          if (hasSelection && sel && sel.rangeCount > 0) {
+            // Replace only the selected text in the contentEditable
+            const range = sel.getRangeAt(0)
+            range.deleteContents()
+            range.insertNode(document.createTextNode(rewritten))
+            // Trigger input event so parent state updates via onInput
+            const editorEl = replyEditorRef.current as unknown as { focus?: () => void } | null
+            editorEl?.focus?.()
+            // Sync state from DOM
+            const rootEl = (range.commonAncestorContainer as HTMLElement).closest?.('[contenteditable]') as HTMLElement | null
+            if (rootEl) {
+              const newHtml = rootEl.innerHTML
+              const newText = rootEl.innerText?.trim() || ''
+              setReplyBody(newText)
+              setReplyHtml(newHtml)
+            }
+          } else {
+            setReplyBody(rewritten)
+            setReplyHtml(rewritten.replace(/\n/g, '<br/>'))
+            if (replyEditorRef.current?.setContent) {
+              replyEditorRef.current.setContent(rewritten.replace(/\n/g, '<br/>'))
+            }
           }
         }
       }

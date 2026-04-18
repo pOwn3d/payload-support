@@ -77,22 +77,41 @@ function useAI(messages, client, ticketSubject, replyBody, setReplyBody, setRepl
   };
   const handleAiRewrite = async (style = "auto") => {
     if (!replyBody.trim()) return;
+    const sel = typeof window !== "undefined" ? window.getSelection() : null;
+    const selectedText = sel?.toString().trim() || "";
+    const hasSelection = selectedText.length > 3;
+    const textToRewrite = hasSelection ? selectedText : replyBody;
     setAiRewriting(true);
     try {
       const res = await fetch("/api/support/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ action: "rewrite", text: replyBody, style })
+        body: JSON.stringify({ action: "rewrite", text: textToRewrite, style })
       });
       if (res.ok) {
         const data = await res.json();
         const rewritten = data.rewritten || "";
         if (rewritten) {
-          setReplyBody(rewritten);
-          setReplyHtml(rewritten.replace(/\n/g, "<br/>"));
-          if (replyEditorRef.current?.setContent) {
-            replyEditorRef.current.setContent(rewritten.replace(/\n/g, "<br/>"));
+          if (hasSelection && sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(document.createTextNode(rewritten));
+            const editorEl = replyEditorRef.current;
+            editorEl?.focus?.();
+            const rootEl = range.commonAncestorContainer.closest?.("[contenteditable]");
+            if (rootEl) {
+              const newHtml = rootEl.innerHTML;
+              const newText = rootEl.innerText?.trim() || "";
+              setReplyBody(newText);
+              setReplyHtml(newHtml);
+            }
+          } else {
+            setReplyBody(rewritten);
+            setReplyHtml(rewritten.replace(/\n/g, "<br/>"));
+            if (replyEditorRef.current?.setContent) {
+              replyEditorRef.current.setContent(rewritten.replace(/\n/g, "<br/>"));
+            }
           }
         }
       }

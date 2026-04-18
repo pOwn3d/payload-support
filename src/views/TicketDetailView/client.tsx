@@ -136,7 +136,9 @@ export const TicketDetailClient: React.FC = () => {
   // Inline message edit
   const [editingMsgId, setEditingMsgId] = useState<string | number | null>(null)
   const [editingBody, setEditingBody] = useState('')
+  const [editingHtml, setEditingHtml] = useState('')
   const [editSaving, setEditSaving] = useState(false)
+  const editEditorRef = useRef<RichTextEditorHandle>(null)
   const [sending, setSending] = useState(false)
 
   const [showMenu, setShowMenu] = useState(false)
@@ -449,11 +451,14 @@ const [clientTyping, setClientTyping] = useState(false)
   const startEditMessage = (msg: Message) => {
     setEditingMsgId(msg.id)
     setEditingBody(msg.body || '')
+    // Prefer existing bodyHtml for WYSIWYG edit, fallback to body with <br/> conversion
+    setEditingHtml(msg.bodyHtml || (msg.body || '').replace(/\n/g, '<br/>'))
   }
 
   const cancelEditMessage = () => {
     setEditingMsgId(null)
     setEditingBody('')
+    setEditingHtml('')
   }
 
   const saveEditMessage = async () => {
@@ -464,11 +469,12 @@ const [clientTyping, setClientTyping] = useState(false)
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ body: editingBody, bodyHtml: null, skipNotification: true }),
+        body: JSON.stringify({ body: editingBody, bodyHtml: editingHtml || null, skipNotification: true }),
       })
       if (res.ok) {
         setEditingMsgId(null)
         setEditingBody('')
+        setEditingHtml('')
         fetchAll()
       }
     } catch { /* silent */ } finally {
@@ -654,11 +660,23 @@ const [clientTyping, setClientTyping] = useState(false)
                       </div>
                       {editingMsgId === msg.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          <textarea
-                            value={editingBody}
-                            onChange={(e) => setEditingBody(e.target.value)}
-                            style={{ width: '100%', minHeight: 120, padding: 10, fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit', border: '1px solid var(--theme-elevation-200)', borderRadius: 6, background: 'var(--theme-elevation-0)', color: 'var(--theme-text)' }}
-                            autoFocus
+                          <RichTextEditor
+                            ref={editEditorRef}
+                            initialValue={editingHtml}
+                            onChange={(html, text) => { setEditingHtml(html); setEditingBody(text) }}
+                            placeholder="Éditer le message..."
+                            minHeight={120}
+                            onFileUpload={async (file) => {
+                              try {
+                                const formData = new FormData()
+                                formData.append('file', file)
+                                formData.append('_payload', JSON.stringify({ alt: file.name }))
+                                const ur = await fetch('/api/media', { method: 'POST', credentials: 'include', body: formData })
+                                if (!ur.ok) return null
+                                const ud = await ur.json()
+                                return ud.doc?.url || null
+                              } catch { return null }
+                            }}
                           />
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             <button onClick={cancelEditMessage} disabled={editSaving} style={{ padding: '5px 12px', fontSize: 12, borderRadius: 5, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-0)', color: 'var(--theme-text)', cursor: 'pointer' }}>Annuler</button>

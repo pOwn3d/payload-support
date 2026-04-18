@@ -277,15 +277,20 @@ R\xE9dige une r\xE9ponse appropri\xE9e au dernier message du client. Sois concis
           const { text, style } = body;
           if (!text?.trim()) return Response.json({ error: "text required" }, { status: 400 });
           const styleInstructions = {
-            auto: "Garde le m\xEAme ton (tutoiement/vouvoiement).",
-            tutoyer: "Utilise le tutoiement. Si le texte vouvoie, convertis en tutoiement.",
-            vouvoyer: "Utilise le vouvoiement. Si le texte tutoie, convertis en vouvoiement.",
-            formel: "Adopte un ton formel et professionnel avec vouvoiement.",
-            court: "Raccourcis le texte au maximum tout en gardant le sens. Sois concis et direct.",
-            amical: "Adopte un ton chaleureux et amical avec tutoiement."
+            auto: { tone: "Garde le ton actuel (neutre professionnel).", person: "IMPORTANT: Pr\xE9serve EXACTEMENT le tutoiement ou vouvoiement du texte original." },
+            tutoyer: { tone: "Ton d\xE9contract\xE9 et direct, mais correct.", person: 'CRITIQUE: Utilise IMP\xC9RATIVEMENT le tutoiement partout (tu, ton, te, toi). Si le texte vouvoie, convertis TOUT en tutoiement. Exemple: "vous pouvez" \u2192 "tu peux", "votre" \u2192 "ton".' },
+            vouvoyer: { tone: "Ton neutre et poli.", person: "CRITIQUE: Utilise IMP\xC9RATIVEMENT le vouvoiement partout (vous, votre, etc). Si le texte tutoie, convertis TOUT en vouvoiement." },
+            formel: { tone: "Ton formel et institutionnel.", person: "Utilise le vouvoiement partout." },
+            court: { tone: "Style concis et direct, phrases courtes, aller \xE0 l'essentiel.", person: "Pr\xE9serve le tutoiement/vouvoiement du texte original." },
+            amical: { tone: "Ton chaleureux, amical, sympathique, avec un peu de cordialit\xE9.", person: "CRITIQUE: Utilise IMP\xC9RATIVEMENT le tutoiement partout. Convertis le vouvoiement en tutoiement." }
           };
           const styleGuide = styleInstructions[style || "auto"] || styleInstructions.auto;
-          const prompt = `Tu es un agent de support technique professionnel. Reformule le texte ci-dessous de mani\xE8re plus professionnelle et corrige les fautes d'orthographe/grammaire. ${styleGuide} Ne change pas le fond du message, am\xE9liore uniquement la forme. R\xE9ponds UNIQUEMENT avec le texte reformul\xE9, sans commentaire ni explication.
+          const prompt = `Reformule le texte ci-dessous en corrigeant les fautes d'orthographe/grammaire. Ne change pas le fond du message, am\xE9liore uniquement la forme.
+
+TON REQUIS: ${styleGuide.tone}
+FORME REQUISE: ${styleGuide.person}
+
+R\xE9ponds UNIQUEMENT avec le texte reformul\xE9, sans commentaire ni explication.
 
 Texte original :
 ${text}`;
