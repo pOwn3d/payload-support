@@ -25,6 +25,8 @@ export { readSupportSettings, readUserPrefs, DEFAULT_SETTINGS, DEFAULT_USER_PREF
 export type { SupportSettings, UserPrefs } from './utils/readSettings'
 export { createAdminNotification } from './utils/adminNotification'
 export { dispatchWebhook } from './utils/webhookDispatcher'
+export { generateTicketSynthesis } from './utils/generateTicketSynthesis'
+export type { TicketSynthesisResult } from './utils/generateTicketSynthesis'
 
 // Hooks
 export { createAssignSlaDeadlines, createCheckSlaOnResolve, createCheckSlaOnReply, calculateBusinessHoursDeadline } from './hooks/checkSLA'

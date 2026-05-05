@@ -8471,6 +8471,7 @@ exports.createTicketsCollection = createTicketsCollection;
 exports.createTimeEntriesCollection = createTimeEntriesCollection;
 exports.createWebhookEndpointsCollection = createWebhookEndpointsCollection;
 exports.dispatchWebhook = dispatchWebhook;
+exports.generateTicketSynthesis = generateTicketSynthesis;
 exports.readSupportSettings = readSupportSettings;
 exports.readUserPrefs = readUserPrefs;
 exports.resolveSlugs = resolveSlugs;

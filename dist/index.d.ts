@@ -309,6 +309,23 @@ type WebhookEvent = 'ticket_created' | 'ticket_resolved' | 'ticket_replied' | 's
  */
 declare function dispatchWebhook(data: Record<string, unknown>, event: WebhookEvent, payload: BasePayload, slugs: CollectionSlugs): void;
 
+interface TicketSynthesisResult {
+    summary: string;
+    generatedAt: string;
+    status: 'done' | 'error' | 'skipped';
+    reason?: string;
+}
+/**
+ * Generates a billing-oriented bullet-point synthesis for a single support ticket.
+ * Persists the result on the ticket (aiSummary, aiSummaryGeneratedAt, aiSummaryStatus).
+ * Designed to be called from an HTTP endpoint OR from a Payload hook (async fire-and-forget).
+ */
+declare function generateTicketSynthesis(args: {
+    payload: Payload;
+    slugs: CollectionSlugs;
+    ticketId: number | string;
+}): Promise<TicketSynthesisResult>;
+
 /**
  * Calculate a business-hours deadline from a start date.
  * Business hours: Mon-Fri, 9:00-18:00 (Europe/Paris).
@@ -381,4 +398,4 @@ declare function createMacrosCollection(slugs: CollectionSlugs): CollectionConfi
 
 declare function createTicketStatusesCollection(slugs: CollectionSlugs): CollectionConfig;
 
-export { type AIProviderConfig, type ActivityEntryData, type CannedResponseData, type ClientData, type CollectionSlugs, DEFAULT_FEATURES, DEFAULT_SETTINGS, DEFAULT_SLUGS, DEFAULT_USER_PREFS, type EmailConfig, type MessageData, type SatisfactionSurveyData, type SupportFeatures, type SupportPluginConfig, type SupportSettings, type TicketData, type TimeEntryData, type UserPrefs, calculateBusinessHoursDeadline, createAdminNotification, createAssignSlaDeadlines, createAuthLogsCollection, createCannedResponsesCollection, createChatMessagesCollection, createCheckSlaOnReply, createCheckSlaOnResolve, createEmailLogsCollection, createKnowledgeBaseCollection, createMacrosCollection, createPendingEmailsCollection, createSatisfactionSurveysCollection, createSlaPoliciesCollection, createSupportClientsCollection, createTicketActivityLogCollection, createTicketMessagesCollection, createTicketStatusEmail, createTicketStatusesCollection, createTicketsCollection, createTimeEntriesCollection, createWebhookEndpointsCollection, dispatchWebhook, readSupportSettings, readUserPrefs, resolveSlugs, supportPlugin };
+export { type AIProviderConfig, type ActivityEntryData, type CannedResponseData, type ClientData, type CollectionSlugs, DEFAULT_FEATURES, DEFAULT_SETTINGS, DEFAULT_SLUGS, DEFAULT_USER_PREFS, type EmailConfig, type MessageData, type SatisfactionSurveyData, type SupportFeatures, type SupportPluginConfig, type SupportSettings, type TicketData, type TicketSynthesisResult, type TimeEntryData, type UserPrefs, calculateBusinessHoursDeadline, createAdminNotification, createAssignSlaDeadlines, createAuthLogsCollection, createCannedResponsesCollection, createChatMessagesCollection, createCheckSlaOnReply, createCheckSlaOnResolve, createEmailLogsCollection, createKnowledgeBaseCollection, createMacrosCollection, createPendingEmailsCollection, createSatisfactionSurveysCollection, createSlaPoliciesCollection, createSupportClientsCollection, createTicketActivityLogCollection, createTicketMessagesCollection, createTicketStatusEmail, createTicketStatusesCollection, createTicketsCollection, createTimeEntriesCollection, createWebhookEndpointsCollection, dispatchWebhook, generateTicketSynthesis, readSupportSettings, readUserPrefs, resolveSlugs, supportPlugin };
