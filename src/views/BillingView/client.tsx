@@ -14,9 +14,14 @@ interface BillingTicket {
   id: number
   ticketNumber: string
   subject: string
+  status: string
   entries: BillingEntry[]
   totalMinutes: number
   billedAmount: number | null
+  hasNoTimeEntries: boolean
+  aiSummary: string | null
+  aiSummaryGeneratedAt: string | null
+  aiSummaryStatus: string | null
 }
 
 interface BillingGroup {
@@ -31,6 +36,7 @@ interface BillingData {
   groups: BillingGroup[]
   grandTotalMinutes: number
   grandTotalBilledAmount: number
+  ticketsWithoutTime: number
 }
 
 interface ProjectOption {
@@ -88,6 +94,9 @@ export const BillingClient: React.FC = () => {
   const [projects, setProjects] = useState<ProjectOption[]>([])
   const [projectsLoaded, setProjectsLoaded] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [hideEmpty, setHideEmpty] = useState(false)
+  const [expandedSummaries, setExpandedSummaries] = useState<Set<number>>(new Set())
+  const [regeneratingIds, setRegeneratingIds] = useState<Set<number>>(new Set())
   const [billedTickets, setBilledTickets] = useState<Set<number>>(() => {
     if (typeof window === 'undefined') return new Set()
     try {
@@ -106,16 +115,33 @@ export const BillingClient: React.FC = () => {
     })
   }, [])
 
-  const allTicketIds = data?.groups.flatMap((g) => g.tickets.map((t) => t.id)) || []
+  const toggleSummary = useCallback((ticketId: number) => {
+    setExpandedSummaries((prev) => {
+      const next = new Set(prev)
+      if (next.has(ticketId)) next.delete(ticketId)
+      else next.add(ticketId)
+      return next
+    })
+  }, [])
+
+  const visibleGroups = React.useMemo(() => {
+    if (!data) return []
+    if (!hideEmpty) return data.groups
+    return data.groups
+      .map((g) => ({ ...g, tickets: g.tickets.filter((t) => !t.hasNoTimeEntries) }))
+      .filter((g) => g.tickets.length > 0)
+  }, [data, hideEmpty])
+
+  const allTicketIds = visibleGroups.flatMap((g) => g.tickets.map((t) => t.id))
   const allBilled = allTicketIds.length > 0 && allTicketIds.every((id) => billedTickets.has(id))
   const toggleAll = useCallback(() => {
     setBilledTickets((prev) => {
-      const ids = data?.groups.flatMap((g) => g.tickets.map((t) => t.id)) || []
+      const ids = visibleGroups.flatMap((g) => g.tickets.map((t) => t.id))
       const next = ids.every((id) => prev.has(id)) ? new Set<number>() : new Set(ids)
       localStorage.setItem('billing-checked-tickets', JSON.stringify([...next]))
       return next
     })
-  }, [data])
+  }, [visibleGroups])
 
   const loadProjects = useCallback(async () => {
     if (projectsLoaded) return
@@ -129,7 +155,6 @@ export const BillingClient: React.FC = () => {
     setProjectsLoaded(true)
   }, [projectsLoaded])
 
-  // Load projects on mount
   React.useEffect(() => { loadProjects() }, [loadProjects])
 
   const fetchBilling = useCallback(async () => {
@@ -152,27 +177,70 @@ export const BillingClient: React.FC = () => {
     setTo(range.to)
   }
 
+  const requestSynthesis = useCallback(async (ticketId: number, force: boolean) => {
+    setRegeneratingIds((prev) => new Set(prev).add(ticketId))
+    try {
+      const params = new URLSearchParams({ ticketId: String(ticketId) })
+      if (force) params.set('force', 'true')
+      const res = await fetch(`/api/support/ticket-synthesis?${params}`, { method: 'POST' })
+      if (res.ok) {
+        const json = await res.json() as { summary: string; generatedAt: string; status: string }
+        setData((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            groups: prev.groups.map((g) => ({
+              ...g,
+              tickets: g.tickets.map((t) => t.id === ticketId
+                ? { ...t, aiSummary: json.summary, aiSummaryGeneratedAt: json.generatedAt, aiSummaryStatus: 'done' }
+                : t,
+              ),
+            })),
+          }
+        })
+        // Auto-expand once we have a summary
+        setExpandedSummaries((prev) => new Set(prev).add(ticketId))
+      }
+    } catch (err) {
+      console.error('[billing] Synthesis error:', err)
+    } finally {
+      setRegeneratingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(ticketId)
+        return next
+      })
+    }
+  }, [])
+
   const copyRecap = useCallback(() => {
     if (!data) return
-
     const lines: string[] = []
     lines.push(`PRE-FACTURATION — Du ${from} au ${to}`)
     lines.push(`Taux horaire : ${rate} EUR/h`)
     lines.push('='.repeat(50))
 
-    for (const group of data.groups) {
+    for (const group of visibleGroups) {
       lines.push('')
       lines.push(`PROJET : ${group.project?.name || 'Sans projet'}`)
       if (group.client?.company) lines.push(`Client : ${group.client.company}`)
       lines.push('-'.repeat(40))
 
       for (const ticket of group.tickets) {
-        lines.push(`  ${ticket.ticketNumber} — ${ticket.subject}`)
+        const flag = ticket.hasNoTimeEntries ? ' [AUCUN TEMPS SAISI]' : ''
+        lines.push(`  ${ticket.ticketNumber} — ${ticket.subject}${flag}`)
         for (const entry of ticket.entries) {
           lines.push(`    ${entry.date} | ${formatDuration(entry.duration)} | ${entry.description || '-'}`)
         }
-        const ticketAmount = ticket.billedAmount || Number(formatAmount(ticket.totalMinutes, rate))
-        lines.push(`    Sous-total : ${formatDuration(ticket.totalMinutes)} = ${ticketAmount.toFixed(2)} EUR${ticket.billedAmount ? ' (forfait)' : ''}`)
+        if (ticket.entries.length > 0) {
+          const ticketAmount = ticket.billedAmount || Number(formatAmount(ticket.totalMinutes, rate))
+          lines.push(`    Sous-total : ${formatDuration(ticket.totalMinutes)} = ${ticketAmount.toFixed(2)} EUR${ticket.billedAmount ? ' (forfait)' : ''}`)
+        }
+        if (ticket.aiSummary) {
+          lines.push('    Detail des actions :')
+          for (const detailLine of ticket.aiSummary.split('\n')) {
+            lines.push(`    ${detailLine}`)
+          }
+        }
       }
       const groupAmount = group.totalBilledAmount > 0
         ? group.totalBilledAmount
@@ -187,13 +255,18 @@ export const BillingClient: React.FC = () => {
     navigator.clipboard.writeText(lines.join('\n'))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }, [data, from, to, rate])
+  }, [data, visibleGroups, from, to, rate])
 
-  const totalTickets = data?.groups.reduce((sum, g) => sum + g.tickets.length, 0) || 0
+  const copyTicketSummary = useCallback((ticket: BillingTicket) => {
+    const lines = [`${ticket.ticketNumber} — ${ticket.subject}`]
+    if (ticket.aiSummary) lines.push('', ticket.aiSummary)
+    navigator.clipboard.writeText(lines.join('\n'))
+  }, [])
+
+  const totalTickets = visibleGroups.reduce((sum, g) => sum + g.tickets.length, 0)
 
   return (
     <div className={styles.page}>
-      {/* Header */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>{t('billing.title')}</h1>
@@ -201,7 +274,6 @@ export const BillingClient: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className={styles.filters}>
         <div className={styles.quickPeriod}>
           <button className={styles.btnPrimary} onClick={() => setPeriod(getMonthRange(0))}>{t('billing.filters.thisMonth')}</button>
@@ -221,11 +293,7 @@ export const BillingClient: React.FC = () => {
           </div>
           <div className={styles.fieldGroup}>
             <label className={styles.label}>{t('billing.filters.project')}</label>
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className={styles.select}
-            >
+            <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={styles.select}>
               <option value="">{t('ticket.allProjects')}</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -245,62 +313,52 @@ export const BillingClient: React.FC = () => {
               <span className={styles.rateUnit}>{t('billing.filters.rateUnit')}</span>
             </div>
           </div>
-          <button
-            className={styles.btnPrimary}
-            onClick={fetchBilling}
-            disabled={loading}
-          >
+          <button className={styles.btnPrimary} onClick={fetchBilling} disabled={loading}>
             {loading ? t('billing.filters.loading') : t('billing.filters.load')}
           </button>
         </div>
       </div>
 
-      {/* Results */}
       {data && (
         <>
-          {data.groups.length === 0 ? (
-            <div className={styles.empty}>
-              {t('billing.empty')}
+          {data.ticketsWithoutTime > 0 && (
+            <div className={styles.warningBanner}>
+              <span>
+                <strong>{data.ticketsWithoutTime}</strong> ticket{data.ticketsWithoutTime > 1 ? 's' : ''} actif{data.ticketsWithoutTime > 1 ? 's' : ''} sans temps saisi sur la periode.
+              </span>
+              <label className={styles.toggleLabel}>
+                <input type="checkbox" checked={hideEmpty} onChange={(e) => setHideEmpty(e.target.checked)} />
+                <span>Masquer ces tickets</span>
+              </label>
             </div>
+          )}
+
+          {visibleGroups.length === 0 ? (
+            <div className={styles.empty}>{t('billing.empty')}</div>
           ) : (
             <>
-              {/* Project groups */}
-              {data.groups.map((group, gi) => (
+              {visibleGroups.map((group, gi) => (
                 <div key={gi} className={styles.groupCard}>
-                  {/* Project header */}
                   <div className={styles.groupHeader}>
                     <div>
-                      <span className={styles.groupName}>
-                        {group.project?.name || 'Sans projet'}
-                      </span>
+                      <span className={styles.groupName}>{group.project?.name || 'Sans projet'}</span>
                       {group.client?.company && (
-                        <span className={styles.groupClient}>
-                          — {group.client.company}
-                        </span>
+                        <span className={styles.groupClient}>— {group.client.company}</span>
                       )}
                     </div>
                     <div className={styles.groupTotals}>
-                      <div className={styles.groupDuration}>
-                        {formatDuration(group.totalMinutes)}
-                      </div>
+                      <div className={styles.groupDuration}>{formatDuration(group.totalMinutes)}</div>
                       {group.totalBilledAmount > 0 ? (
                         <>
-                          <div className={styles.groupAmountBilled}>
-                            {group.totalBilledAmount.toFixed(2)} EUR facture
-                          </div>
-                          <div className={styles.groupAmountStrike}>
-                            {formatAmount(group.totalMinutes, rate)} EUR (temps)
-                          </div>
+                          <div className={styles.groupAmountBilled}>{group.totalBilledAmount.toFixed(2)} EUR facture</div>
+                          <div className={styles.groupAmountStrike}>{formatAmount(group.totalMinutes, rate)} EUR (temps)</div>
                         </>
                       ) : (
-                        <div className={styles.groupAmount}>
-                          {formatAmount(group.totalMinutes, rate)} EUR
-                        </div>
+                        <div className={styles.groupAmount}>{formatAmount(group.totalMinutes, rate)} EUR</div>
                       )}
                     </div>
                   </div>
 
-                  {/* Tickets table */}
                   <table className={styles.table}>
                     <thead>
                       <tr>
@@ -334,64 +392,144 @@ export const BillingClient: React.FC = () => {
                     <tbody>
                       {group.tickets.map((ticket) => {
                         const isBilled = billedTickets.has(ticket.id)
-                        return ticket.entries.map((entry, ei) => (
-                          <tr
-                            key={`${ticket.id}-${ei}`}
-                            className={`${isBilled ? styles.tableRowBilled : styles.tableRow} ${!isBilled && ei % 2 === 0 ? styles.tableRowEven : ''} ${!isBilled && ei % 2 !== 0 ? styles.tableRowOdd : ''}`}
-                          >
-                            {ei === 0 ? (
-                              <>
-                                <td className={styles.td} rowSpan={ticket.entries.length} style={{ verticalAlign: 'middle' }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={isBilled}
-                                    onChange={() => toggleBilled(ticket.id)}
-                                    className={styles.checkbox}
-                                    title={isBilled ? 'Marquer comme non facture' : 'Marquer comme facture'}
-                                  />
-                                </td>
-                                <td className={`${styles.td} ${styles.bold} ${isBilled ? styles.strikethrough : ''}`} rowSpan={ticket.entries.length}>
-                                  <a
-                                    href={`/admin/support/ticket?id=${ticket.id}`}
-                                    className={styles.ticketLink}
-                                  >
-                                    {ticket.ticketNumber}
-                                  </a>
-                                </td>
-                                <td className={`${styles.tdLeft} ${isBilled ? styles.strikethrough : ''}`} rowSpan={ticket.entries.length}>
-                                  {ticket.subject}
-                                </td>
-                              </>
-                            ) : null}
-                            <td className={styles.td}>{entry.date}</td>
-                            <td className={styles.td}>{formatDuration(entry.duration)}</td>
-                            <td className={`${styles.tdLeft} ${styles.secondary}`}>
-                              {entry.description || '-'}
+                        const isExpanded = expandedSummaries.has(ticket.id)
+                        const isRegenerating = regeneratingIds.has(ticket.id)
+                        const rowSpan = Math.max(ticket.entries.length, 1)
+                        const renderTicketHeaderCells = () => (
+                          <>
+                            <td className={styles.td} rowSpan={rowSpan} style={{ verticalAlign: 'middle' }}>
+                              <input
+                                type="checkbox"
+                                checked={isBilled}
+                                onChange={() => toggleBilled(ticket.id)}
+                                className={styles.checkbox}
+                                title={isBilled ? 'Marquer comme non facture' : 'Marquer comme facture'}
+                              />
                             </td>
-                            <td className={`${styles.td} ${styles.bold}`}>
-                              {formatAmount(entry.duration, rate)} EUR
-                            </td>
-                            {ei === 0 ? (
-                              <td
-                                className={`${styles.td} ${ticket.billedAmount ? styles.billedAmount : styles.secondary}`}
-                                rowSpan={ticket.entries.length}
+                            <td className={`${styles.td} ${styles.bold} ${isBilled ? styles.strikethrough : ''}`} rowSpan={rowSpan}>
+                              <a href={`/admin/support/ticket?id=${ticket.id}`} className={styles.ticketLink}>
+                                {ticket.ticketNumber}
+                              </a>
+                              <button
+                                className={styles.summaryBtn}
+                                onClick={() => toggleSummary(ticket.id)}
+                                title={isExpanded ? 'Masquer le detail' : 'Afficher le detail IA'}
                               >
-                                {ticket.billedAmount ? `${ticket.billedAmount.toFixed(2)} EUR` : '-'}
+                                {isExpanded ? '▼' : '▶'} IA
+                              </button>
+                            </td>
+                            <td className={`${styles.tdLeft} ${isBilled ? styles.strikethrough : ''}`} rowSpan={rowSpan}>
+                              {ticket.subject}
+                              {ticket.hasNoTimeEntries && (
+                                <span className={styles.noTimeBadge} title="Aucun temps saisi sur la periode">
+                                  ⚠ Aucun temps saisi
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        )
+
+                        const rows: React.ReactNode[] = []
+
+                        if (ticket.entries.length === 0) {
+                          rows.push(
+                            <tr
+                              key={`${ticket.id}-empty`}
+                              className={`${isBilled ? styles.tableRowBilled : styles.tableRowNoTime}`}
+                            >
+                              {renderTicketHeaderCells()}
+                              <td className={`${styles.td} ${styles.secondary}`} colSpan={5}>
+                                <em>Pas de saisie de temps. Verifier si du temps a ete oublie.</em>
                               </td>
-                            ) : null}
-                          </tr>
-                        ))
+                            </tr>,
+                          )
+                        } else {
+                          ticket.entries.forEach((entry, ei) => {
+                            rows.push(
+                              <tr
+                                key={`${ticket.id}-${ei}`}
+                                className={`${isBilled ? styles.tableRowBilled : styles.tableRow} ${!isBilled && ei % 2 === 0 ? styles.tableRowEven : ''} ${!isBilled && ei % 2 !== 0 ? styles.tableRowOdd : ''}`}
+                              >
+                                {ei === 0 ? renderTicketHeaderCells() : null}
+                                <td className={styles.td}>{entry.date}</td>
+                                <td className={styles.td}>{formatDuration(entry.duration)}</td>
+                                <td className={`${styles.tdLeft} ${styles.secondary}`}>
+                                  {entry.description || '-'}
+                                </td>
+                                <td className={`${styles.td} ${styles.bold}`}>
+                                  {formatAmount(entry.duration, rate)} EUR
+                                </td>
+                                {ei === 0 ? (
+                                  <td
+                                    className={`${styles.td} ${ticket.billedAmount ? styles.billedAmount : styles.secondary}`}
+                                    rowSpan={ticket.entries.length}
+                                  >
+                                    {ticket.billedAmount ? `${ticket.billedAmount.toFixed(2)} EUR` : '-'}
+                                  </td>
+                                ) : null}
+                              </tr>,
+                            )
+                          })
+                        }
+
+                        if (isExpanded) {
+                          rows.push(
+                            <tr key={`${ticket.id}-summary`} className={styles.summaryRow}>
+                              <td colSpan={8} className={styles.summaryCell}>
+                                <div className={styles.summaryHeader}>
+                                  <strong>Synthese IA des actions</strong>
+                                  <div className={styles.summaryActions}>
+                                    {ticket.aiSummaryGeneratedAt && (
+                                      <span className={styles.summaryMeta}>
+                                        Genere le {new Date(ticket.aiSummaryGeneratedAt).toLocaleString('fr-FR')}
+                                      </span>
+                                    )}
+                                    {ticket.aiSummary && (
+                                      <button
+                                        className={styles.summaryAction}
+                                        onClick={() => copyTicketSummary(ticket)}
+                                      >
+                                        Copier
+                                      </button>
+                                    )}
+                                    <button
+                                      className={styles.summaryAction}
+                                      onClick={() => requestSynthesis(ticket.id, !!ticket.aiSummary)}
+                                      disabled={isRegenerating}
+                                    >
+                                      {isRegenerating
+                                        ? 'Generation...'
+                                        : ticket.aiSummary ? 'Regenerer' : 'Generer'}
+                                    </button>
+                                  </div>
+                                </div>
+                                {ticket.aiSummaryStatus === 'pending' && !ticket.aiSummary ? (
+                                  <div className={styles.summaryEmpty}>
+                                    Generation en cours en arriere-plan. Cliquer sur "Generer" pour forcer.
+                                  </div>
+                                ) : ticket.aiSummary ? (
+                                  <pre className={styles.summaryText}>{ticket.aiSummary}</pre>
+                                ) : (
+                                  <div className={styles.summaryEmpty}>
+                                    Pas de synthese disponible. La synthese est generee automatiquement quand le ticket passe en "resolu", ou manuellement via le bouton "Generer".
+                                  </div>
+                                )}
+                              </td>
+                            </tr>,
+                          )
+                        }
+
+                        return rows
                       })}
                     </tbody>
                   </table>
                 </div>
               ))}
 
-              {/* Grand total */}
               <div className={styles.grandTotal}>
                 <div>
                   <div className={styles.totalMeta}>
-                    {totalTickets} ticket{totalTickets > 1 ? 's' : ''} facturable{totalTickets > 1 ? 's' : ''}
+                    {totalTickets} ticket{totalTickets > 1 ? 's' : ''} affiche{totalTickets > 1 ? 's' : ''}
                     {billedTickets.size > 0 && (
                       <span className={styles.totalChecked}>
                         ({allTicketIds.filter((id) => billedTickets.has(id)).length} coche{allTicketIds.filter((id) => billedTickets.has(id)).length > 1 ? 's' : ''})
@@ -407,16 +545,10 @@ export const BillingClient: React.FC = () => {
                   </div>
                 </div>
                 <div className={styles.totalActions}>
-                  <button
-                    className={allBilled ? styles.btnSecondary : styles.btnGreen}
-                    onClick={toggleAll}
-                  >
+                  <button className={allBilled ? styles.btnSecondary : styles.btnGreen} onClick={toggleAll}>
                     {allBilled ? t('billing.totals.uncheckAll') : t('billing.totals.checkAll')}
                   </button>
-                  <button
-                    className={copied ? styles.btnSuccess : styles.btnAmber}
-                    onClick={copyRecap}
-                  >
+                  <button className={copied ? styles.btnSuccess : styles.btnAmber} onClick={copyRecap}>
                     {copied ? t('billing.totals.copiedRecap') : t('billing.totals.copyRecap')}
                   </button>
                 </div>

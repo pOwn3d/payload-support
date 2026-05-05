@@ -2975,9 +2975,36 @@ function createBillingEndpoint(slugs) {
           return Response.json({ error: "Missing from/to params" }, { status: 400 });
         }
         const projectId = url.searchParams.get("projectId");
+        const toExclusive = new Date(to);
+        toExclusive.setDate(toExclusive.getDate() + 1);
+        const toExclusiveIso = toExclusive.toISOString();
         const ticketWhere = {
-          billable: { equals: true },
-          ...projectId ? { project: { equals: Number(projectId) } } : {}
+          and: [
+            { billable: { equals: true } },
+            ...projectId ? [{ project: { equals: Number(projectId) } }] : [],
+            {
+              or: [
+                {
+                  and: [
+                    { updatedAt: { greater_than_equal: from } },
+                    { updatedAt: { less_than: toExclusiveIso } }
+                  ]
+                },
+                {
+                  and: [
+                    { createdAt: { greater_than_equal: from } },
+                    { createdAt: { less_than: toExclusiveIso } }
+                  ]
+                },
+                {
+                  and: [
+                    { resolvedAt: { greater_than_equal: from } },
+                    { resolvedAt: { less_than: toExclusiveIso } }
+                  ]
+                }
+              ]
+            }
+          ]
         };
         const allTickets = [];
         let ticketPage = 1;
@@ -3030,8 +3057,8 @@ function createBillingEndpoint(slugs) {
         const projectGroups = /* @__PURE__ */ new Map();
         for (const ticket of allTickets) {
           const t = ticket;
-          const ticketEntries = entriesByTicket.get(t.id);
-          if (!ticketEntries || ticketEntries.length === 0) continue;
+          const ticketEntries = entriesByTicket.get(t.id) || [];
+          const hasNoTimeEntries = ticketEntries.length === 0;
           const project = typeof t.project === "object" && t.project ? { id: t.project.id, name: t.project.name || "Sans nom" } : null;
           const projectKey = project ? String(project.id) : "no-project";
           if (!projectGroups.has(projectKey)) {
@@ -3059,9 +3086,14 @@ function createBillingEndpoint(slugs) {
             id: t.id,
             ticketNumber: t.ticketNumber || "",
             subject: t.subject || "",
+            status: t.status || "",
             entries: ticketEntries,
             totalMinutes: ticketTotalMinutes,
-            billedAmount
+            billedAmount,
+            hasNoTimeEntries,
+            aiSummary: t.aiSummary || null,
+            aiSummaryGeneratedAt: t.aiSummaryGeneratedAt || null,
+            aiSummaryStatus: t.aiSummaryStatus || null
           });
           projectGroups.get(projectKey).totalMinutes += ticketTotalMinutes;
           if (billedAmount) projectGroups.get(projectKey).totalBilledAmount += billedAmount;
@@ -3069,7 +3101,16 @@ function createBillingEndpoint(slugs) {
         const groups = Array.from(projectGroups.values());
         const grandTotalMinutes = groups.reduce((sum, g) => sum + g.totalMinutes, 0);
         const grandTotalBilledAmount = groups.reduce((sum, g) => sum + g.totalBilledAmount, 0);
-        return new Response(JSON.stringify({ groups, grandTotalMinutes, grandTotalBilledAmount }), {
+        const ticketsWithoutTime = groups.reduce(
+          (sum, g) => sum + g.tickets.filter((t) => t.hasNoTimeEntries).length,
+          0
+        );
+        return new Response(JSON.stringify({
+          groups,
+          grandTotalMinutes,
+          grandTotalBilledAmount,
+          ticketsWithoutTime
+        }), {
           headers: {
             "Content-Type": "application/json",
             "Cache-Control": "private, max-age=300, stale-while-revalidate=600"
@@ -3079,6 +3120,177 @@ function createBillingEndpoint(slugs) {
         const authResponse = handleAuthError(err);
         if (authResponse) return authResponse;
         console.error("[billing] Error:", err);
+        return Response.json({ error: "Internal server error" }, { status: 500 });
+      }
+    }
+  };
+}
+
+// src/utils/generateTicketSynthesis.ts
+function getClient3(aiSettings) {
+  const Anthropic = __require("@anthropic-ai/sdk").default;
+  if (aiSettings.provider === "ollama") {
+    const baseURL = process.env.OLLAMA_API_URL || "https://ollama.orkelis.app/v1";
+    return new Anthropic({ apiKey: "ollama", baseURL });
+  }
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
+function getModel3(aiSettings) {
+  return aiSettings.model || "claude-haiku-4-5-20251001";
+}
+async function generateTicketSynthesis(args) {
+  const { payload, slugs, ticketId } = args;
+  const settings = await readSupportSettings(payload);
+  if (settings.ai.enableSynthesis === false) {
+    return { summary: "", generatedAt: (/* @__PURE__ */ new Date()).toISOString(), status: "skipped", reason: "synthesis disabled" };
+  }
+  const ticket = await payload.findByID({
+    collection: slugs.tickets,
+    id: ticketId,
+    depth: 1,
+    overrideAccess: true
+  });
+  if (!ticket) {
+    return { summary: "", generatedAt: (/* @__PURE__ */ new Date()).toISOString(), status: "error", reason: "ticket not found" };
+  }
+  await payload.update({
+    collection: slugs.tickets,
+    id: ticketId,
+    data: { aiSummaryStatus: "pending" },
+    overrideAccess: true
+  }).catch(() => {
+  });
+  const messagesResult = await payload.find({
+    collection: slugs.ticketMessages,
+    where: { ticket: { equals: ticketId } },
+    sort: "createdAt",
+    limit: 500,
+    depth: 0,
+    overrideAccess: true
+  });
+  const messages = messagesResult.docs;
+  if (messages.length === 0) {
+    const generatedAt = (/* @__PURE__ */ new Date()).toISOString();
+    await payload.update({
+      collection: slugs.tickets,
+      id: ticketId,
+      data: {
+        aiSummary: "(Aucun message dans ce ticket)",
+        aiSummaryGeneratedAt: generatedAt,
+        aiSummaryStatus: "done"
+      },
+      overrideAccess: true
+    });
+    return { summary: "(Aucun message dans ce ticket)", generatedAt, status: "done" };
+  }
+  const conversation = messages.map((m) => {
+    const author = m.authorType === "admin" ? "Support" : "Client";
+    const date = m.createdAt ? new Date(m.createdAt).toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Europe/Paris"
+    }) : "";
+    return `[${date}] ${author}: ${m.body || ""}`;
+  }).join("\n\n");
+  const clientObj = typeof ticket.client === "object" && ticket.client ? ticket.client : null;
+  const clientCompany = clientObj?.company || "";
+  const clientName = clientObj ? [clientObj.firstName, clientObj.lastName].filter(Boolean).join(" ") : "";
+  const prompt = `Tu es un consultant technique qui prepare un recap factuel pour une facturation client.
+
+Sujet du ticket : ${ticket.subject || "(sans sujet)"}
+Client : ${clientName || "Inconnu"}${clientCompany ? ` \u2014 ${clientCompany}` : ""}
+
+Conversation complete du ticket :
+${conversation}
+
+Genere un recap factuel sous forme d'une liste a puces courtes et actionnables, decrivant CE QUI A ETE FAIT cote support pendant ce ticket. C'est destine a etre colle dans un devis ou une facture.
+
+Regles strictes :
+- Une puce = une action realisee, formulee en groupe nominal court (ex : "Diagnostic configuration DNS et authentification Mailchimp")
+- Pas de phrases completes, pas de "j'ai fait", pas de pronoms
+- Pas de salutations, pas d'introduction, pas de conclusion
+- Pas de markdown autre que les puces "- "
+- 5 a 10 puces maximum, ordonnees chronologiquement
+- Ne mentionne PAS le client par son nom dans les puces
+- Si le ticket n'a pas abouti, decris quand meme le travail d'analyse realise
+
+Reponds UNIQUEMENT avec la liste de puces, rien d'autre.`;
+  const anthropic = getClient3(settings.ai);
+  const model = getModel3(settings.ai);
+  try {
+    const res = await anthropic.messages.create({
+      model,
+      max_tokens: 600,
+      messages: [{ role: "user", content: prompt }]
+    });
+    const summary = res.content[0]?.type === "text" ? res.content[0].text.trim() : "";
+    const generatedAt = (/* @__PURE__ */ new Date()).toISOString();
+    await payload.update({
+      collection: slugs.tickets,
+      id: ticketId,
+      data: {
+        aiSummary: summary,
+        aiSummaryGeneratedAt: generatedAt,
+        aiSummaryStatus: "done"
+      },
+      overrideAccess: true
+    });
+    return { summary, generatedAt, status: "done" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await payload.update({
+      collection: slugs.tickets,
+      id: ticketId,
+      data: { aiSummaryStatus: "error" },
+      overrideAccess: true
+    }).catch(() => {
+    });
+    return { summary: "", generatedAt: (/* @__PURE__ */ new Date()).toISOString(), status: "error", reason: message };
+  }
+}
+
+// src/endpoints/ticket-synthesis.ts
+function createTicketSynthesisEndpoint(slugs) {
+  return {
+    path: "/support/ticket-synthesis",
+    method: "post",
+    handler: async (req) => {
+      try {
+        requireAdmin(req, slugs);
+        const payload = req.payload;
+        const url = new URL(req.url || "", "http://localhost");
+        const ticketIdRaw = url.searchParams.get("ticketId");
+        const force = url.searchParams.get("force") === "true";
+        if (!ticketIdRaw) {
+          return Response.json({ error: "ticketId required" }, { status: 400 });
+        }
+        const ticketId = Number(ticketIdRaw);
+        if (Number.isNaN(ticketId)) {
+          return Response.json({ error: "ticketId must be a number" }, { status: 400 });
+        }
+        if (!force) {
+          const existing = await payload.findByID({
+            collection: slugs.tickets,
+            id: ticketId,
+            depth: 0,
+            overrideAccess: true
+          });
+          if (existing?.aiSummary && existing.aiSummaryStatus === "done") {
+            return Response.json({
+              summary: existing.aiSummary,
+              generatedAt: existing.aiSummaryGeneratedAt,
+              status: "cached"
+            });
+          }
+        }
+        const result = await generateTicketSynthesis({ payload, slugs, ticketId });
+        return Response.json(result);
+      } catch (err) {
+        const authResponse = handleAuthError(err);
+        if (authResponse) return authResponse;
+        console.error("[support/ticket-synthesis] Error:", err);
         return Response.json({ error: "Internal server error" }, { status: 500 });
       }
     }
@@ -5023,6 +5235,7 @@ function createSupportEndpoints(slugs, options) {
   if (!f || f.ai !== false) {
     endpoints.push(createAiEndpoint(slugs));
     endpoints.push(...createClientIntelligenceEndpoint(slugs));
+    endpoints.push(createTicketSynthesisEndpoint(slugs));
   }
   if (!f || f.bulkActions !== false) endpoints.push(createBulkActionEndpoint(slugs));
   if (!f || f.merge !== false) endpoints.push(createMergeTicketsEndpoint(slugs));
@@ -5679,6 +5892,32 @@ function createTrackSLA(slugs) {
     return doc;
   };
 }
+function createTrackAiSummaryOnResolve(slugs) {
+  return async ({ doc, previousDoc, operation, req }) => {
+    if (operation !== "update" || !previousDoc) return doc;
+    const wasResolved = previousDoc.status === "resolved";
+    const isResolved = doc.status === "resolved";
+    if (wasResolved && !isResolved && doc.aiSummary) {
+      try {
+        await req.payload.update({
+          collection: slugs.tickets,
+          id: doc.id,
+          data: { aiSummary: null, aiSummaryGeneratedAt: null, aiSummaryStatus: null },
+          overrideAccess: true
+        });
+      } catch (err) {
+        console.error("[support] Failed to clear ai summary on reopen:", err);
+      }
+      return doc;
+    }
+    if (!wasResolved && isResolved && !doc.aiSummary) {
+      setImmediate(() => {
+        generateTicketSynthesis({ payload: req.payload, slugs, ticketId: doc.id }).catch((err) => console.error("[support] Background ai synthesis failed:", err));
+      });
+    }
+    return doc;
+  };
+}
 function createLogTicketActivity(slugs) {
   return async ({ doc, previousDoc, operation, req }) => {
     if (operation !== "update" || !previousDoc) return doc;
@@ -6083,6 +6322,49 @@ function createTicketsCollection(slugs, options) {
         admin: { initCollapsed: true },
         fields: billingFields
       },
+      // AI Synthesis collapsible — auto-filled when ticket is resolved
+      {
+        type: "collapsible",
+        label: "Synthese IA",
+        admin: {
+          initCollapsed: true,
+          description: "Recap factuel genere automatiquement au passage en resolu. Sert au copier-coller dans devis/factures."
+        },
+        fields: [
+          {
+            name: "aiSummary",
+            type: "textarea",
+            label: "Synthese",
+            admin: {
+              readOnly: true,
+              rows: 8,
+              description: "Vide tant que le ticket n'est pas resolu. Effacee si le ticket est reouvert."
+            }
+          },
+          {
+            type: "row",
+            fields: [
+              {
+                name: "aiSummaryGeneratedAt",
+                type: "date",
+                label: "Genere le",
+                admin: { readOnly: true, width: "50%", date: { displayFormat: "dd/MM/yyyy HH:mm" } }
+              },
+              {
+                name: "aiSummaryStatus",
+                type: "select",
+                label: "Statut",
+                options: [
+                  { label: "En cours", value: "pending" },
+                  { label: "Genere", value: "done" },
+                  { label: "Erreur", value: "error" }
+                ],
+                admin: { readOnly: true, width: "50%" }
+              }
+            ]
+          }
+        ]
+      },
       // SLA & Delais
       {
         type: "collapsible",
@@ -6207,6 +6489,7 @@ function createTicketsCollection(slugs, options) {
       ],
       afterChange: [
         createTrackSLA(slugs),
+        createTrackAiSummaryOnResolve(slugs),
         createAutoCalculateSLA(slugs),
         createAssignSlaDeadlines(slugs, notificationSlug),
         createCheckSlaOnResolve(slugs, notificationSlug),

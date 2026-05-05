@@ -13,6 +13,7 @@ import { dispatchWebhook } from '../utils/webhookDispatcher'
 import { readSupportSettings } from '../utils/readSettings'
 import { createTicketStatusEmail } from '../hooks/ticketStatusEmail'
 import { createAssignSlaDeadlines, createCheckSlaOnResolve } from '../hooks/checkSLA'
+import { generateTicketSynthesis } from '../utils/generateTicketSynthesis'
 
 // ─── Hooks ───────────────────────────────────────────────
 
@@ -148,6 +149,40 @@ function createTrackSLA(slugs: CollectionSlugs): CollectionAfterChangeHook {
         id: doc.id,
         data: { resolvedAt: new Date().toISOString() },
         overrideAccess: true,
+      })
+    }
+    return doc
+  }
+}
+
+function createTrackAiSummaryOnResolve(slugs: CollectionSlugs): CollectionAfterChangeHook {
+  return async ({ doc, previousDoc, operation, req }) => {
+    if (operation !== 'update' || !previousDoc) return doc
+    const wasResolved = previousDoc.status === 'resolved'
+    const isResolved = doc.status === 'resolved'
+
+    // Reopening: clear the cached summary so the next resolve regenerates it
+    if (wasResolved && !isResolved && doc.aiSummary) {
+      try {
+        await req.payload.update({
+          collection: slugs.tickets,
+          id: doc.id,
+          data: { aiSummary: null, aiSummaryGeneratedAt: null, aiSummaryStatus: null },
+          overrideAccess: true,
+        })
+      } catch (err) {
+        console.error('[support] Failed to clear ai summary on reopen:', err)
+      }
+      return doc
+    }
+
+    // Just resolved: trigger generation if not already cached.
+    // Fire-and-forget so the admin UI doesn't block on the LLM call.
+    if (!wasResolved && isResolved && !doc.aiSummary) {
+      // setImmediate keeps the response snappy; failures are logged inside the util.
+      setImmediate(() => {
+        generateTicketSynthesis({ payload: req.payload, slugs, ticketId: doc.id })
+          .catch((err) => console.error('[support] Background ai synthesis failed:', err))
       })
     }
     return doc
@@ -596,6 +631,48 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
         admin: { initCollapsed: true },
         fields: billingFields,
       },
+      // AI Synthesis collapsible — auto-filled when ticket is resolved
+      {
+        type: 'collapsible', label: 'Synthese IA',
+        admin: {
+          initCollapsed: true,
+          description: 'Recap factuel genere automatiquement au passage en resolu. Sert au copier-coller dans devis/factures.',
+        },
+        fields: [
+          {
+            name: 'aiSummary',
+            type: 'textarea',
+            label: 'Synthese',
+            admin: {
+              readOnly: true,
+              rows: 8,
+              description: 'Vide tant que le ticket n\'est pas resolu. Effacee si le ticket est reouvert.',
+            },
+          },
+          {
+            type: 'row',
+            fields: [
+              {
+                name: 'aiSummaryGeneratedAt',
+                type: 'date',
+                label: 'Genere le',
+                admin: { readOnly: true, width: '50%', date: { displayFormat: 'dd/MM/yyyy HH:mm' } },
+              },
+              {
+                name: 'aiSummaryStatus',
+                type: 'select',
+                label: 'Statut',
+                options: [
+                  { label: 'En cours', value: 'pending' },
+                  { label: 'Genere', value: 'done' },
+                  { label: 'Erreur', value: 'error' },
+                ],
+                admin: { readOnly: true, width: '50%' },
+              },
+            ],
+          },
+        ],
+      },
       // SLA & Delais
       {
         type: 'collapsible', label: 'SLA & Delais',
@@ -710,6 +787,7 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
       ],
       afterChange: [
         createTrackSLA(slugs),
+        createTrackAiSummaryOnResolve(slugs),
         createAutoCalculateSLA(slugs),
         createAssignSlaDeadlines(slugs, notificationSlug),
         createCheckSlaOnResolve(slugs, notificationSlug),

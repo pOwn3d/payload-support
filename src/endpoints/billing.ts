@@ -8,6 +8,10 @@ const MAX_PAGES = 50
 /**
  * GET /api/support/billing?from=...&to=...&projectId=...
  * Admin-only endpoint returning billing data.
+ *
+ * Includes ALL billable tickets active during the period (i.e. updated/created/resolved
+ * between from and to) — even those without any time entries, so the admin can spot
+ * tickets where time was forgotten.
  */
 export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -29,12 +33,43 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
 
         const projectId = url.searchParams.get('projectId')
 
+        // Build an exclusive upper-bound for ISO datetime fields:
+        // when filtering on updatedAt / resolvedAt with `to=2026-04-30`, we want to include
+        // events that happened on April 30 after 00:00.
+        const toExclusive = new Date(to)
+        toExclusive.setDate(toExclusive.getDate() + 1)
+        const toExclusiveIso = toExclusive.toISOString()
+
         const ticketWhere: Where = {
-          billable: { equals: true },
-          ...(projectId ? { project: { equals: Number(projectId) } } : {}),
+          and: [
+            { billable: { equals: true } },
+            ...(projectId ? [{ project: { equals: Number(projectId) } } as Where] : []),
+            {
+              or: [
+                {
+                  and: [
+                    { updatedAt: { greater_than_equal: from } },
+                    { updatedAt: { less_than: toExclusiveIso } },
+                  ],
+                },
+                {
+                  and: [
+                    { createdAt: { greater_than_equal: from } },
+                    { createdAt: { less_than: toExclusiveIso } },
+                  ],
+                },
+                {
+                  and: [
+                    { resolvedAt: { greater_than_equal: from } },
+                    { resolvedAt: { less_than: toExclusiveIso } },
+                  ],
+                },
+              ],
+            },
+          ],
         }
 
-        // Paginate tickets instead of limit:0
+        // Paginate tickets
         const allTickets: Array<Record<string, unknown>> = []
         let ticketPage = 1
         let ticketHasMore = true
@@ -53,7 +88,7 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
           ticketPage++
         }
 
-        // Paginate time entries instead of limit:0
+        // Paginate time entries within the period
         const allEntries: Array<Record<string, unknown>> = []
         let entryPage = 1
         let entryHasMore = true
@@ -94,15 +129,27 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
         const projectGroups = new Map<string, {
           project: { id: number; name: string } | null
           client: { company: string } | null
-          tickets: Array<{ id: number; ticketNumber: string; subject: string; entries: any[]; totalMinutes: number; billedAmount: number | null }>
+          tickets: Array<{
+            id: number
+            ticketNumber: string
+            subject: string
+            status: string
+            entries: Array<{ duration: number; description: string; date: string }>
+            totalMinutes: number
+            billedAmount: number | null
+            hasNoTimeEntries: boolean
+            aiSummary: string | null
+            aiSummaryGeneratedAt: string | null
+            aiSummaryStatus: string | null
+          }>
           totalMinutes: number
           totalBilledAmount: number
         }>()
 
         for (const ticket of allTickets) {
           const t = ticket as any
-          const ticketEntries = entriesByTicket.get(t.id)
-          if (!ticketEntries || ticketEntries.length === 0) continue
+          const ticketEntries = entriesByTicket.get(t.id) || []
+          const hasNoTimeEntries = ticketEntries.length === 0
 
           const project = typeof t.project === 'object' && t.project
             ? { id: t.project.id, name: t.project.name || 'Sans nom' }
@@ -138,9 +185,14 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
             id: t.id,
             ticketNumber: t.ticketNumber || '',
             subject: t.subject || '',
+            status: t.status || '',
             entries: ticketEntries,
             totalMinutes: ticketTotalMinutes,
             billedAmount,
+            hasNoTimeEntries,
+            aiSummary: t.aiSummary || null,
+            aiSummaryGeneratedAt: t.aiSummaryGeneratedAt || null,
+            aiSummaryStatus: t.aiSummaryStatus || null,
           })
           projectGroups.get(projectKey)!.totalMinutes += ticketTotalMinutes
           if (billedAmount) projectGroups.get(projectKey)!.totalBilledAmount += billedAmount
@@ -149,8 +201,17 @@ export function createBillingEndpoint(slugs: CollectionSlugs): Endpoint {
         const groups = Array.from(projectGroups.values())
         const grandTotalMinutes = groups.reduce((sum, g) => sum + g.totalMinutes, 0)
         const grandTotalBilledAmount = groups.reduce((sum, g) => sum + g.totalBilledAmount, 0)
+        const ticketsWithoutTime = groups.reduce(
+          (sum, g) => sum + g.tickets.filter((t) => t.hasNoTimeEntries).length,
+          0,
+        )
 
-        return new Response(JSON.stringify({ groups, grandTotalMinutes, grandTotalBilledAmount }), {
+        return new Response(JSON.stringify({
+          groups,
+          grandTotalMinutes,
+          grandTotalBilledAmount,
+          ticketsWithoutTime,
+        }), {
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',

@@ -25,6 +25,7 @@ import { createAdminChatGetEndpoint, createAdminChatPostEndpoint } from './admin
 import { createAdminChatStreamEndpoint } from './admin-chat-stream'
 import { createAdminStatsEndpoint } from './admin-stats'
 import { createBillingEndpoint } from './billing'
+import { createTicketSynthesisEndpoint } from './ticket-synthesis'
 import { createEmailStatsEndpoint } from './email-stats'
 import { createSatisfactionEndpoint } from './satisfaction'
 import { createTrackOpenEndpoint } from './track-open'
@@ -65,6 +66,7 @@ export { createAdminChatGetEndpoint, createAdminChatPostEndpoint } from './admin
 export { createAdminChatStreamEndpoint } from './admin-chat-stream'
 export { createAdminStatsEndpoint } from './admin-stats'
 export { createBillingEndpoint } from './billing'
+export { createTicketSynthesisEndpoint } from './ticket-synthesis'
 export { createEmailStatsEndpoint } from './email-stats'
 export { createSatisfactionEndpoint } from './satisfaction'
 export { createTrackOpenEndpoint } from './track-open'
@@ -121,6 +123,7 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   if (!f || f.ai !== false) {
     endpoints.push(createAiEndpoint(slugs))
     endpoints.push(...createClientIntelligenceEndpoint(slugs))
+    endpoints.push(createTicketSynthesisEndpoint(slugs))
   }
   if (!f || f.bulkActions !== false) endpoints.push(createBulkActionEndpoint(slugs))
   if (!f || f.merge !== false) endpoints.push(createMergeTicketsEndpoint(slugs))
