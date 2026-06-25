@@ -1,0 +1,629 @@
+// Pending Emails — Clean admin view, 2026
+// Uses Payload CSS variables for dark mode support
+
+$font-stack: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+$blue: #2563eb;
+$green: #16a34a;
+$amber: #d97706;
+$orange: #ea580c;
+$red: #dc2626;
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-pill: 20px;
+
+// ── Page layout ──────────────────────────────────────────────
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  font-family: $font-stack;
+}
+
+.loadingWrap {
+  padding: 40px 24px;
+}
+
+// ── Header ───────────────────────────────────────────────────
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--theme-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.titleIcon {
+  color: $blue;
+  display: flex;
+  align-items: center;
+}
+
+.subtitle {
+  color: var(--theme-elevation-500);
+  margin: 0;
+  font-size: 14px;
+}
+
+.pendingBadge {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: $radius-pill;
+  background-color: $orange;
+  color: #fff;
+  white-space: nowrap;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--theme-elevation-150, #f1f5f9);
+}
+
+.tab {
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  color: var(--theme-elevation-500);
+  background: transparent;
+  transition: color 100ms, border-color 100ms;
+
+  &:hover {
+    color: var(--theme-text);
+  }
+}
+
+.tabActive {
+  color: $blue;
+  border-bottom-color: $blue;
+}
+
+// ── Empty state ──────────────────────────────────────────────
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// ── Email card ───────────────────────────────────────────────
+.card {
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: $radius-md;
+  background: var(--theme-elevation-0, #fff);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:hover {
+    border-color: var(--theme-elevation-300);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.cardProcessing {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.senderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.senderName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--theme-text);
+}
+
+.senderEmail {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+.cardSubject {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--theme-text);
+  margin-bottom: 4px;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+}
+
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+// ── Status badge (processed/ignored) ─────────────────────────
+.statusBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: $radius-pill;
+  color: #fff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.statusProcessed {
+  background-color: $green;
+}
+
+.statusIgnored {
+  background-color: var(--theme-elevation-400);
+}
+
+// ── Suggestion badges ────────────────────────────────────────
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.suggestionChip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: $radius-pill;
+}
+
+.suggestionHigh {
+  background-color: #dcfce7;
+  color: $green;
+}
+
+.suggestionMedium {
+  background-color: #fef3c7;
+  color: $amber;
+}
+
+.suggestionLow {
+  background-color: var(--theme-elevation-100);
+  color: var(--theme-elevation-500);
+}
+
+// ── Body preview ─────────────────────────────────────────────
+.bodySection {
+  margin-top: 10px;
+}
+
+.bodyText {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+  line-height: 1.5;
+}
+
+.bodyExpanded {
+  white-space: pre-wrap;
+}
+
+.expandBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $blue;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  transition: opacity 100ms;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ── Action buttons ───────────────────────────────────────────
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--theme-elevation-200);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 100ms, transform 80ms;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+  }
+}
+
+.btnCreate {
+  background-color: $green;
+}
+
+.btnLink {
+  background-color: $blue;
+}
+
+.btnIgnore {
+  background-color: var(--theme-elevation-400);
+}
+
+// ── Modal overlay ────────────────────────────────────────────
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal {
+  background: var(--theme-elevation-0, #fff);
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: $radius-lg;
+  padding: 24px;
+  width: 560px;
+  max-height: 80vh;
+  overflow: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--theme-elevation-500);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  transition: color 100ms;
+
+  &:hover {
+    color: var(--theme-text);
+  }
+}
+
+// ── Modal section labels ─────────────────────────────────────
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--theme-elevation-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.sectionBlock {
+  margin-bottom: 16px;
+}
+
+// ── Suggestion / result row (modal) ──────────────────────────
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  cursor: pointer;
+  margin-bottom: 6px;
+  text-align: left;
+  color: var(--theme-text);
+  transition: border-color 100ms, background 100ms;
+
+  &:hover {
+    border-color: var(--theme-elevation-300);
+    background: var(--theme-elevation-100);
+  }
+}
+
+.resultTicketNum {
+  font-weight: 700;
+  color: $blue;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 12px;
+}
+
+.resultSubject {
+  flex: 1;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scoreBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: $radius-pill;
+  color: #fff;
+}
+
+.scoreHigh {
+  background-color: $green;
+}
+
+.scoreMedium {
+  background-color: $amber;
+}
+
+.scoreLow {
+  background-color: var(--theme-elevation-500);
+}
+
+// ── Detected client row ──────────────────────────────────────
+.detectedRow {
+  @extend .resultRow;
+  border: 2px solid $green;
+
+  &:hover {
+    border-color: $green;
+  }
+}
+
+.detectedLabel {
+  flex: 1;
+}
+
+.detectedName {
+  font-weight: 600;
+}
+
+.detectedEmail {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  margin-left: 8px;
+}
+
+.useBtn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: $radius-pill;
+  background-color: $green;
+  color: #fff;
+}
+
+// ── Client result row ────────────────────────────────────────
+.clientResultLabel {
+  flex: 1;
+}
+
+.clientResultName {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.clientResultEmail {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  margin-left: 8px;
+}
+
+// ── Search input (modals) ────────────────────────────────────
+.searchWrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  color: var(--theme-elevation-400);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  color: var(--theme-text);
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--theme-elevation-400);
+  }
+}
+
+.searchingHint {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+  padding: 8px;
+}
+
+.noResults {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+  padding: 8px;
+}
+
+// ── Separator + create toggle ────────────────────────────────
+.separator {
+  border-top: 1px solid var(--theme-elevation-200);
+  margin: 16px 0;
+  padding-top: 16px;
+}
+
+.createToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: $blue;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+  transition: opacity 100ms;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+// ── Create client form ───────────────────────────────────────
+.createForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.createFormRow {
+  display: flex;
+  gap: 8px;
+}
+
+.formInput {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+  color: var(--theme-text);
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: $blue;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+
+  &::placeholder {
+    color: var(--theme-elevation-400);
+  }
+}
+
+.formInputHalf {
+  @extend .formInput;
+  width: 50%;
+}
+
+.formError {
+  font-size: 12px;
+  color: $red;
+  padding: 6px 10px;
+  border-radius: $radius-sm;
+  background-color: #fef2f2;
+  border: 1px solid $red;
+}
+
+.submitBtn {
+  padding: 8px 14px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--theme-elevation-200);
+  background-color: $green;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 100ms;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

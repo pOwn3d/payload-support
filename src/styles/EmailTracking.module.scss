@@ -1,0 +1,238 @@
+// Email Tracking — Clean 2026 design with Payload CSS vars
+
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.header {
+  padding: 20px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--theme-text);
+  margin: 0;
+  flex: 1;
+}
+
+// Stat cards
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+  @media (max-width: 800px) { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: var(--theme-elevation-50);
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--theme-elevation-500);
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.statUnit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--theme-elevation-500);
+  margin-left: 2px;
+}
+
+// Filters
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--theme-elevation-150, #f1f5f9);
+}
+
+.tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 100ms;
+  &:hover { color: var(--theme-text); }
+  &.tabActive {
+    color: var(--theme-text);
+    border-bottom-color: #2563eb;
+  }
+}
+
+.dateRangeGroup {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.dateRangeBtn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  cursor: pointer;
+  transition: all 80ms;
+  &:hover { background: var(--theme-elevation-100); }
+  &.dateRangeActive {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+}
+
+.searchInput {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-0, #fff);
+  color: var(--theme-text);
+  font-size: 13px;
+  width: 220px;
+  &:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08); }
+  &::placeholder { color: var(--theme-elevation-400); }
+}
+
+// Table
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theme-elevation-500);
+  border-bottom: 1px solid var(--theme-elevation-200);
+}
+
+.table td {
+  padding: 10px 12px;
+  color: var(--theme-text);
+  border-bottom: 1px solid var(--theme-elevation-100, #f8fafc);
+  vertical-align: middle;
+}
+
+.table tr:hover td {
+  background: var(--theme-elevation-50);
+}
+
+.statusBadge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ticketLink {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12px;
+  &:hover { text-decoration: underline; }
+}
+
+.expandBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--theme-elevation-400);
+  font-size: 12px;
+  padding: 2px;
+  &:hover { color: var(--theme-text); }
+}
+
+.errorDetail {
+  padding: 10px 14px;
+  background: #fef2f2;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #991b1b;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  margin: 4px 0;
+}
+
+.processingTime {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+}
+
+.timeFast { color: #16a34a; }
+.timeMedium { color: #d97706; }
+.timeSlow { color: #dc2626; }
+
+// Pagination
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pageBtn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  cursor: pointer;
+  &:hover { background: var(--theme-elevation-100); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+}
+
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+}

@@ -1,0 +1,358 @@
+// Ticket Inbox — Superhuman/Linear inspired, 2026
+
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+// Header
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--theme-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--theme-elevation-500);
+  margin: 2px 0 0;
+}
+
+.subtitleBreach {
+  color: var(--theme-error-500, #c4392c);
+  font-weight: 600;
+}
+
+.headerRight {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.searchInput {
+  padding: 8px 12px 8px 34px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-0, #fff);
+  color: var(--theme-text);
+  font-size: 13px;
+  width: 280px;
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: var(--theme-info-500, #2a6bd8);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 18%, transparent);
+  }
+
+  &::placeholder { color: var(--theme-elevation-400); }
+}
+
+.searchHint {
+  position: absolute;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--theme-elevation-400);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-50);
+}
+
+.newTicketBtn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-text);
+  background: var(--theme-text);
+  color: var(--theme-bg, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 100ms;
+  text-decoration: none;
+  &:hover {
+    background: var(--theme-elevation-800);
+    border-color: var(--theme-elevation-800);
+  }
+}
+
+// Filter tabs / segments
+.tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: var(--theme-elevation-100);
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: 8px;
+  padding: 2px;
+  margin: 4px 0 6px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-elevation-500);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 100ms, color 100ms;
+  white-space: nowrap;
+
+  &:hover { color: var(--theme-text); }
+
+  &.tabActive {
+    color: var(--theme-text);
+    background: var(--theme-elevation-0, #fff);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  }
+
+  &.tabAlert:not(.tabActive) {
+    color: var(--theme-error-500, #c4392c);
+  }
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  background: var(--theme-elevation-200);
+  border-radius: 999px;
+}
+
+.tabActive .tabCount {
+  background: var(--theme-elevation-100);
+  color: var(--theme-text);
+}
+
+.tabCountAlert {
+  color: var(--theme-error-500, #c4392c) !important;
+  background: color-mix(in srgb, var(--theme-error-500, #c4392c) 12%, transparent) !important;
+}
+
+.sortRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 0;
+}
+
+.sortSelect {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  &:hover { color: var(--theme-text); }
+}
+
+// Ticket list
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+// Layout : check | priority-dot | StatusPill | ticket# | subject | client | sla | updated | unread
+.row {
+  display: grid;
+  grid-template-columns: 18px 12px 110px 80px 1fr 200px 90px 90px 12px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--theme-elevation-100, #f3f3f3);
+  cursor: pointer;
+  transition: background 80ms ease;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+
+  &:hover { background: var(--theme-elevation-50); }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 16px 110px 1fr 80px 80px;
+  }
+}
+
+.rowSelected {
+  background: var(--theme-elevation-100);
+}
+
+.rowUnread {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-info-500, #2a6bd8) 8%, transparent) 0, transparent 6px);
+
+  .subject { font-weight: 700; }
+}
+
+.rowBreach::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--theme-error-500, #c4392c);
+}
+
+.rowCheck {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--theme-text);
+}
+
+.priorityDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ticketNum {
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 11px;
+  color: var(--theme-elevation-400);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.subject {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// SLA cell — color reflects state (computed in computeSlaState)
+.slaCell {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--theme-elevation-400);
+  white-space: nowrap;
+}
+.slaOk     { color: var(--theme-elevation-400); }
+.slaWarn   { color: var(--theme-warning-500, #c97a0a); font-weight: 600; }
+.slaBreach { color: var(--theme-error-500, #c4392c); font-weight: 700; }
+
+.timeAgo {
+  font-size: 12px;
+  color: var(--theme-elevation-400);
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.unreadDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--theme-info-500, #2a6bd8);
+  flex-shrink: 0;
+}
+
+// Empty state
+.empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--theme-elevation-400);
+}
+
+.emptyIcon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// Keyboard hints
+.keyboardHints {
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--theme-elevation-0, #fff);
+  border: 1px solid var(--theme-elevation-200);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-elevation-500);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+
+  kbd {
+    font-family: inherit;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--theme-elevation-200);
+    background: var(--theme-elevation-50);
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
+
+// Loading
+.loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--theme-elevation-400);
+  font-size: 14px;
+}

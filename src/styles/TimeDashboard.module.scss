@@ -1,0 +1,287 @@
+// TimeDashboard — Clean admin aesthetic, 2026
+
+.page {
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+// Header
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--theme-text);
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--theme-elevation-500);
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.newEntryBtn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 100ms;
+
+  &:hover { opacity: 0.9; }
+}
+
+// Filters
+.filters {
+  padding: 14px;
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  background: var(--theme-elevation-100);
+  margin-bottom: 16px;
+}
+
+.quickPeriod {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.filterRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--theme-elevation-500);
+  margin-bottom: 3px;
+}
+
+.input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-300);
+  font-size: 13px;
+  background: var(--theme-elevation-100);
+  color: var(--theme-text);
+  transition: border-color 150ms, box-shadow 150ms;
+
+  &:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  }
+}
+
+.select {
+  composes: input;
+}
+
+// Buttons
+.btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-300);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 100ms;
+
+  &:hover { opacity: 0.9; }
+}
+
+.btnPrimary { composes: btn; background: #2563eb; }
+.btnSecondary { composes: btn; background: var(--theme-elevation-100); color: var(--theme-text); }
+.btnAmber { composes: btn; background: #d97706; }
+
+// KPI cards
+.kpis {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.kpiCard {
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--theme-elevation-100);
+  border: 1px solid var(--theme-elevation-300);
+}
+
+.kpiCardPrimary { composes: kpiCard; border-color: #2563eb; }
+.kpiCardAmber { composes: kpiCard; border-color: #d97706; }
+.kpiCardOrange { composes: kpiCard; border-color: #ea580c; }
+
+.kpiLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--theme-elevation-500);
+}
+
+.kpiValue {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.kpiPrimary { composes: kpiValue; color: #2563eb; }
+.kpiAmber { composes: kpiValue; color: #d97706; }
+.kpiOrange { composes: kpiValue; color: #ea580c; }
+
+// Chart
+.chartWrap {
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.chartHeader {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--theme-elevation-50);
+  border-bottom: 1px solid var(--theme-elevation-300);
+  color: var(--theme-text);
+}
+
+.chartBars {
+  padding: 14px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 80px;
+}
+
+.chartBar {
+  flex: 1;
+  background: #2563eb;
+  border-radius: 2px 2px 0 0;
+  min-width: 4px;
+  transition: opacity 150ms;
+
+  &:hover { opacity: 0.8; }
+}
+
+// Empty state
+.empty {
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  background: var(--theme-elevation-100);
+  color: var(--theme-elevation-500);
+  font-size: 14px;
+}
+
+// Group cards
+.groupCard {
+  border: 1px solid var(--theme-elevation-300);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.groupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: var(--theme-elevation-50);
+  border-bottom: 1px solid var(--theme-elevation-300);
+}
+
+.groupLabel {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--theme-text);
+}
+
+.groupTotal {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2563eb;
+}
+
+// Entry table
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.entryRow {
+  border-bottom: 1px solid var(--theme-elevation-200);
+
+  &:last-child { border-bottom: none; }
+}
+
+.tdTicket {
+  padding: 6px 14px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-size: 11px;
+  width: 80px;
+}
+
+.tdSubject {
+  padding: 6px 8px;
+  color: var(--theme-elevation-500);
+  font-size: 12px;
+}
+
+.tdDescription {
+  padding: 6px 8px;
+  color: var(--theme-elevation-500);
+  font-size: 12px;
+}
+
+.tdDuration {
+  padding: 6px 14px;
+  text-align: right;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.ticketLink {
+  color: var(--theme-text);
+  text-decoration: underline;
+
+  &:hover { color: #2563eb; }
+}
+
+// Loading
+.loading {
+  padding: 40px;
+}

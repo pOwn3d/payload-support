@@ -1,0 +1,98 @@
+import type { Endpoint } from 'payload'
+import type { CollectionSlugs } from '../utils/slugs'
+import { requireAdmin, handleAuthError } from '../utils/auth'
+import { dbUpdate, dbDelete } from '../utils/db'
+
+/**
+ * POST /api/support/bulk-action
+ * Apply an action to multiple tickets at once. Admin-only.
+ */
+export function createBulkActionEndpoint(slugs: CollectionSlugs): Endpoint {
+  return {
+    path: '/support/bulk-action',
+    method: 'post',
+    handler: async (req) => {
+      try {
+        const payload = req.payload
+
+        requireAdmin(req, slugs)
+
+        const { ticketIds, action, value } = (await req.json!()) as {
+          ticketIds: number[]
+          action: 'close' | 'reopen' | 'assign' | 'tag' | 'delete' | 'set_priority' | 'set_category'
+          value?: string | number
+        }
+
+        if (!ticketIds?.length || !action) {
+          return Response.json({ error: 'ticketIds and action required' }, { status: 400 })
+        }
+
+        let processed = 0
+
+        for (const ticketId of ticketIds) {
+          try {
+            switch (action) {
+              case 'close':
+                await dbUpdate(payload, slugs.tickets, {
+                  id: ticketId,
+                  data: { status: 'resolved', resolvedAt: new Date().toISOString() },
+                  overrideAccess: true,
+                })
+                break
+              case 'reopen':
+                await dbUpdate(payload, slugs.tickets, {
+                  id: ticketId,
+                  data: { status: 'open' },
+                  overrideAccess: true,
+                })
+                break
+              case 'assign':
+                if (value) {
+                  await dbUpdate(payload, slugs.tickets, {
+                    id: ticketId,
+                    data: { assignedTo: Number(value) },
+                    overrideAccess: true,
+                  })
+                }
+                break
+              case 'set_priority':
+                if (value) {
+                  await dbUpdate(payload, slugs.tickets, {
+                    id: ticketId,
+                    data: { priority: String(value) },
+                    overrideAccess: true,
+                  })
+                }
+                break
+              case 'set_category':
+                if (value) {
+                  await dbUpdate(payload, slugs.tickets, {
+                    id: ticketId,
+                    data: { category: String(value) },
+                    overrideAccess: true,
+                  })
+                }
+                break
+              case 'delete':
+                await dbDelete(payload, slugs.tickets, {
+                  id: ticketId,
+                  overrideAccess: true,
+                })
+                break
+            }
+            processed++
+          } catch (err) {
+            console.error(`[bulk-action] Failed for ticket ${ticketId}:`, err)
+          }
+        }
+
+        return Response.json({ processed, total: ticketIds.length })
+      } catch (error) {
+        const authResponse = handleAuthError(error)
+        if (authResponse) return authResponse
+        console.error('[bulk-action] Error:', error)
+        return Response.json({ error: 'Internal server error' }, { status: 500 })
+      }
+    },
+  }
+}

@@ -1,0 +1,23 @@
+node_modules/
+*.tgz
+.DS_Store
+Icon?
+
+# Build output (généré par `npm run build` / publié via prepublishOnly)
+dist/
+
+# Lockfile unique (npm) — pas de pnpm
+pnpm-lock.yaml
+
+# IDE
+.idea/
+.vscode/
+
+# Tests
+coverage/
+
+# Internal docs (audit reports, notes) — not shipped
+docs/
+
+# AI assistant session artifacts
+.claude/

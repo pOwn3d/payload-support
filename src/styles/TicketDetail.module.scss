@@ -1,0 +1,1893 @@
+// TicketDetail — Payload Support refonte v2 (alignement maquette designer)
+// Tokens : --theme-* + --s-* + --t-* + --r-* via tokens.css du plugin
+// Aucune valeur hex hardcodée hors fallbacks tokens.
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--theme-bg);
+}
+
+// ─── HEADER (detail__header maquette) ───
+// Layout : back-btn 32x32 | title-wrap (ID/cat/source meta + h1 title) | quick-actions
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+  background: var(--theme-bg);
+}
+
+.backLink {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-elevation-0, #fff);
+  color: var(--theme-text);
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background 80ms ease;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+.ticketMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+// detail__id (maquette) : ID mono · category · source email
+.ticketNumber {
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.01em;
+
+  > .ticketNumberSep {
+    color: var(--theme-text-tertiary, var(--theme-elevation-400));
+  }
+
+  > .ticketNumberCat,
+  > .ticketNumberSource {
+    color: var(--theme-text-tertiary, var(--theme-elevation-500));
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+// detail__title (maquette) : h1 20px/1.3, 600, text-wrap: pretty
+// Multi-ligne autorisee, on tronque a 2 lignes via line-clamp pour eviter de pousser le header
+.ticketSubject {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--theme-text);
+  margin: 0;
+  text-wrap: pretty;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// Status pill (select) — pilule arrondie, padding et chevron alignés
+.statusChip {
+  padding: 0 26px 0 12px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: box-shadow 100ms;
+  appearance: none;
+  -webkit-appearance: none;
+  letter-spacing: 0.01em;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+
+  &:hover {
+    box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 18%, transparent);
+  }
+}
+
+.sentimentBadge {
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+// Bouton "more" : 32x32 carré aligné sur btn--icon de la maquette
+.moreBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-elevation-0, #fff);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theme-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 80ms ease;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+// ─── LAYOUT (detail grid maquette) ───
+// Maquette : grid-template-columns: 1fr 360px, full bleed, pas de gap/border-radius
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  align-items: stretch;
+  min-height: 0;
+  flex: 1;
+  @media (max-width: 1060px) { grid-template-columns: 1fr; }
+}
+
+.conversationCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+}
+
+// Sidebar (sidepanel maquette) : pas de card, full-bleed, scroll vertical
+.sidebar {
+  background: var(--theme-elevation-50);
+  border-left: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  @media (max-width: 1060px) {
+    border-left: 0;
+    border-top: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+  }
+}
+
+// ─── SIDEBAR SECTIONS (sp__sect maquette) ───
+// Sections : fond bg (pas elevation-50), border-bottom 1px, padding 16px
+.sideSection {
+  padding: 16px;
+  background: var(--theme-bg);
+  border-bottom: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+  &:last-child { border-bottom: none; }
+}
+
+// Section title : t-micro uppercase letter-spaced + flex space-between
+.sideSectionTitle {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  margin: 0 0 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// dl/dt/dd (kv maquette) — grid 100px 1fr, label aligné gauche, value étirée
+.sideField {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sideLabel {
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  font-weight: 400;
+}
+.sideValue {
+  color: var(--theme-text);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+// Inline select for sidebar editable fields (kv__edit maquette)
+// Left-aligned dans la grid (la valeur s'aligne au début de la colonne 2)
+.sideSelect {
+  padding: 2px 8px;
+  margin: -2px -8px -2px 0;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--theme-text);
+  cursor: pointer;
+  transition: background 80ms ease;
+  text-align: left;
+  max-width: 100%;
+  width: 100%;
+  justify-self: start;
+
+  &:hover { background: var(--theme-elevation-100); }
+  &:focus {
+    border-color: var(--theme-info-500, #2a6bd8);
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 18%, transparent);
+  }
+}
+
+// Client card (sp__customer maquette)
+.clientCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+// Avatar 36×36 client = warning (warm), support = info — pas de gradient
+.clientAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--theme-warning-500, #c97a0a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.clientInfo { flex: 1; min-width: 0; }
+.clientName {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--theme-text);
+  margin: 0;
+}
+.clientCompany {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  margin: 0;
+}
+
+.clientEmail {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-info-500, #2a6bd8);
+  text-decoration: underline;
+  word-break: break-all;
+  display: block;
+  &:hover { text-decoration: underline; }
+}
+
+// "Fiche client" / "Portail" : 2 boutons flex 1, maquette
+.clientActions {
+  display: flex;
+  gap: 8px;
+}
+
+.smallBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-elevation-0, #fff);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-text);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 80ms ease;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+// ─── THREAD (conversation timeline maquette) ───
+.thread {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--theme-bg);
+}
+
+// Day separator (day-sep maquette) : lignes horizontales + label uppercase micro
+.dateSeparator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 12px;
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--theme-elevation-150, var(--theme-input-border));
+  }
+}
+
+.dateSeparatorText {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+// Message (msg maquette) : grid 32px 1fr, padding vertical 12px
+.message {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  position: relative;
+  transition: none;
+  background: transparent;
+
+  // Plus de border-top entre messages : la séparation vient du body bubble
+  &:hover { background: transparent; }
+}
+
+// Client bubble warm tint via msg__body, pas de border-left sur le wrap
+.messageClient {
+  background: transparent;
+  &:hover { background: transparent; }
+
+  .messageBody {
+    background: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 6%, var(--theme-bg));
+    border-color: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 18%, var(--theme-input-border));
+  }
+}
+
+// Admin/support bubble — neutre (elevation-0)
+.messageAdmin {
+  background: transparent;
+  &:hover { background: transparent; }
+
+  .messageBody {
+    background: var(--theme-elevation-0, #fff);
+    border-color: var(--theme-elevation-200, var(--theme-input-border));
+  }
+}
+
+// Internal note — warming + dashed border (visible agents only)
+.messageInternal {
+  .messageBody {
+    background: var(--theme-warning-50, color-mix(in srgb, var(--theme-warning-500, #c97a0a) 10%, var(--theme-bg))) !important;
+    border-style: dashed !important;
+    border-color: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 35%, transparent) !important;
+  }
+}
+
+// Avatar (msg__avatar maquette) : 32x32, padding-top 2px pour aligner avec head
+.avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.messageContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// Head : author + role + channel + time (baseline aligned)
+.messageHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.messageAuthor {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--theme-text);
+}
+
+.messageTime {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+}
+
+// Pills "Interne" / "Solution" — pill style, 22px height
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.messageMeta {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+// Body bubble : t-body 14px/1.55, padding 12px 16px, border 1px elevation-200
+// Width: prend toute la largeur dispo dans la colonne conversation (suppression du max-width 720px
+// qui créait un vide à droite quand le main est large).
+.messageBody {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--theme-text);
+  background: var(--theme-elevation-0, #fff);
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  border-radius: 6px;
+  padding: 12px 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 4px;
+  width: 100%;
+}
+
+// Actions hover (msg__actions maquette) : ghost links micro, opacity 0 -> 1
+.messageActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  opacity: 0;
+  transition: opacity 80ms ease;
+}
+
+.message:hover .messageActions { opacity: 1; }
+
+.actionIcon {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  width: auto;
+  transition: color 80ms ease;
+  &:hover { color: var(--theme-text); background: transparent; }
+  &.danger:hover { color: var(--theme-error-500, #c4392c); }
+}
+
+// ─── TYPING ───
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.typingDots {
+  display: flex;
+  gap: 3px;
+  span {
+    width: 5px; height: 5px; border-radius: 50%; background: #7c3aed;
+    animation: bounce 1.2s infinite;
+    &:nth-child(2) { animation-delay: 150ms; }
+    &:nth-child(3) { animation-delay: 300ms; }
+  }
+}
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+// ─── COMPOSER (maquette : assist-row + box + footer) ───
+// Le composer maquette englobe : un assist row au-dessus, une box avec toolbar+editor,
+// puis un footer séparé. Pas de border-radius global, fond elevation-bg.
+.composer {
+  border-top: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+  background: var(--theme-bg);
+  padding: 12px 24px 16px;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 150ms;
+}
+
+// Mode note interne : fond warning-50 sur tout le composer
+.composerInternal {
+  background: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 8%, var(--theme-bg));
+}
+
+// Drag & drop : surbrillance info
+.composerDragOver {
+  background: color-mix(in srgb, var(--theme-info-500, #2a6bd8) 6%, var(--theme-bg));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 30%, transparent);
+}
+
+// Assist row (composer__assist maquette) : ligne au-dessus de la box
+// Boutons type "pill" : IA / Reformuler / Templates / Code / Fichier
+.composerToolbar {
+  display: flex;
+  gap: 8px;
+  padding: 0 0 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 0;
+}
+
+// Toolbar buttons (assist-btn maquette) : pill 26px, micro typo
+.toolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-bg);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  transition: background 80ms ease, color 80ms ease;
+  position: relative;
+  width: auto;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+    color: var(--theme-text);
+  }
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+// Bouton IA — accent purple, pill style
+.toolbarBtnAi {
+  background: var(--theme-accent-50, color-mix(in srgb, var(--theme-accent-500, #6b46e8) 10%, transparent));
+  border-color: color-mix(in srgb, var(--theme-accent-500, #6b46e8) 25%, transparent);
+  color: var(--theme-accent-500, #6b46e8);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--theme-accent-500, #6b46e8) 12%, var(--theme-bg));
+    color: var(--theme-accent-500, #6b46e8);
+  }
+}
+
+// Tooltip sur toolbarBtn (data-tooltip)
+.toolbarBtn {
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--theme-text);
+    color: var(--theme-bg, #fff);
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 100ms;
+    z-index: 10;
+  }
+  &:hover::after { opacity: 1; }
+}
+
+// Séparateur dans assist row : line vertical 16px
+.toolbarDivider {
+  width: 1px;
+  height: 16px;
+  background: var(--theme-elevation-200, var(--theme-input-border));
+  margin: 0 4px;
+}
+
+// Réponses types / macros select : aligné sur les pills assist
+.cannedSelect {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-bg);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  cursor: pointer;
+  margin-left: auto;
+  &:hover { background: var(--theme-elevation-50); }
+}
+
+// Composer footer (maquette) : ligne séparée avec selects + toggles + send
+.composerFooter {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 0;
+  border-top: 0;
+}
+
+.composerOptions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    user-select: none;
+    transition: color 120ms ease;
+  }
+
+  // Note interne (1er label) : warning quand cochee
+  // Notifier (2e label) : info quand cochee
+  // Approximation via :has() — supportee Chrome/Safari/FF >= 121
+  > label:nth-of-type(1):has(input:checked) {
+    color: var(--theme-warning-500, #c97a0a);
+    input[type="checkbox"]:checked { background: var(--theme-warning-500, #c97a0a); }
+  }
+  > label:nth-of-type(2):has(input:checked) {
+    color: var(--theme-info-500, #2a6bd8);
+  }
+
+  // Toggle switch (toggle__sw maquette) : 28×16, info-500 quand checked
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 28px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--theme-elevation-200, var(--theme-input-border));
+    position: relative;
+    cursor: pointer;
+    transition: background 120ms ease;
+    margin: 0;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--theme-bg, #fff);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+      transition: left 120ms ease;
+    }
+
+    &:checked {
+      background: var(--theme-info-500, #2a6bd8);
+      &::after { left: 14px; }
+    }
+  }
+}
+
+// Raccourci clavier : kbd style maquette (1px 5px)
+.sendShortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: auto;
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--theme-elevation-100);
+    border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--theme-text-secondary, var(--theme-elevation-600));
+  }
+}
+
+// Send button (btn--primary maquette) : fond theme-text, color theme-bg
+.sendBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-text);
+  background: var(--theme-text);
+  color: var(--theme-bg, #fff);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease;
+
+  &:hover {
+    background: var(--theme-elevation-800);
+    border-color: var(--theme-elevation-800);
+  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.sendBtnInternal {
+  background: var(--theme-warning-500, #c97a0a);
+  border-color: var(--theme-warning-500, #c97a0a);
+  color: #fff;
+
+  &:hover {
+    background: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 80%, black);
+    border-color: color-mix(in srgb, var(--theme-warning-500, #c97a0a) 80%, black);
+  }
+}
+
+// ─── ATTACHMENTS ───
+.attachments {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.attachmentImg {
+  max-width: 220px;
+  max-height: 180px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  object-fit: cover;
+  cursor: pointer;
+  transition: opacity 100ms;
+  &:hover { opacity: 0.85; }
+}
+
+.attachmentFile {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-elevation-200);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-text);
+  text-decoration: none;
+  background: var(--theme-elevation-50);
+  transition: background 80ms;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+// ─── Time tracker (tt maquette) ───
+// Maquette : grid 1fr auto (display + sub | go-btn), display monospace 22px 600
+.timer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.timerDisplay {
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--theme-text);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+
+  &.timerActive { color: var(--theme-error-500, #c4392c); }
+}
+
+// Bouton Go / Pause / Save (tt__go maquette) :
+//  - "paused" (Go) : bg theme-text, color theme-bg (carré sombre, contrasté)
+//  - "running" (Pause) : bg error-500, color white (stop visible)
+//  - "save" (💾) : ghost neutre theme-bg + border elevation-200
+// Approximation : on neutralise par défaut, et les classes appellantes appliquent le style.
+.timerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-text);
+  background: var(--theme-text);
+  color: var(--theme-bg, #fff);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 80ms ease, border-color 80ms ease;
+  white-space: nowrap;
+  &:hover { background: var(--theme-elevation-800); border-color: var(--theme-elevation-800); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// Variante running (tt__go--running maquette) : bg error-500 quand le timer tourne
+.timerBtnRunning {
+  background: var(--theme-error-500, #c4392c);
+  border-color: var(--theme-error-500, #c4392c);
+  color: #fff;
+  &:hover {
+    background: color-mix(in srgb, var(--theme-error-500, #c4392c) 85%, black);
+    border-color: color-mix(in srgb, var(--theme-error-500, #c4392c) 85%, black);
+  }
+}
+
+// Variante "ghost" pour les boutons secondaires (Save / + Ajouter) : neutre, evite le carre noir partout
+.timerBtnGhost {
+  background: var(--theme-bg);
+  border-color: var(--theme-elevation-200, var(--theme-input-border));
+  color: var(--theme-text);
+  font-weight: 500;
+  &:hover { background: var(--theme-elevation-100); border-color: var(--theme-elevation-200, var(--theme-input-border)); }
+}
+
+// Activity in sidebar
+.collapseBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--theme-elevation-500);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  &:hover { color: var(--theme-text); }
+}
+
+.activityItem {
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--theme-elevation-100, #f8fafc);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+
+  &:last-child { border-bottom: none; }
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.activityContent { flex: 1; min-width: 0; }
+.activityText { font-weight: 500; color: var(--theme-text); font-size: 12px; }
+.activityTime { font-size: 11px; color: var(--theme-elevation-500); margin-top: 1px; }
+
+// ─── DROPDOWN ───
+.dropdown { position: relative; display: inline-block; }
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--theme-elevation-200);
+  background: var(--theme-elevation-0, #fff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-text);
+  cursor: pointer;
+  border-radius: 6px;
+  text-decoration: none;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+// RTE
+.rteDisplay {
+  :global(blockquote) { border-left: 3px solid #2563eb; margin: 8px 0; padding: 8px 16px; background: var(--theme-elevation-50); border-radius: 0 6px 6px 0; }
+  :global(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+  :global(a) { color: #2563eb; text-decoration: underline; }
+  :global(ul), :global(ol) { margin: 8px 0; padding-left: 24px; }
+  :global(li) { margin: 2px 0; }
+  :global(p) { margin: 0 0 6px 0; }
+
+}
+
+// ─── UNDO TOAST (#2) ───
+.undoToast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--theme-text, #1e293b);
+  color: var(--theme-elevation-0, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: toastIn 200ms ease-out;
+}
+
+.undoBtn {
+  padding: 4px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 100ms;
+  &:hover { background: rgba(255, 255, 255, 0.25); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+// ─── SPLIT MODAL (#2) ───
+.splitOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 150ms ease-out;
+}
+
+.splitModal {
+  background: var(--theme-elevation-0, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--theme-elevation-200);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  width: 440px;
+  max-width: 90vw;
+  padding: 24px;
+}
+
+.splitTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--theme-text);
+  margin: 0 0 8px;
+}
+
+.splitPreview {
+  font-size: 12px;
+  color: var(--theme-elevation-500);
+  margin: 0 0 16px;
+  line-height: 1.5;
+  max-height: 80px;
+  overflow: hidden;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--theme-elevation-50);
+}
+
+.splitInput {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  font-size: 14px;
+  color: var(--theme-text);
+  background: var(--theme-elevation-0, #fff);
+  margin-bottom: 16px;
+  transition: border-color 100ms;
+
+  &:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+}
+
+.splitActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.splitCancelBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-200);
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-elevation-500);
+  cursor: pointer;
+  &:hover { background: var(--theme-elevation-100); }
+}
+
+.splitConfirmBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  &:hover { background: #1d4ed8; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ─── TAGS (.tag maquette) ───
+// Maquette : tag 20px height, padding 8px, bg elevation-100, border input-border
+.tagsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 4px 0 8px;
+  border-radius: 4px;
+  background: var(--theme-elevation-100);
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+}
+
+.tagRemove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  transition: color 80ms ease;
+  &:hover { color: var(--theme-error-500, #c4392c); }
+}
+
+// Bouton "+ Ajouter" : dashed border, micro typo, tertiary color
+.tagAddBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px dashed var(--theme-elevation-300, var(--theme-input-border));
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  cursor: pointer;
+  transition: border-color 80ms ease, color 80ms ease;
+  &:hover {
+    border-color: var(--theme-info-500, #2a6bd8);
+    color: var(--theme-info-500, #2a6bd8);
+  }
+}
+
+.tagInput {
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-info-500, #2a6bd8);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  width: 100px;
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 18%, transparent);
+  }
+}
+
+// ─── FILE UPLOAD PREVIEW (#5) ───
+.uploadPreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.uploadPreviewItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--theme-elevation-50);
+  border: 1px solid var(--theme-elevation-200);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.uploadRemoveBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--theme-elevation-400);
+  padding: 0;
+  &:hover { color: #ef4444; }
+}
+
+// Hidden file input
+.hiddenFileInput {
+  display: none;
+}
+
+// ─── RESPONSIVE BREAKPOINTS (#8) ───
+@media (max-width: 768px) {
+  .page {
+    padding: 0 12px 40px;
+  }
+
+  .topBar {
+    gap: 10px;
+    padding: 12px 0 10px;
+    flex-wrap: wrap;
+  }
+
+  .ticketSubject {
+    font-size: 15px;
+  }
+
+  .topBarRight {
+    gap: 6px;
+  }
+
+  .sentimentBadge {
+    display: none;
+  }
+
+  .message {
+    padding: 10px 8px;
+  }
+
+  .composerToolbar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .composerFooter {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .composerOptions {
+    justify-content: center;
+  }
+
+  .sendBtn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .sidebar {
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 0 8px 32px;
+  }
+
+  .topBar {
+    gap: 8px;
+  }
+
+  .ticketSubject {
+    font-size: 14px;
+  }
+
+  .ticketNumber {
+    font-size: 10px;
+  }
+
+  .statusChip {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+
+  .messageAuthor {
+    font-size: 12px;
+  }
+
+  .messageBody {
+    font-size: 13px;
+  }
+
+  .attachmentImg {
+    max-width: 160px;
+    max-height: 120px;
+  }
+
+  .composerOptions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sideField {
+    font-size: 12px;
+  }
+}
+
+// ─── SLA BREACH BANNER (sla-banner maquette) ───
+// Maquette : background error-50, border error-500 25%, icon rond bg blanc,
+// body avec strong rouge, CTA "Escalader" pill style avec icône arrow-up
+.slaBanner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 24px 0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: var(--theme-error-50, color-mix(in srgb, var(--theme-error-500, #c4392c) 8%, var(--theme-bg)));
+  border: 1px solid color-mix(in srgb, var(--theme-error-500, #c4392c) 25%, transparent);
+  color: var(--theme-error-500, #c4392c);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+// Icône cercle blanc (sla-banner__icon maquette) : 28×28 bg = theme-bg
+.slaBannerIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-bg);
+  color: var(--theme-error-500, #c4392c);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slaBannerBody {
+  flex: 1;
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text);
+
+  strong {
+    color: var(--theme-error-500, #c4392c);
+    font-weight: 600;
+  }
+}
+
+.slaBannerSep {
+  color: var(--theme-text-tertiary, var(--theme-elevation-400));
+  margin: 0 2px;
+}
+
+.slaBannerTarget {
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+// CTA Escalader (btn--sm maquette) : pill ghost avec icon arrow-up
+.slaBannerCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-error-500, #c4392c);
+  background: var(--theme-bg);
+  color: var(--theme-error-500, #c4392c);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+  transition: background 80ms ease;
+
+  &:hover {
+    background: var(--theme-error-500, #c4392c);
+    color: var(--theme-bg);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-error-500, #c4392c) 25%, transparent);
+  }
+}
+
+// ─── AI SYNTHESIS CARD (ai-card maquette, promoted top of sidebar) ───
+// Gradient accent-50 → bg de 0% à 70%, bordure accent-25%, paddings 16px
+.aiCard {
+  background: linear-gradient(180deg,
+    var(--theme-accent-50, color-mix(in srgb, var(--theme-accent-500, #6b46e8) 10%, transparent)) 0%,
+    var(--theme-bg) 70%) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-500, #6b46e8) 25%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--theme-accent-500, #6b46e8) 18%, transparent);
+}
+
+// Title : t-micro uppercase accent-500
+.aiCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  color: var(--theme-accent-500, #6b46e8);
+  margin: 0 0 12px;
+}
+
+// Icone sparkles — pas de fond, juste glyph (maquette : icon name="sparkles" size=11)
+.aiCardIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 11px;
+  background: transparent;
+  color: var(--theme-accent-500, #6b46e8);
+}
+
+.aiCardLead {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text);
+  margin: 0 0 12px;
+  text-wrap: pretty;
+}
+
+.aiCardChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+// AI chip : pill plein arrondi avec bg theme-bg + border, t-micro
+.aiChip {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--theme-text);
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+}
+
+.aiCardFacts {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aiCardFact {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text);
+}
+
+// Dot par défaut accent — voir aiCardDotOpen/Resolved/Risk pour variants
+.aiCardDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--theme-accent-500, #6b46e8);
+  flex-shrink: 0;
+}
+
+// ─── SIDEBAR TABS (sp__tabs maquette) ───
+// Maquette : sticky top:0, padding horizontal 12px, gap 4px,
+// onglet actif souligné 2px theme-text, tabs label maquette
+.sidebarTabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  background: var(--theme-bg);
+  border-bottom: 1px solid var(--theme-elevation-150, var(--theme-input-border));
+}
+
+.sidebarTab {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 12px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+  text-align: center;
+
+  &:hover {
+    color: var(--theme-text);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 2px var(--theme-bg), 0 0 0 4px var(--theme-info-500, #2a6bd8);
+    border-radius: 4px;
+  }
+}
+
+.sidebarTabActive {
+  color: var(--theme-text);
+  border-bottom-color: var(--theme-text);
+}
+
+// ─── PREVIOUS TICKETS (Client tab) ───
+.previousTicketsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.previousTicketsItem {
+  margin: 0;
+}
+
+.previousTicketsLink {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-elevation-150, #f1f5f9);
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  text-decoration: none;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: var(--theme-elevation-50);
+    border-color: var(--theme-elevation-200);
+  }
+}
+
+.previousTicketsSubject {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previousTicketsMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--theme-elevation-500);
+}
+
+.previousTicketsStatus {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.previousTicketsDate {
+  font-weight: 500;
+}
+
+.previousTicketsEmpty {
+  font-size: 12px;
+  color: var(--theme-elevation-400);
+  text-align: center;
+  padding: 8px 0;
+}
+
+// ─── AI SUGGESTION preview (ai-suggest maquette) ───
+// Bandeau placé au-dessus du composer, grid auto 1fr auto (icon | body | actions)
+.aiSuggestionPreview {
+  margin: 0 24px 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-500, #6b46e8) 25%, transparent);
+  border-radius: 6px;
+  background: var(--theme-accent-50, color-mix(in srgb, var(--theme-accent-500, #6b46e8) 10%, transparent));
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  animation: ai-suggest-in 200ms ease-out;
+}
+
+@keyframes ai-suggest-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Le header n'est plus séparé : icon → label/body en colonne dans la grid
+.aiSuggestionPreviewHeader {
+  display: contents;
+}
+
+// Icon ronde 28×28 avec sparkles, full accent
+.aiSuggestionIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-accent-500, #6b46e8);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  grid-row: 1 / span 2;
+}
+
+// Label uppercase + ellipsis ; appliqué au bloc central via colonne 2
+.aiSuggestionLabel {
+  grid-column: 2;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  color: var(--theme-accent-500, #6b46e8);
+}
+
+.aiSuggestionDismiss {
+  display: none; // dismiss via les boutons d'action — pas de croix en plus
+}
+
+// Body : 3-line clamp, t-body-sm
+.aiSuggestionBody {
+  grid-column: 2;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 64px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+// Actions à droite : Ignorer / Insérer
+.aiSuggestionActions {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.aiSuggestionIgnore {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-elevation-0, #fff);
+  color: var(--theme-text-secondary, var(--theme-elevation-600));
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--theme-elevation-100);
+    color: var(--theme-text);
+  }
+}
+
+.aiSuggestionInsert {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-text);
+  background: var(--theme-text);
+  color: var(--theme-bg, #fff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--theme-elevation-800);
+    border-color: var(--theme-elevation-800);
+  }
+}
+
+// ai-card__next-title (maquette) : t-micro uppercase tertiary
+.aiCardNextTitle {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  margin: 12px 0 8px;
+}
+.aiCardNextActions {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+// next-action (maquette) : card bg + border, padding 8px 12px, t-body-sm
+.aiCardNextAction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+// Check 16×16 carré radius 4px, done = success-500 (maquette next-action__check)
+.aiCardNextCheck {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--theme-elevation-300, var(--theme-input-border));
+  background: var(--theme-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 11px; font-weight: 700;
+  color: transparent;
+  transition: background 100ms ease, border-color 100ms ease;
+  &:hover { border-color: var(--theme-success-500, #128a5e); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+.aiCardNextCheckDone {
+  background: var(--theme-success-500, #128a5e);
+  border-color: var(--theme-success-500, #128a5e);
+  color: #fff;
+}
+
+.aiCardNextLabel {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--theme-text);
+}
+.aiCardNextLabelDone {
+  text-decoration: line-through;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+}
+.aiCardNextWhen {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  flex-shrink: 0;
+}
+
+// Composer alias select : aligné sur composer__as / select maquette
+.composerAliasSelect {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  cursor: pointer;
+  &:hover { background: var(--theme-elevation-50); }
+  &:focus-visible {
+    outline: 0;
+    border-color: var(--theme-info-500, #2a6bd8);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 18%, transparent);
+  }
+}
+
+// ─── COMPOSER BOX (composer__box maquette) ───
+// Wrapper englobant toolbar + editor avec border-radius et focus ring
+.composerBox {
+  border: 1px solid var(--theme-elevation-200, var(--theme-input-border));
+  border-radius: 6px;
+  background: var(--theme-bg);
+  overflow: hidden;
+  transition: border-color 80ms ease, box-shadow 80ms ease;
+  margin-bottom: 0;
+
+  &:focus-within {
+    border-color: var(--theme-info-500, #2a6bd8);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-info-500, #2a6bd8) 18%, transparent);
+  }
+}
+
+// ─── HEADER ID META INLINE (detail__id span variants) ───
+.ticketNumberSep {
+  color: var(--theme-text-tertiary, var(--theme-elevation-400));
+  margin: 0 2px;
+}
+.ticketNumberCat {
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+}
+.ticketNumberSource {
+  color: var(--theme-text-tertiary, var(--theme-elevation-500));
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// ─── PROGRESS BAR (tt__bar maquette) ───
+.timerBar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--theme-elevation-100);
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.timerBarFill {
+  height: 100%;
+  background: linear-gradient(90deg,
+    var(--theme-success-500, #128a5e) 0%,
+    var(--theme-info-500, #2a6bd8) 100%);
+  border-radius: 3px;
+  transition: width 200ms ease;
+}
+
+// ─── AI CARD HISTORY DOT VARIANTS ───
+// Cohérence avec maquette ai-card__hist .h-dot--open/resolved/risk
+.aiCardDotOpen     { background: var(--theme-warning-500, #c97a0a) !important; }
+.aiCardDotResolved { background: var(--theme-success-500, #128a5e) !important; }
+.aiCardDotRisk     { background: var(--theme-error-500, #c4392c) !important; }

@@ -1,0 +1,66 @@
+// StatusPill — sémantique unique des statuts ticket
+// Tous les fonds/couleurs sont mappés sur les --theme-* Payload natifs
+// via color-mix() pour rester cohérent en light/dark.
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  line-height: 1;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+// ---------- Variants ----------
+// Each variant uses color-mix on Payload's theme tokens so dark/light just works.
+
+.open {
+  background: color-mix(in srgb, var(--theme-success-500, #2dbf86) 12%, transparent);
+  color: var(--theme-success-500, #16a34a);
+}
+
+.pending {
+  background: color-mix(in srgb, var(--theme-warning-500, #e9a23a) 14%, transparent);
+  color: var(--theme-warning-500, #c97a0a);
+}
+
+.resolved {
+  background: color-mix(in srgb, var(--theme-elevation-500, #7a7a7a) 14%, transparent);
+  color: var(--theme-elevation-600, #5e5e5e);
+}
+
+.neutral {
+  background: var(--theme-elevation-100, #f3f3f3);
+  color: var(--theme-elevation-600, #5e5e5e);
+}
+
+.escalated {
+  background: color-mix(in srgb, var(--theme-error-500, #c4392c) 14%, transparent);
+  color: var(--theme-error-500, #c4392c);
+}
+
+.breach {
+  background: color-mix(in srgb, var(--theme-error-500, #c4392c) 14%, transparent);
+  color: var(--theme-error-500, #c4392c);
+  border-color: color-mix(in srgb, var(--theme-error-500, #c4392c) 30%, transparent);
+}
+
+[data-theme='dark'] {
+  .open     { color: var(--theme-success-500, #2dbf86); }
+  .pending  { color: var(--theme-warning-500, #e9a23a); }
+  .escalated, .breach { color: var(--theme-error-500, #ed5f51); }
+}
