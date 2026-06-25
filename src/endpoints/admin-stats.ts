@@ -18,12 +18,16 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
 
         requireAdmin(req, slugs)
 
+        // Optional per-team dashboard scoping (?teamId=) — applied to ticket counts.
+        const teamId = new URL(req.url!).searchParams.get('teamId')
+        const teamAnd = teamId ? [{ team: { equals: Number(teamId) } }] : []
+
         // ── Status counts via individual count queries ──
         const statuses = ['open', 'waiting_client', 'resolved'] as const
         const statusCounts = await Promise.all(
           statuses.map(async (status) => {
             const result = await dbCount(payload, slugs.tickets, {
-              where: { status: { equals: status } },
+              where: { and: [{ status: { equals: status } }, ...teamAnd] },
               overrideAccess: true,
             })
             return [status, result.totalDocs] as const
@@ -37,7 +41,7 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
         const priorityCounts = await Promise.all(
           priorities.map(async (priority) => {
             const result = await dbCount(payload, slugs.tickets, {
-              where: { priority: { equals: priority } },
+              where: { and: [{ priority: { equals: priority } }, ...teamAnd] },
               overrideAccess: true,
             })
             return [priority, result.totalDocs] as const
@@ -50,7 +54,7 @@ export function createAdminStatsEndpoint(slugs: CollectionSlugs): Endpoint {
         const categoryCounts = await Promise.all(
           categories.map(async (category) => {
             const result = await dbCount(payload, slugs.tickets, {
-              where: { category: { equals: category } },
+              where: { and: [{ category: { equals: category } }, ...teamAnd] },
               overrideAccess: true,
             })
             return [category, result.totalDocs] as const

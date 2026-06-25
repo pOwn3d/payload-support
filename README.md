@@ -5,8 +5,8 @@
 
 <div align="center">
 
+[![npm version](https://img.shields.io/npm/v/@consilioweb/payload-support?color=1f8a5b&label=npm)](https://www.npmjs.com/package/@consilioweb/payload-support)
 [![MIT License](https://img.shields.io/badge/license-MIT-1f8a5b)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-1f8a5b)](package.json)
 [![Node.js](https://img.shields.io/badge/node-18+-1f8a5b)](https://nodejs.org)
 [![Payload](https://img.shields.io/badge/payload-3.x-1f8a5b)](https://payloadcms.com)
 [![Tests](https://img.shields.io/badge/tests-102%20passing-1f8a5b)](src/__tests__)
@@ -228,6 +228,9 @@ import type { SupportPluginConfig, SupportFeatures } from '@consilioweb/payload-
 | `CRON_SECRET` | for crons | `x-cron-secret` header for the cron endpoints. |
 | `ANTHROPIC_API_KEY` / `OLLAMA_API_URL` | if AI | AI provider keys/URL. |
 | `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` | if OAuth | Portal Google sign-in. |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | if push | Web Push keys (`npx web-push generate-vapid-keys`). |
+| `VAPID_SUBJECT` | optional | Push contact (`mailto:` or URL), defaults to `mailto:support@example.com`. |
+| `SUPPORT_TEAM_SCOPING` | optional | `1` to scope agents to their team's tickets. |
 | `SUPPORT_EMAIL` / `SUPPORT_REPLY_TO` | optional | From/reply-to addresses. |
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" alt="" />
@@ -368,6 +371,13 @@ npm run typecheck && npm test && npm run build
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
+### [1.1.0] — 2026-06-25
+
+- 🎯 **Per-team SLA policies & dashboards** (team policy overrides the default, `?teamId=` scoping).
+- 🔔 **Native push / browser notifications** (Web Push / VAPID, agent pushed on new client messages).
+- 🎭 **End-to-end UI test harness** (browser-driven admin via Playwright, `pnpm test:e2e`).
+- ✅ 109 integration tests (up from 102).
+
 ### [1.0.0] — 2026-06-25
 
 - ✨ Complete ticketing, SLA (+ pause-on-hold), automation & **visual rules engine**.
@@ -405,9 +415,9 @@ See [CHANGELOG.md](CHANGELOG.md) for the full history.
 - [x] Full admin i18n (all views)
 - [x] Social channels (WhatsApp, Messenger)
 - [x] Multi-team / workspaces mode
-- [ ] **Per-team SLA policies & dashboards**
-- [ ] **Native push / browser notifications**
-- [ ] **End-to-end UI test harness** (browser-driven admin)
+- [x] Per-team SLA policies & dashboards
+- [x] Native push / browser notifications
+- [x] End-to-end UI test harness (browser-driven admin)
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" alt="" />
 

@@ -4,6 +4,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-06-25
+
+### Added
+- **Per-team SLA policies & dashboards**: SLA policies can target a specific team
+  (team policy takes precedence over the global default), and the admin dashboard
+  can be scoped per team via `?teamId=`.
+- **Native push / browser notifications**: Web Push (VAPID) subscriptions per agent
+  (`/support/push/subscribe`, `/support/push/vapid-public-key`), with the assigned
+  agent pushed on new client messages. No-ops gracefully when VAPID is unset.
+- **End-to-end UI test harness**: browser-driven Playwright suite for the admin
+  (`pnpm test:e2e`), run against any host app via `E2E_BASE_URL`; skipped by
+  default so CI stays green without a live admin.
+
+### Tests
+- 109 integration tests (up from 102): per-team SLA precedence, dashboard team
+  scoping, push subscribe/idempotency/auth, VAPID no-op.
+
 ## [1.0.0] — 2026-06-25
 
 First public stable release.

@@ -9,6 +9,7 @@ import { createCheckSlaOnReply } from '../hooks/checkSLA'
 import { resolveAccessibleTicketIds } from '../utils/ticketAccess'
 import { sanitizeMessageHtml } from '../utils/sanitizeHtml'
 import { queueClientNotification } from '../utils/notificationQueue'
+import { sendPushToUser } from '../utils/push'
 import { dbFind, dbCreate, dbFindByID } from '../utils/db'
 
 function createAssignAuthor(slugs: CollectionSlugs): CollectionBeforeChangeHook {
@@ -259,6 +260,16 @@ function createNotifyAdminOnClientMessage(slugs: CollectionSlugs, notificationSl
 
       const preview = doc.body?.length > 500 ? doc.body.slice(0, 500) + '...' : doc.body
       const headerTitle = isNewTicket ? `Nouveau ticket ${ticketNumber}` : `Nouveau message — ${ticketNumber}`
+
+      // Browser push to the assigned agent (RUNTIME no-op without VAPID keys).
+      const assignedId = assignedAdmin?.id ?? (ticket.assignedTo && typeof ticket.assignedTo !== 'object' ? ticket.assignedTo : undefined)
+      if (assignedId) {
+        void sendPushToUser(payload, slugs, assignedId, {
+          title: headerTitle,
+          body: `${clientName}: ${preview || subject}`,
+          url: `/admin/collections/${slugs.tickets}/${ticketId}`,
+        }).catch(() => { /* best-effort */ })
+      }
 
       if (primaryEmail) {
         await payload.sendEmail({

@@ -1,6 +1,6 @@
 {
   "name": "@consilioweb/payload-support",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Payload CMS plugin — professional support & ticketing system with AI, SLA, time tracking, live chat, and more",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -54,7 +54,9 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "keywords": [
     "payload",
@@ -123,6 +125,7 @@
   },
   "devDependencies": {
     "@payloadcms/db-sqlite": "^3.85.1",
+    "@playwright/test": "^1.49.0",
     "@payloadcms/graphql": "^3.85.1",
     "@payloadcms/next": "^3.85.1",
     "@payloadcms/richtext-lexical": "^3.85.1",
@@ -131,6 +134,7 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19.0.0",
     "@types/sanitize-html": "^2.16.1",
+    "@types/web-push": "^3.6.4",
     "esbuild-sass-plugin": "^3.7.0",
     "next": "^15.5.14",
     "payload": "^3.85.1",
@@ -142,6 +146,7 @@
   },
   "dependencies": {
     "pdfkit": "^0.19.1",
-    "sanitize-html": "^2.17.5"
+    "sanitize-html": "^2.17.5",
+    "web-push": "^3.6.7"
   }
 }

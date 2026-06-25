@@ -48,6 +48,7 @@ import { createProcessScheduledEndpoint } from './process-scheduled'
 import { createProcessSnoozeEndpoint } from './process-snooze'
 import { createProcessDigestsEndpoint } from './process-digests'
 import { createChannelsWebhookEndpoint } from './channels'
+import { createVapidKeyEndpoint, createPushSubscribeEndpoint } from './push'
 import { createUserPrefsGetEndpoint, createUserPrefsPostEndpoint } from './user-prefs'
 import { createEscalateEndpoint } from './escalate'
 import { createTicketFeedbackEndpoint } from './ticket-feedback'
@@ -100,6 +101,7 @@ export { createProcessScheduledEndpoint } from './process-scheduled'
 export { createProcessSnoozeEndpoint } from './process-snooze'
 export { createProcessDigestsEndpoint } from './process-digests'
 export { createChannelsWebhookEndpoint } from './channels'
+export { createVapidKeyEndpoint, createPushSubscribeEndpoint } from './push'
 export { createUserPrefsGetEndpoint, createUserPrefsPostEndpoint } from './user-prefs'
 export type { UserPrefs } from './user-prefs'
 export { createEscalateEndpoint } from './escalate'
@@ -193,6 +195,8 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   if (!f || f.snooze !== false) endpoints.push(createProcessSnoozeEndpoint(slugs))
   endpoints.push(createProcessDigestsEndpoint(slugs))
   endpoints.push(createChannelsWebhookEndpoint(slugs))
+  endpoints.push(createVapidKeyEndpoint())
+  endpoints.push(createPushSubscribeEndpoint(slugs))
 
   return endpoints
 }

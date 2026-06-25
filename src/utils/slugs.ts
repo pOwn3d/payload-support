@@ -23,6 +23,7 @@ export interface CollectionSlugs {
   notificationQueue: string
   automationRules: string
   supportTeams: string
+  pushSubscriptions: string
   users: string
   media: string
 }
@@ -48,6 +49,7 @@ export const DEFAULT_SLUGS: CollectionSlugs = {
   notificationQueue: 'notification-queue',
   automationRules: 'automation-rules',
   supportTeams: 'support-teams',
+  pushSubscriptions: 'push-subscriptions',
   users: 'users',
   media: 'media',
 }

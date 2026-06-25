@@ -111,6 +111,16 @@ export function createSlaPoliciesCollection(slugs: CollectionSlugs): CollectionC
           description: 'Utiliser cette politique pour les tickets sans SLA spécifique (par priorité)',
         },
       },
+      {
+        name: 'team',
+        type: 'relationship',
+        relationTo: slugs.supportTeams,
+        index: true,
+        label: 'Équipe (optionnel)',
+        admin: {
+          description: "Limiter cette politique à une équipe — prioritaire sur la politique par défaut",
+        },
+      },
     ],
     access: {
       create: ({ req }) => req.user?.collection === slugs.users,

@@ -15,6 +15,9 @@ pnpm-lock.yaml
 
 # Tests
 coverage/
+playwright-report/
+test-results/
+.playwright/
 
 # Internal docs (audit reports, notes) — not shipped
 docs/

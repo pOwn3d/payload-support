@@ -26,6 +26,7 @@ import {
   createNotificationQueueCollection,
   createAutomationRulesCollection,
   createSupportTeamCollection,
+  createPushSubscriptionCollection,
 } from './collections'
 
 function viewConfig(component: string, path: string): AdminViewConfig {
@@ -96,6 +97,7 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       createNotificationQueueCollection(slugs),
       createAutomationRulesCollection(slugs),
       createSupportTeamCollection(slugs),
+      createPushSubscriptionCollection(slugs),
     ]
 
     // Auth logs (conditional)

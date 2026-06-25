@@ -157,8 +157,22 @@ async function resolveSlaPolicy(
     }
   }
 
-  // Look for a default policy matching this ticket's priority
   const priority = field(ticket, 'priority') || 'normal'
+
+  // Per-team policy (team + priority) takes precedence over the global default.
+  const teamRef = field(ticket, 'team')
+  const teamId = typeof teamRef === 'object' && teamRef !== null ? (teamRef as AnyDoc).id : teamRef
+  if (teamId) {
+    try {
+      const teamPolicies = await dbFind(payload, slugs.slaPolicies, {
+        where: { and: [{ team: { equals: teamId } }, { priority: { equals: priority } }] },
+        limit: 1, depth: 0, overrideAccess: true,
+      })
+      if (teamPolicies.docs.length > 0) return teamPolicies.docs[0]
+    } catch { /* fall through to default */ }
+  }
+
+  // Look for a default policy matching this ticket's priority
   try {
     const defaults = await dbFind(payload, slugs.slaPolicies, {
       where: {
