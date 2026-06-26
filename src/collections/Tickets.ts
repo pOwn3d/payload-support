@@ -87,7 +87,10 @@ function createRestrictClientUpdates(slugs: CollectionSlugs): CollectionBeforeCh
   return async ({ data, operation, req, originalDoc }) => {
     if (operation !== 'update') return data
     if (req.user?.collection !== slugs.supportClients) return data
-    const allowedStatuses = ['open', 'resolved']
+    // Clients may move a ticket to: open / waiting_support (reopen) or resolved (close).
+    // 'waiting_support' is required so the reopen button actually puts the ball back
+    // in the support team's court instead of being silently rejected.
+    const allowedStatuses = ['open', 'waiting_support', 'resolved']
     const newData: Record<string, unknown> = {}
     if (data.status && allowedStatuses.includes(data.status as string)) {
       newData.status = data.status

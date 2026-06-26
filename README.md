@@ -371,6 +371,10 @@ npm run typecheck && npm test && npm run build
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
 
+### [1.1.1] — 2026-06-26
+
+- 🐛 **Fix client ticket reopen**: allow clients to set `waiting_support` (the status the portal's "Reopen" button sends). It was silently rejected, leaving the ticket `resolved`.
+
 ### [1.1.0] — 2026-06-25
 
 - 🎯 **Per-team SLA policies & dashboards** (team policy overrides the default, `?teamId=` scoping).

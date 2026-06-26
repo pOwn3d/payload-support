@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-06-26
+
+### Fixed
+- **Client ticket reopen**: clients can now move a ticket to `waiting_support`,
+  the status sent by the portal's "Reopen" button. Previously only `open` and
+  `resolved` were allowed, so reopening silently no-op'd (the PATCH returned 200
+  but the status stayed `resolved`).
+
 ## [1.1.0] — 2026-06-25
 
 ### Added
