@@ -6,7 +6,7 @@ const supportEmail = process.env.SUPPORT_EMAIL || 'support@example.com'
 
 export default function SupportPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-slate-950">
+    <div className="flex min-h-[100dvh] flex-col bg-white dark:bg-slate-950">
       {/* Header */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-950/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -20,7 +20,7 @@ export default function SupportPage() {
           </Link>
           <Link
             href="/support/login"
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
+            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
           >
             Se connecter
           </Link>
@@ -49,7 +49,7 @@ export default function SupportPage() {
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/support/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 active:scale-[0.98] dark:shadow-blue-600/20"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/30 active:scale-[0.98] dark:shadow-blue-600/20"
               >
                 Accéder à mon espace
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
@@ -58,7 +58,7 @@ export default function SupportPage() {
               </Link>
               <Link
                 href="/support/register"
-                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-medium text-slate-700 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-slate-50 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Créer un compte
               </Link>
@@ -80,7 +80,7 @@ export default function SupportPage() {
             </p>
             <div className="grid gap-8 sm:grid-cols-3">
               {/* Card 1 */}
-              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-950 dark:text-blue-400 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -96,7 +96,7 @@ export default function SupportPage() {
               </div>
 
               {/* Card 2 */}
-              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-950 dark:text-blue-400 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -109,7 +109,7 @@ export default function SupportPage() {
               </div>
 
               {/* Card 3 */}
-              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:shadow-lg hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800">
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white dark:bg-blue-950 dark:text-blue-400 dark:group-hover:bg-blue-600 dark:group-hover:text-white">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
                     <circle cx="12" cy="12" r="10" />
@@ -139,13 +139,13 @@ export default function SupportPage() {
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/support/register"
-                className="inline-flex items-center rounded-xl bg-blue-600 px-8 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-xl active:scale-[0.98]"
+                className="inline-flex items-center rounded-xl bg-blue-600 px-8 py-3.5 text-base font-medium text-white shadow-lg shadow-blue-600/25 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-xl active:scale-[0.98]"
               >
                 Créer un compte
               </Link>
               <a
                 href={`mailto:${supportEmail}`}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-base font-medium text-slate-700 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-slate-50 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-slate-400">
                   <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z" />

@@ -108,7 +108,7 @@ export function ExtMessagePanel({
           ))}
         </div>
       )}
-      <button onClick={handleSendExtMsg} disabled={sendingExtMsg || !extMsgBody.trim()} style={s.btn('#818cf8', sendingExtMsg || !extMsgBody.trim())}>
+      <button onClick={handleSendExtMsg} disabled={sendingExtMsg || !extMsgBody.trim()} style={s.btn('#1d2b4d', sendingExtMsg || !extMsgBody.trim())}>
         {sendingExtMsg ? 'Ajout...' : 'Ajouter (sans notification)'}
       </button>
     </div>
@@ -204,12 +204,12 @@ interface SnoozePanelProps {
 
 export function SnoozePanel({ snoozeSaving, handleSnooze }: SnoozePanelProps) {
   return (
-    <div style={{ padding: '14px 18px', borderRadius: '8px', backgroundColor: '#faf5ff', border: '1px solid #e9d5ff', marginBottom: '14px' }}>
+    <div style={{ padding: '14px 18px', borderRadius: '8px', backgroundColor: '#eef8f7', border: '1px solid #b8dcda', marginBottom: '14px' }}>
       <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: '#5b21b6' }}>Snooze — masquer temporairement</h4>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button onClick={() => handleSnooze(1)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#8b5cf6', snoozeSaving), fontSize: '12px' }}>1 jour</button>
-        <button onClick={() => handleSnooze(3)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#8b5cf6', snoozeSaving), fontSize: '12px' }}>3 jours</button>
-        <button onClick={() => handleSnooze(7)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#8b5cf6', snoozeSaving), fontSize: '12px' }}>1 semaine</button>
+        <button onClick={() => handleSnooze(1)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 jour</button>
+        <button onClick={() => handleSnooze(3)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>3 jours</button>
+        <button onClick={() => handleSnooze(7)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 semaine</button>
         <input
           type="datetime-local"
           onChange={(e) => { if (e.target.value) handleSnooze(null, e.target.value) }}

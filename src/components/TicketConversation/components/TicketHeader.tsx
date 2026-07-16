@@ -57,7 +57,7 @@ export function TicketHeader({
         </span>
       )}
       {snoozeUntil && new Date(snoozeUntil) > new Date() && (
-        <span style={s.badge('#f5f3ff', '#7c3aed')}>
+        <span style={s.badge('#eef8f7', '#17807c')}>
           Snoozé {new Date(snoozeUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </span>
       )}

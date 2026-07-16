@@ -37,7 +37,7 @@ $font-stack: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, 
 .container {
   display: flex;
   gap: 16px;
-  height: calc(100vh - 220px);
+  height: calc(100dvh - 220px);
   min-height: 500px;
 }
 

@@ -1,6 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { dbFindByID, dbUpdate, dbCreate } from '../utils/db'
 
 // 1x1 transparent GIF (43 bytes)
@@ -14,7 +14,20 @@ const TRANSPARENT_GIF = Buffer.from(
  * Use this when building tracking URLs in email templates.
  */
 export function generateTrackingToken(ticketId: string, messageId: string, secret: string): string {
-  return createHmac('sha256', secret).update(`${ticketId}:${messageId}`).digest('hex').substring(0, 16)
+  return createHmac('sha256', secret).update(`${ticketId}:${messageId}`).digest('hex')
+}
+
+export function verifyTrackingToken(
+  ticketId: string,
+  messageId: string,
+  signature: string,
+  secret: string,
+): boolean {
+  if (!/^[0-9a-f]{64}$/i.test(signature)) return false
+
+  const expected = Buffer.from(generateTrackingToken(ticketId, messageId, secret), 'hex')
+  const received = Buffer.from(signature, 'hex')
+  return expected.length === received.length && timingSafeEqual(expected, received)
 }
 
 /**
@@ -40,8 +53,10 @@ export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
       // and the silent "tracking writes without auth" hole.
       const secret = process.env.PAYLOAD_SECRET || ''
       const validSig =
-        !!secret && !!ticketId && !!messageId && !!sig &&
-        sig === generateTrackingToken(ticketId, messageId, secret)
+        !!secret && Number.isInteger(parsedId) && parsedId > 0 &&
+        Number.isInteger(parsedMsgId) && parsedMsgId > 0 &&
+        !!ticketId && !!messageId && !!sig &&
+        verifyTrackingToken(ticketId, messageId, sig, secret)
 
       if (!validSig) {
         // Return transparent GIF silently (don't leak information, don't process)
@@ -58,6 +73,17 @@ export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
       if (ticketId && Number.isInteger(parsedId) && parsedId > 0) {
         try {
           const payload = req.payload
+
+          const msg = await dbFindByID(payload, slugs.ticketMessages, {
+            id: parsedMsgId,
+            depth: 0,
+            overrideAccess: true,
+            select: { ticket: true, emailOpenedAt: true },
+          }) as any
+          const messageTicketId = typeof msg?.ticket === 'object' ? msg.ticket?.id : msg?.ticket
+          if (!msg || String(messageTicketId) !== String(parsedId)) {
+            return transparentGifResponse()
+          }
 
           const ticket = await dbFindByID(payload, slugs.tickets, {
             id: parsedId,
@@ -81,13 +107,6 @@ export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
 
           // Track at message level
           if (Number.isInteger(parsedMsgId) && parsedMsgId > 0) {
-            const msg = await dbFindByID(payload, slugs.ticketMessages, {
-              id: parsedMsgId,
-              depth: 0,
-              overrideAccess: true,
-              select: { emailOpenedAt: true },
-            }) as any
-
             if (msg && !msg.emailOpenedAt) {
               await dbUpdate(payload, slugs.ticketMessages, {
                 id: parsedMsgId,
@@ -127,16 +146,20 @@ export function createTrackOpenEndpoint(slugs: CollectionSlugs): Endpoint {
         }
       }
 
-      return new Response(TRANSPARENT_GIF, {
-        status: 200,
-        headers: {
-          'Content-Type': 'image/gif',
-          'Content-Length': String(TRANSPARENT_GIF.length),
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-      })
+      return transparentGifResponse()
     },
   }
+}
+
+function transparentGifResponse(): Response {
+  return new Response(TRANSPARENT_GIF, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/gif',
+      'Content-Length': String(TRANSPARENT_GIF.length),
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  })
 }

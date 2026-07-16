@@ -2,10 +2,11 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { readSupportSettings, type SupportSettings } from '../utils/readSettings'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 
-function getClient(aiSettings: SupportSettings['ai']) {
-  // Dynamic import to avoid hard dependency
-  const Anthropic = require('@anthropic-ai/sdk').default
+async function getClient(aiSettings: SupportSettings['ai']) {
+  const moduleName = '@anthropic-ai/sdk'
+  const { default: Anthropic } = await import(moduleName)
   if (aiSettings.provider === 'ollama') {
     const baseURL = process.env.OLLAMA_API_URL || 'https://ollama.orkelis.app/v1'
     return new Anthropic({ apiKey: 'ollama', baseURL })
@@ -23,7 +24,8 @@ type AiAction = 'sentiment' | 'synthesis' | 'suggest_reply' | 'rewrite'
  * POST /api/support/ai
  * Admin-only endpoint for AI features in support.
  */
-export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createAiEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const limiter = new RateLimiter(60_000, 30, store)
   return {
     path: '/support/ai',
     method: 'post',
@@ -32,6 +34,9 @@ export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
         const payload = req.payload
 
         requireAdmin(req, slugs)
+        if (await limiter.check(String(req.user!.id), req)) {
+          return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
+        }
 
         const settings = await readSupportSettings(payload)
         const aiSettings = settings.ai
@@ -43,7 +48,7 @@ export function createAiEndpoint(slugs: CollectionSlugs): Endpoint {
         }
         const { action } = body as { action: AiAction }
 
-        const anthropic = getClient(aiSettings)
+        const anthropic = await getClient(aiSettings)
         const model = getModel(aiSettings)
 
         if (action === 'sentiment') {

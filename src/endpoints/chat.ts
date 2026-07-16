@@ -2,12 +2,10 @@ import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto from 'crypto'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { requireClient, handleAuthError } from '../utils/auth'
 import { dbFind, dbCreate } from '../utils/db'
 
-const chatSessionLimiter = new RateLimiter(3_600_000, 5) // 5 sessions per hour
-const chatMessageLimiter = new RateLimiter(60_000, 15) // 15 messages per minute
 
 /**
  * GET /api/support/chat?session=xxx&after=timestamp
@@ -68,7 +66,9 @@ export function createChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
  * POST /api/support/chat
  * Send a message or start a new chat session. Client-only.
  */
-export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createChatPostEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const chatSessionLimiter = new RateLimiter(3_600_000, 5, store)
+  const chatMessageLimiter = new RateLimiter(60_000, 15, store)
   return {
     path: '/support/chat',
     method: 'post',
@@ -89,7 +89,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Start a new session
         if (action === 'start') {
-          if (chatSessionLimiter.check(userId)) {
+          if (await chatSessionLimiter.check(userId, req)) {
             return Response.json({ error: 'Trop de sessions créées. Réessayez plus tard.' }, { status: 429 })
           }
 
@@ -111,7 +111,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Send a message
         if (action === 'send' && session && message) {
-          if (chatMessageLimiter.check(userId)) {
+          if (await chatMessageLimiter.check(userId, req)) {
             return Response.json({ error: 'Trop de messages. Attendez un moment.' }, { status: 429 })
           }
 

@@ -1,6 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { dbFind, dbUpdate, dbCreate } from '../utils/db'
+import { verifySecret } from '../utils/webhookSecurity'
 
 /**
  * POST /api/support/process-snooze
@@ -20,7 +21,7 @@ export function createProcessSnoozeEndpoint(slugs: CollectionSlugs): Endpoint {
     handler: async (req) => {
       const secret = req.headers.get('x-cron-secret')
       const expectedSecret = process.env.CRON_SECRET
-      if (!expectedSecret || secret !== expectedSecret) {
+      if (!verifySecret(secret, expectedSecret)) {
         return Response.json({ error: 'Non autorisé' }, { status: 401 })
       }
 

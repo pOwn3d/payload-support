@@ -47,7 +47,7 @@ export function CloseTicketButton({ ticketId }: { ticketId: number | string }) {
     <button
       onClick={handleClose}
       disabled={loading}
-      className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all disabled:opacity-50 ${
+      className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none disabled:opacity-50 ${
         confirming
           ? 'border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'
           : 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'

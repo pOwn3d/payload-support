@@ -1,8 +1,9 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFind, dbCreate } from '../utils/db'
+import { verifySecret } from '../utils/webhookSecurity'
 import crypto from 'crypto'
 
 interface ParsedConversation {
@@ -11,7 +12,6 @@ interface ParsedConversation {
   messages: { from: 'client' | 'admin'; name: string; date: string; content: string }[]
 }
 
-const importLimiter = new RateLimiter(3_600_000, 10) // 10 per hour
 
 function parseStructuredMarkdown(markdown: string): ParsedConversation | null {
   const clientMatch = markdown.match(
@@ -131,7 +131,8 @@ ONLY JSON, nothing else.`,
  * POST /api/support/import-conversation
  * Import a conversation from markdown into the ticket system.
  */
-export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createImportConversationEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const importLimiter = new RateLimiter(3_600_000, 10, store)
   return {
     path: '/support/import-conversation',
     method: 'post',
@@ -143,7 +144,7 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoi
         const webhookSecret = req.headers.get('x-webhook-secret')
         let isAuthed = false
 
-        if (webhookSecret && process.env.SUPPORT_WEBHOOK_SECRET && webhookSecret === process.env.SUPPORT_WEBHOOK_SECRET) {
+        if (verifySecret(webhookSecret, process.env.SUPPORT_WEBHOOK_SECRET)) {
           isAuthed = true
         } else if (req.user && req.user.collection === slugs.users) {
           isAuthed = true
@@ -154,7 +155,7 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs): Endpoi
         }
 
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-        if (importLimiter.check(ip)) {
+        if (await importLimiter.check(ip, req)) {
           return Response.json({ error: 'Rate limit exceeded. Maximum 10 imports per hour.' }, { status: 429 })
         }
 
