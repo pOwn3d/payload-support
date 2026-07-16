@@ -540,7 +540,7 @@ export const SupportDashboardClient: React.FC = () => {
 
           {/* CSAT ring */}
           <div className={styles.panel}>
-            <h2 className={styles.panelTitle}>{t('dashboard.csat')}</h2>
+            <h2 className={styles.panelTitle}>{t('dashboard.csatTitle')}</h2>
             <CSATRing score={stats.satisfactionAvg} count={stats.satisfactionCount} />
           </div>
         </div>

@@ -413,7 +413,7 @@ export const TicketingSettingsClient: React.FC = () => {
        * SECTION 1 — Feature Flags
        * ======================================== */}
       <CollapsibleSection
-        title={t('settingsView.features')}
+        title={t('settingsView.featuresTitle')}
         icon={<Settings size={16} />}
         color={V.blue}
         badge={

@@ -107,6 +107,7 @@ export default defineConfig([
       'src/views/**/*.ts',
       'src/views/**/*.scss',
       'src/views/**/*.css',
+      'src/views/**/*.json',
       'src/components/**/*.tsx',
       'src/components/**/*.ts',
       'src/components/**/*.json',

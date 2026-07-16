@@ -266,7 +266,7 @@
     "activeTickets": "Active tickets",
     "noActiveTickets": "No active tickets",
     "volume7days": "Volume — last 7 days",
-    "csat": "Client satisfaction (CSAT)",
+    "csatTitle": "Client satisfaction (CSAT)",
     "newTicketAction": "+ New ticket",
     "pendingEmails": "Pending emails",
     "crm": "CRM Clients",
@@ -599,7 +599,7 @@
   "settingsView": {
     "configTitle": "Support module configuration",
     "intro": "Manage features, email configuration, AI and support module preferences.",
-    "features": "Features",
+    "featuresTitle": "Features",
     "featuresDescription": "Enable or disable support module features.",
     "reset": "Reset",
     "saved": "✓ Saved",

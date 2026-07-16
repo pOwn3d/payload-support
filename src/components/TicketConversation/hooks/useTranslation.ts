@@ -1,22 +1,56 @@
 import { useState, useCallback, useEffect } from 'react'
 import frTranslations from '../locales/fr.json'
 import enTranslations from '../locales/en.json'
+import frViewTranslations from '../../../views/shared/locales/fr.json'
+import enViewTranslations from '../../../views/shared/locales/en.json'
 
 type Locale = 'fr' | 'en'
 
 const LOCALE_STORAGE_KEY = 'support_locale'
 const DEFAULT_LOCALE: Locale = 'fr'
 
+function mergeTranslations(
+  base: Record<string, unknown>,
+  supplement: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = { ...base }
+
+  for (const [key, value] of Object.entries(supplement)) {
+    const current = merged[key]
+
+    if (
+      current != null
+      && value != null
+      && typeof current === 'object'
+      && typeof value === 'object'
+      && !Array.isArray(current)
+      && !Array.isArray(value)
+    ) {
+      merged[key] = mergeTranslations(
+        current as Record<string, unknown>,
+        value as Record<string, unknown>,
+      )
+      continue
+    }
+
+    if (current === undefined || (typeof current !== 'object' && typeof value === 'object')) {
+      merged[key] = value
+    }
+  }
+
+  return merged
+}
+
 const translations: Record<Locale, Record<string, unknown>> = {
-  fr: frTranslations,
-  en: enTranslations,
+  fr: mergeTranslations(frTranslations, frViewTranslations),
+  en: mergeTranslations(enTranslations, enViewTranslations),
 }
 
 /**
  * Resolve a dot-notation key from a nested object.
  * e.g. getNestedValue(obj, 'ticket.status.open') => 'Ouvert'
  */
-function getNestedValue(obj: Record<string, unknown>, path: string): string {
+export function getNestedValue(obj: Record<string, unknown>, path: string): string {
   const keys = path.split('.')
   let current: unknown = obj
 
@@ -113,4 +147,4 @@ export function useTranslation() {
 }
 
 export type { Locale }
-export { DEFAULT_LOCALE, LOCALE_STORAGE_KEY }
+export { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, translations }

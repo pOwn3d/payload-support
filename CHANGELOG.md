@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] — 2026-07-16
+
+### Fixed
+- Load the shared view dictionaries alongside the core support dictionaries so
+  all ticket status, inbox, detail, time-tracking, tag and billing labels resolve
+  in French and English instead of rendering their raw translation keys.
+- Resolve the `dashboard.csat` and `settingsView.features` key collisions that
+  made a section title and nested labels mutually exclusive.
+
+### Tests
+- Validate every literal translation key used by support components and views
+  against both locale catalogs, and assert that the French and English catalogs
+  remain structurally aligned. The release contains 132 passing tests.
+
 ## [2.0.0] — 2026-07-16
 
 ### Added
