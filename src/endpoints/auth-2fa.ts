@@ -1,12 +1,9 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto, { createHmac } from 'crypto'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
 import { dbFind, dbUpdate } from '../utils/db'
-
-const sendLimiter = new RateLimiter(60 * 60 * 1000, 3) // 3 per hour
-const verifyLimiter = new RateLimiter(15 * 60 * 1000, 5) // 5 per 15 min
 
 function generateSecureCode(): string {
   const buf = crypto.randomBytes(4)
@@ -27,7 +24,9 @@ function hashCode(code: string): string {
  * POST /api/support/2fa
  * Send or verify a 2FA code.
  */
-export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const sendLimiter = new RateLimiter(60 * 60 * 1000, 3, store)
+  const verifyLimiter = new RateLimiter(15 * 60 * 1000, 5, store)
   return {
     path: '/support/2fa',
     method: 'post',
@@ -49,7 +48,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
         const genericSendResponse = { success: true, message: 'Si un compte existe, un code a été envoyé.' }
 
         if (action === 'send') {
-          if (sendLimiter.check(email)) {
+          if (await sendLimiter.check(email, req)) {
             return Response.json(genericSendResponse)
           }
 
@@ -98,7 +97,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs): Endpoint {
             return Response.json({ error: 'Code manquant' }, { status: 400 })
           }
 
-          if (verifyLimiter.check(email)) {
+          if (await verifyLimiter.check(email, req)) {
             return Response.json(
               { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
               { status: 429 },

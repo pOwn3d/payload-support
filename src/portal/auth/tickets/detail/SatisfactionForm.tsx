@@ -97,7 +97,7 @@ export function SatisfactionForm({ ticketId }: { ticketId: number | string }) {
             onClick={() => setRating(star)}
             onMouseEnter={() => setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
-            className="rounded-lg p-1 transition-all hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+            className="rounded-lg p-1 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
             <svg
               className={`h-8 w-8 transition-colors ${
@@ -131,13 +131,13 @@ export function SatisfactionForm({ ticketId }: { ticketId: number | string }) {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Un commentaire ? (optionnel)"
-        className="mb-4 w-full resize-y rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 dark:focus:ring-blue-500/20"
+        className="mb-4 w-full resize-y rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 dark:focus:ring-blue-500/20"
       />
 
       <button
         type="submit"
         disabled={loading || rating === 0}
-        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {loading ? (
           <>

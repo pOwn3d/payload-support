@@ -206,7 +206,7 @@ function getCategories(t: (key: string) => string) {
     { key: 'core', label: t('settingsView.categories.core'), color: V.blue },
     { key: 'communication', label: t('settingsView.categories.communication'), color: V.green },
     { key: 'productivity', label: t('settingsView.categories.productivity'), color: V.amber },
-    { key: 'advanced', label: t('settingsView.categories.advanced'), color: '#7c3aed' },
+    { key: 'advanced', label: t('settingsView.categories.advanced'), color: '#17807c' },
   ]
 }
 
@@ -532,7 +532,7 @@ export const TicketingSettingsClient: React.FC = () => {
       <CollapsibleSection
         title={t('settingsView.aiTitle')}
         icon={<Bot size={16} />}
-        color="#7c3aed"
+        color="#17807c"
         defaultOpen={false}
         badge={
           features.ai
@@ -604,7 +604,7 @@ export const TicketingSettingsClient: React.FC = () => {
             <Toggle
               checked={settings.ai[item.key]}
               onChange={() => updateAI(item.key, !settings.ai[item.key])}
-              color="#7c3aed"
+              color="#17807c"
               size="sm"
             />
             <div style={{ flex: 1 }}>

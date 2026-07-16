@@ -106,7 +106,7 @@ export function ChatbotWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
           aria-label="Ouvrir l'assistant IA"
           title="Assistant IA"
         >
@@ -129,7 +129,7 @@ export function ChatbotWidget() {
       {/* Chat panel */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-6 z-40 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl transition-all dark:border-gray-700 dark:bg-gray-900"
+          className="fixed bottom-24 right-6 z-40 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none dark:border-gray-700 dark:bg-gray-900"
           style={{ height: '500px' }}
           role="dialog"
           aria-label="Assistant Support"
@@ -254,12 +254,12 @@ export function ChatbotWidget() {
                 placeholder="Posez votre question..."
                 maxLength={500}
                 disabled={loading}
-                className="flex-1 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-blue-400"
+                className="flex-1 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-blue-400"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
-                className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition-all hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600"
+                className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600"
                 aria-label="Envoyer"
               >
                 <svg

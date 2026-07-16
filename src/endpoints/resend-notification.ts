@@ -1,18 +1,18 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFindByID } from '../utils/db'
 
-const resendLimiter = new RateLimiter(60 * 60 * 1000, 10) // 10 per hour
 
 /**
  * POST /api/support/resend-notification
  * Resend the email notification for a specific ticket message. Admin-only.
  */
-export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createResendNotificationEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const resendLimiter = new RateLimiter(60 * 60 * 1000, 10, store)
   return {
     path: '/support/resend-notification',
     method: 'post',
@@ -22,7 +22,7 @@ export function createResendNotificationEndpoint(slugs: CollectionSlugs): Endpoi
 
         requireAdmin(req, slugs)
 
-        if (resendLimiter.check(String(req.user.id))) {
+        if (await resendLimiter.check(String(req.user.id), req)) {
           return Response.json(
             { error: 'Trop de renvois. Réessayez dans une heure.' },
             { status: 429 },

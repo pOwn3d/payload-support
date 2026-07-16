@@ -4,7 +4,7 @@ import { handleAuthError, AuthError } from '../utils/auth'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { randomBytes } from 'crypto'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFindByID, dbFind, dbCreate, dbUpdate, dbCount } from '../utils/db'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -12,7 +12,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Anti-abuse limits: an invite can create a placeholder account AND send an
 // email, so cap both the volume per user and the collaborators per ticket.
 const MAX_COLLABORATORS_PER_TICKET = 20
-const inviteLimiter = new RateLimiter(60 * 60 * 1000, 10)
 
 /**
  * POST /api/support/tickets/:id/invite
@@ -31,7 +30,8 @@ const inviteLimiter = new RateLimiter(60 * 60 * 1000, 10)
  *  - Sends an invitation email with a magic link `/support/tickets/:id?inviteToken=...`.
  *  - Returns { ok, invitedTo, role }.
  */
-export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const inviteLimiter = new RateLimiter(60 * 60 * 1000, 10, store)
   return {
     path: '/support/tickets/:id/invite',
     method: 'post',
@@ -75,7 +75,7 @@ export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs): Endpoi
         }
 
         // Anti-abuse: cap invite volume per user (in-memory, fail-closed).
-        if (inviteLimiter.check(String(req.user.id))) {
+        if (await inviteLimiter.check(String(req.user.id), req)) {
           return Response.json({ error: 'Trop d\'invitations. Réessayez plus tard.' }, { status: 429 })
         }
 

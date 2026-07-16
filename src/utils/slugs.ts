@@ -24,6 +24,8 @@ export interface CollectionSlugs {
   automationRules: string
   supportTeams: string
   pushSubscriptions: string
+  rateLimits: string
+  counters: string
   users: string
   media: string
 }
@@ -50,6 +52,8 @@ export const DEFAULT_SLUGS: CollectionSlugs = {
   automationRules: 'automation-rules',
   supportTeams: 'support-teams',
   pushSubscriptions: 'push-subscriptions',
+  rateLimits: 'support-rate-limits',
+  counters: 'support-counters',
   users: 'users',
   media: 'media',
 }

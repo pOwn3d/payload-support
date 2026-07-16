@@ -3,6 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFind, dbCreate, dbUpdate } from '../utils/db'
+import { verifySecret } from '../utils/webhookSecurity'
 
 /**
  * GET /api/support/auto-close
@@ -16,7 +17,7 @@ export function createAutoCloseEndpoint(slugs: CollectionSlugs): Endpoint {
       const secret = req.headers.get('x-cron-secret')
       const expectedSecret = process.env.CRON_SECRET
 
-      if (!expectedSecret || secret !== expectedSecret) {
+      if (!verifySecret(secret, expectedSecret)) {
         return Response.json({ error: 'Non autorisé' }, { status: 401 })
       }
 

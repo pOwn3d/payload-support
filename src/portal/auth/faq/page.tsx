@@ -28,7 +28,7 @@ const categoryConfig: Record<string, { label: string; icon: React.ReactNode; col
   },
   account: {
     label: 'Compte & Profil',
-    color: 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
+    color: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
         <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
@@ -153,7 +153,7 @@ export default async function FAQPage() {
                 {items.map((article) => (
                   <details
                     key={article.id}
-                    className="group rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 shadow-sm transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-600 open:shadow-md"
+                    className="group rounded-xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:border-slate-300 dark:hover:border-slate-600 open:shadow-md"
                   >
                     <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 dark:text-white list-none [&::-webkit-details-marker]:hidden">
                       <span className="leading-relaxed">{article.title}</span>

@@ -525,7 +525,7 @@ const TicketConversation: React.FC = () => {
                                 return sched.scheduledSent ? (
                                   <span style={s.badge('#f0fdf4', '#16a34a')}>{'\u2713'} Programmé le {createdDate} — rédigé le {scheduledDate !== createdDate ? scheduledDate : createdDate}</span>
                                 ) : (
-                                  <span style={s.badge('#f3e8ff', '#7c3aed')}>{'\u23F0'} Rédigé le {createdDate} — envoi programmé le {scheduledDate}</span>
+                                  <span style={s.badge('#eef8f7', '#17807c')}>{'\u23F0'} Rédigé le {createdDate} — envoi programmé le {scheduledDate}</span>
                                 )
                               })()}
                             </span>
@@ -723,12 +723,12 @@ const TicketConversation: React.FC = () => {
       {clientTyping && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-          fontSize: 12, color: '#7c3aed', fontWeight: 500,
+          fontSize: 12, color: '#17807c', fontWeight: 500,
         }}>
           <span style={{ display: 'flex', gap: 2 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#7c3aed', animation: 'bounce 1s infinite', animationDelay: '0ms' }} />
-            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#7c3aed', animation: 'bounce 1s infinite', animationDelay: '150ms' }} />
-            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#7c3aed', animation: 'bounce 1s infinite', animationDelay: '300ms' }} />
+            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#17807c', animation: 'bounce 1s infinite', animationDelay: '0ms' }} />
+            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#17807c', animation: 'bounce 1s infinite', animationDelay: '150ms' }} />
+            <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#17807c', animation: 'bounce 1s infinite', animationDelay: '300ms' }} />
           </span>
           {clientTypingName || 'Client'} est en train d&apos;écrire...
         </div>
@@ -777,7 +777,7 @@ const TicketConversation: React.FC = () => {
             <button
               onClick={handleAiSuggestReply}
               disabled={aiReplying || messages.length === 0}
-              style={{ ...s.outlineBtn('#7c3aed', aiReplying || messages.length === 0), fontSize: '11px', padding: '3px 10px', borderRadius: '14px' }}
+              style={{ ...s.outlineBtn('#17807c', aiReplying || messages.length === 0), fontSize: '11px', padding: '3px 10px', borderRadius: '14px' }}
             >
               {aiReplying ? 'Génération...' : 'Suggestion IA'}
             </button>
@@ -903,7 +903,7 @@ const TicketConversation: React.FC = () => {
             <button
               onClick={() => setShowSchedule(!showSchedule)}
               disabled={!replyBody.trim() && !replyHtml}
-              style={{ ...s.outlineBtn('#7c3aed', !replyBody.trim() && !replyHtml), fontSize: '12px', padding: '8px 12px' }}
+              style={{ ...s.outlineBtn('#17807c', !replyBody.trim() && !replyHtml), fontSize: '12px', padding: '8px 12px' }}
               title="Programmer l'envoi à une date/heure précise"
             >
               {'\u23F0'}
@@ -911,8 +911,8 @@ const TicketConversation: React.FC = () => {
           )}
         </div>
         {showSchedule && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', padding: '10px 14px', borderRadius: '8px', backgroundColor: '#faf5ff', border: '1px solid #e9d5ff' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed' }}>Programmer pour :</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', padding: '10px 14px', borderRadius: '8px', backgroundColor: '#eef8f7', border: '1px solid #b8dcda' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#17807c' }}>Programmer pour :</span>
             <input
               type="datetime-local"
               value={scheduleDate}
@@ -923,7 +923,7 @@ const TicketConversation: React.FC = () => {
             <button
               onClick={handleScheduleReply}
               disabled={sending || !scheduleDate || (!replyBody.trim() && !replyHtml)}
-              style={{ ...s.btn('#7c3aed', sending || !scheduleDate || (!replyBody.trim() && !replyHtml)), fontSize: '12px', padding: '6px 14px' }}
+              style={{ ...s.btn('#17807c', sending || !scheduleDate || (!replyBody.trim() && !replyHtml)), fontSize: '12px', padding: '6px 14px' }}
             >
               {sending ? '...' : '\u23F0 Programmer'}
             </button>

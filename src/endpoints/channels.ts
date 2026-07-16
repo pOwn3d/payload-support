@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { dbFind, dbCreate } from '../utils/db'
 import { randomBytes } from 'crypto'
+import { verifySecret } from '../utils/webhookSecurity'
 
 const PROVIDERS = ['whatsapp', 'messenger'] as const
 type Provider = (typeof PROVIDERS)[number]
@@ -22,7 +23,7 @@ export function createChannelsWebhookEndpoint(slugs: CollectionSlugs): Endpoint 
     method: 'post',
     handler: async (req) => {
       const secret = req.headers.get('x-channel-secret')
-      if (!process.env.CHANNELS_WEBHOOK_SECRET || secret !== process.env.CHANNELS_WEBHOOK_SECRET) {
+      if (!verifySecret(secret, process.env.CHANNELS_WEBHOOK_SECRET)) {
         return Response.json({ error: 'Non autorisé' }, { status: 401 })
       }
 

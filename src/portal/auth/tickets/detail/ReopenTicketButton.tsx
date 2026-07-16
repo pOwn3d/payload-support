@@ -47,7 +47,7 @@ export function ReopenTicketButton({ ticketId }: { ticketId: number | string }) 
     <button
       onClick={handleReopen}
       disabled={loading}
-      className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 ${
+      className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none disabled:opacity-50 ${
         confirming
           ? 'border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
           : 'border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30'

@@ -26,7 +26,7 @@ export function ClientBar({ client }: { client: ClientInfo }) {
         <button
           type="button"
           onClick={() => window.open(`/api/admin/impersonate?clientId=${client.id}`, '_blank')}
-          style={{ ...s.ghostBtn('#7c3aed'), fontSize: '11px', padding: '4px 10px' }}
+          style={{ ...s.ghostBtn('#17807c'), fontSize: '11px', padding: '4px 10px' }}
           title="Se connecter au portail support en tant que ce client"
         >
           Voir en tant que client

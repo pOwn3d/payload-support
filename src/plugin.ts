@@ -27,7 +27,10 @@ import {
   createAutomationRulesCollection,
   createSupportTeamCollection,
   createPushSubscriptionCollection,
+  createSupportRateLimitsCollection,
+  createSupportCountersCollection,
 } from './collections'
+import { PayloadRateLimitStore } from './utils/rateLimiter'
 
 function viewConfig(component: string, path: string): AdminViewConfig {
   return { Component: component, path: path as `/${string}` }
@@ -68,6 +71,9 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     ...config?.collectionSlugs,
     users: config?.userCollectionSlug || 'users',
   })
+  const rateLimitStore = config?.rateLimitStore === 'payload'
+    ? new PayloadRateLimitStore(slugs.rateLimits)
+    : config?.rateLimitStore
 
   return (incomingConfig: Config): Config => {
     const existingCollections = incomingConfig.collections || []
@@ -80,14 +86,17 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       projectCollectionSlug: config?.projectCollectionSlug,
       documentsCollectionSlug: config?.documentsCollectionSlug,
       notificationSlug: config?.notificationSlug,
+      ticketNumber: config?.ticketNumber,
+      capabilities: config?.capabilities,
     }
     const messageOptions = {
       notificationSlug: config?.notificationSlug,
+      capabilities: config?.capabilities,
     }
     const supportCollections = [
       createTicketsCollection(slugs, ticketOptions),
       createTicketMessagesCollection(slugs, messageOptions),
-      createSupportClientsCollection(slugs),
+      createSupportClientsCollection(slugs, { capabilities: config?.capabilities }),
       createCannedResponsesCollection(slugs),
       createTicketActivityLogCollection(slugs),
       createSatisfactionSurveysCollection(slugs),
@@ -98,7 +107,11 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       createAutomationRulesCollection(slugs),
       createSupportTeamCollection(slugs),
       createPushSubscriptionCollection(slugs),
+      createSupportCountersCollection(slugs.counters),
     ]
+    if (config?.rateLimitStore === 'payload') {
+      supportCollections.push(createSupportRateLimitsCollection(slugs.rateLimits))
+    }
 
     // Auth logs (conditional)
     if (features.authLogs !== false) supportCollections.push(createAuthLogsCollection(slugs))
@@ -150,6 +163,8 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
     const supportEndpoints = createSupportEndpoints(slugs, {
       oauth: { allowedEmailDomains: config?.allowedEmailDomains },
       features,
+      rateLimitStore,
+      capabilities: config?.capabilities,
     })
 
     return {

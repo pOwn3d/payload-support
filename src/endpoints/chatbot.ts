@@ -1,23 +1,23 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFind } from '../utils/db'
 
-const chatbotLimiter = new RateLimiter(60_000, 10) // 10 requests per minute per IP
 
 /**
  * POST /api/support/chatbot
  * AI chatbot that answers from the knowledge base before creating a ticket.
  * Public endpoint (accessible from the support portal).
  */
-export function createChatbotEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createChatbotEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const chatbotLimiter = new RateLimiter(60_000, 10, store)
   return {
     path: '/support/chatbot',
     method: 'post',
     handler: async (req) => {
       try {
         const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
-        if (chatbotLimiter.check(ip)) {
+        if (await chatbotLimiter.check(ip, req)) {
           return Response.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
         }
 

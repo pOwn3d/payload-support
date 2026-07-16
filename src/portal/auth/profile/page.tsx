@@ -254,7 +254,7 @@ export default function ProfilePage() {
                   required
                   value={profile.firstName}
                   onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
                 />
               </div>
               <div>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                   required
                   value={profile.lastName}
                   onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
                 />
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                 required
                 value={profile.company}
                 onChange={(e) => setProfile({ ...profile, company: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
 
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                 value={profile.phone}
                 onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                 placeholder="+33 6 00 00 00 00"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
 
@@ -317,7 +317,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>
@@ -384,8 +384,8 @@ export default function ProfilePage() {
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50 shadow-sm backdrop-blur-sm">
           <div className="border-b border-slate-100 dark:border-slate-700/50 px-6 py-4 sm:px-8">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-900/30">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-violet-600 dark:text-violet-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50 dark:bg-teal-900/30">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-teal-700 dark:text-teal-300">
                   <path fillRule="evenodd" d="M10 2a6 6 0 00-6 6c0 1.887-.454 3.665-1.257 5.234a.75.75 0 00.515 1.076 32.91 32.91 0 003.256.508 3.5 3.5 0 006.972 0 32.903 32.903 0 003.256-.508.75.75 0 00.515-1.076A11.448 11.448 0 0116 8a6 6 0 00-6-6zM8.05 14.943a33.54 33.54 0 003.9 0 2 2 0 01-3.9 0z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -443,7 +443,7 @@ export default function ProfilePage() {
               type="button"
               onClick={handleSaveProfile}
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Enregistrement...' : 'Sauvegarder les preferences'}
             </button>
@@ -491,7 +491,7 @@ export default function ProfilePage() {
                 required
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
 
@@ -506,7 +506,7 @@ export default function ProfilePage() {
                 minLength={8}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
               <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">Minimum 8 caracteres</p>
             </div>
@@ -521,14 +521,14 @@ export default function ProfilePage() {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
 
             <button
               type="submit"
               disabled={changingPassword}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-slate-100 px-6 py-3 text-sm font-semibold text-white dark:text-slate-900 shadow-sm transition-all duration-200 hover:bg-slate-800 dark:hover:bg-white hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 dark:bg-slate-100 px-6 py-3 text-sm font-semibold text-white dark:text-slate-900 shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-slate-800 dark:hover:bg-white hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {changingPassword ? (
                 <>
@@ -567,7 +567,7 @@ export default function ProfilePage() {
             <a
               href="/api/support/export-data"
               download
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition-all duration-200 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
@@ -603,7 +603,7 @@ export default function ProfilePage() {
             {!showDeleteConfirm ? (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300"
+                className="inline-flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-800/50 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                   <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
@@ -651,7 +651,7 @@ export default function ProfilePage() {
                     value={deletePassword}
                     onChange={(e) => setDeletePassword(e.target.value)}
                     placeholder="Votre mot de passe"
-                    className="w-full rounded-xl border border-red-200 dark:border-red-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                    className="w-full rounded-xl border border-red-200 dark:border-red-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
                   />
                 </div>
 
@@ -684,13 +684,13 @@ export default function ProfilePage() {
                       }
                     }}
                     disabled={deleting || !deletePassword}
-                    className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-red-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-red-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {deleting ? 'Suppression...' : 'Confirmer la suppression'}
                   </button>
                   <button
                     onClick={() => { setShowDeleteConfirm(false); setDeletePassword(''); setDeleteError('') }}
-                    className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    className="rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
                     Annuler
                   </button>

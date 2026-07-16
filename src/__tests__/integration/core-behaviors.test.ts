@@ -23,6 +23,29 @@ describe('core ticketing behaviours', () => {
     expect(t1.ticketNumber).not.toBe(t2.ticketNumber)
   }, 60_000)
 
+  it('allocates sequential numbers under concurrent creation and after deletion', async () => {
+    const payload = await buildTestPayload()
+    const c = await makeClient(payload, 'concurrent-num@example.com')
+    const tickets = await Promise.all(
+      Array.from({ length: 12 }, (_, index) => payload.create({
+        collection: 'tickets',
+        data: { subject: `concurrent-${index}`, client: c.id, status: 'open', priority: 'normal' },
+        overrideAccess: true,
+      })),
+    )
+    const numbers = tickets.map((ticket) => Number(String(ticket.ticketNumber).replace('TK-', '')))
+    expect(new Set(numbers)).toHaveLength(12)
+
+    const highest = Math.max(...numbers)
+    await payload.delete({ collection: 'tickets', id: tickets[0].id, overrideAccess: true })
+    const next = await payload.create({
+      collection: 'tickets',
+      data: { subject: 'after-delete', client: c.id, status: 'open', priority: 'normal' },
+      overrideAccess: true,
+    })
+    expect(Number(String(next.ticketNumber).replace('TK-', ''))).toBe(highest + 1)
+  }, 60_000)
+
   it('moves status to waiting_client on admin reply and back to open on client reply', async () => {
     const payload = await buildTestPayload()
     const c = await makeClient(payload, 'status@example.com')

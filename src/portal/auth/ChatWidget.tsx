@@ -215,7 +215,7 @@ function ChatWidgetInner() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-3 border-black bg-[#00E5FF] shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] dark:border-gray-600 dark:shadow-[4px_4px_0px_#333]"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full border-3 border-black bg-[#00E5FF] shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] dark:border-gray-600 dark:shadow-[4px_4px_0px_#333]"
           title="Chat en direct"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
@@ -274,7 +274,7 @@ function ChatWidgetInner() {
                 </p>
                 <button
                   onClick={startChat}
-                  className="rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-sm font-black text-black shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
+                  className="rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-sm font-black text-black shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
                 >
                   Démarrer le chat
                 </button>
@@ -320,7 +320,7 @@ function ChatWidgetInner() {
                 <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">Le chat est terminé.</p>
                 <button
                   onClick={resetChat}
-                  className="rounded-xl border-2 border-black bg-[#FFD600] px-4 py-2 text-xs font-bold text-black shadow-[2px_2px_0px_#000] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#000]"
+                  className="rounded-xl border-2 border-black bg-[#FFD600] px-4 py-2 text-xs font-bold text-black shadow-[2px_2px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_#000]"
                 >
                   Nouveau chat
                 </button>
@@ -344,7 +344,7 @@ function ChatWidgetInner() {
                 <button
                   type="submit"
                   disabled={!input.trim() || sending}
-                  className="rounded-xl border-2 border-black bg-[#00E5FF] px-3 py-2 font-bold text-black transition-all hover:shadow-[2px_2px_0px_#000] disabled:opacity-50 dark:border-gray-600"
+                  className="rounded-xl border-2 border-black bg-[#00E5FF] px-3 py-2 font-bold text-black transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:shadow-[2px_2px_0px_#000] disabled:opacity-50 dark:border-gray-600"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                     <line x1="22" y1="2" x2="11" y2="13" />

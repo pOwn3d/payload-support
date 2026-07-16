@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border-4 border-black bg-[#FFD600] shadow-[4px_4px_0px_#000]">
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               href="/support/login"
-              className="block w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-center text-base font-black text-black shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
+              className="block w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-center text-base font-black text-black shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
             >
               Retour à la connexion
             </Link>
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl border-3 border-black bg-[#FFD600] px-6 py-3 text-base font-black text-black shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] disabled:opacity-50"
+              className="w-full rounded-xl border-3 border-black bg-[#FFD600] px-6 py-3 text-base font-black text-black shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] disabled:opacity-50"
             >
               {loading ? 'Envoi...' : 'Envoyer le lien'}
             </button>

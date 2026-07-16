@@ -42,7 +42,7 @@ export function MarkSolutionButton({
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`mt-2 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all ${
+      className={`mt-2 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none ${
         isSolution
           ? 'border-2 border-green-500 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
           : 'border-2 border-gray-200 text-gray-400 hover:border-green-500 hover:text-green-600 dark:border-gray-600 dark:hover:border-green-500'

@@ -4,6 +4,7 @@ import { escapeHtml } from '../utils/emailTemplate'
 import { fireWebhooks } from '../utils/fireWebhooks'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFind, dbFindByID, dbUpdate } from '../utils/db'
+import { verifySecret } from '../utils/webhookSecurity'
 
 /**
  * POST /api/support/process-scheduled
@@ -18,7 +19,7 @@ export function createProcessScheduledEndpoint(slugs: CollectionSlugs): Endpoint
       const secret = req.headers.get('x-cron-secret')
       const expectedSecret = process.env.CRON_SECRET
 
-      if (!expectedSecret || secret !== expectedSecret) {
+      if (!verifySecret(secret, expectedSecret)) {
         return Response.json({ error: 'Non autorisé' }, { status: 401 })
       }
 

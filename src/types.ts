@@ -1,3 +1,7 @@
+import type { RateLimitStore } from './utils/rateLimiter'
+import type { InboundEmailInput } from './utils/webhookSecurity'
+import type { Payload, PayloadRequest } from 'payload'
+
 // ─── Feature flags ───────────────────────────────────────
 
 export interface SupportFeatures {
@@ -76,6 +80,62 @@ export interface EmailConfig {
   replyTo?: string
 }
 
+export interface SmsSendResult {
+  sent: boolean
+  skipped?: boolean
+  error?: string
+}
+
+export interface SmsAdapter {
+  isConfigured?: () => boolean
+  send: (input: {
+    message: string
+    to: string
+    payload: Payload
+    ticket: Record<string, unknown>
+    client: Record<string, unknown>
+  }) => Promise<SmsSendResult>
+}
+
+export interface SupportCapabilities {
+  /** Optional SMS transport. The module never depends on a concrete provider. */
+  sms?: {
+    adapter: SmsAdapter
+    buildMessage?: (input: {
+      client: Record<string, unknown>
+      ticket: Record<string, unknown>
+    }) => string | Promise<string>
+  }
+  /** Native daily/weekly notification queue. */
+  digests?: boolean
+  /** Incoming email business adapter, protected and validated by the module. */
+  inboundEmail?: {
+    handle: (req: PayloadRequest, input: InboundEmailInput) => Promise<Response>
+    secret?: string
+    secretHeader?: string
+  }
+  /** Generate a short, editable display title after ticket creation. */
+  aiTitles?: {
+    generate: (payload: Payload, ticketId: number | string) => Promise<unknown>
+  }
+  /** Override the module's default resolved-ticket synthesis generator. */
+  aiSummaries?: {
+    generate: (payload: Payload, ticketId: number | string) => Promise<unknown>
+  }
+  /** Persist billing lines and their invoicing state. */
+  detailedBilling?: boolean
+  /** Persist pro-bono work and its estimated value. */
+  volunteering?: boolean
+  /** Best-effort cleanup of noisy messages after an inbound client reply. */
+  threadCleanup?: {
+    clean: (payload: Payload, ticketId: number | string, messageId: number | string) => Promise<unknown>
+  }
+  /** Deployment-specific project suggestion adapter. */
+  projectSuggestions?: {
+    suggest: (req: PayloadRequest) => Promise<Response>
+  }
+}
+
 // ─── Plugin configuration ────────────────────────────────
 
 export interface SupportPluginConfig {
@@ -87,6 +147,15 @@ export interface SupportPluginConfig {
 
   /** Email configuration for ticket notifications */
   email?: EmailConfig
+
+  /** Shared rate-limit storage. Defaults to process-local memory. */
+  rateLimitStore?: RateLimitStore | 'payload'
+
+  /** Sequential ticket number formatting. */
+  ticketNumber?: { prefix?: string; padding?: number }
+
+  /** Optional generic capabilities backed by deployment-specific adapters. */
+  capabilities?: SupportCapabilities
 
   /** Locale: 'fr' or 'en' (default: 'fr') */
   locale?: 'fr' | 'en'
@@ -136,6 +205,8 @@ export interface SupportPluginConfig {
     macros?: string
     ticketStatuses?: string
     ticketFeedback?: string
+    rateLimits?: string
+    counters?: string
   }
 
   /** Admin notification collection slug (default: 'admin-notifications') */

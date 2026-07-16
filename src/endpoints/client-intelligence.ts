@@ -2,9 +2,11 @@ import type { Endpoint, PayloadRequest } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { readSupportSettings, type SupportSettings } from '../utils/readSettings'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 
-function getClient(aiSettings: SupportSettings['ai']) {
-  const Anthropic = require('@anthropic-ai/sdk').default
+async function getClient(aiSettings: SupportSettings['ai']) {
+  const moduleName = '@anthropic-ai/sdk'
+  const { default: Anthropic } = await import(moduleName)
   if (aiSettings.provider === 'ollama') {
     const baseURL = process.env.OLLAMA_API_URL || 'https://ollama.orkelis.app/v1'
     return new Anthropic({ apiKey: 'ollama', baseURL })
@@ -25,10 +27,14 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
  * POST /api/support/client-intelligence?clientId=X
  * Force-refreshes the summary.
  */
-export function createClientIntelligenceEndpoint(slugs: CollectionSlugs): Endpoint[] {
+export function createClientIntelligenceEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint[] {
+  const limiter = new RateLimiter(60_000, 20, store)
   const getHandler = async (req: PayloadRequest) => {
     try {
       requireAdmin(req, slugs)
+      if (await limiter.check(String(req.user!.id), req)) {
+        return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      }
       const payload = req.payload
       const url = new URL(req.url || '', 'http://localhost')
       const clientId = url.searchParams.get('clientId')
@@ -64,6 +70,9 @@ export function createClientIntelligenceEndpoint(slugs: CollectionSlugs): Endpoi
   const postHandler = async (req: PayloadRequest) => {
     try {
       requireAdmin(req, slugs)
+      if (await limiter.check(String(req.user!.id), req)) {
+        return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      }
       const payload = req.payload
       const body = await req.json?.() || {}
       const clientId = body.clientId
@@ -197,7 +206,7 @@ Réponds en JSON strict (pas de markdown, pas de commentaires) avec cette struct
 Sois factuel. Ne dépasse pas 5 items par tableau. Réponds UNIQUEMENT avec le JSON.`
 
   // 6. Call AI
-  const anthropic = getClient(aiSettings)
+  const anthropic = await getClient(aiSettings)
   const model = getModel(aiSettings)
 
   const res = await anthropic.messages.create({

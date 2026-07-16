@@ -57,14 +57,14 @@ export function QuickActions({
           </button>
         ))}
         {snoozeUntil && new Date(snoozeUntil) > new Date() && (
-          <button onClick={onCancelSnooze} disabled={snoozeSaving} style={{ ...s.ghostBtn('#7c3aed', snoozeSaving), fontSize: '12px', padding: '5px 10px' }}>
+          <button onClick={onCancelSnooze} disabled={snoozeSaving} style={{ ...s.ghostBtn('#17807c', snoozeSaving), fontSize: '12px', padding: '5px 10px' }}>
             Annuler snooze
           </button>
         )}
         <span style={{ borderLeft: `1px solid ${C.border}`, height: '20px', margin: '0 4px' }} />
         <button onClick={onToggleMerge} style={s.ghostBtn('#be185d')}>Fusionner</button>
         <button onClick={onToggleExtMsg} style={s.ghostBtn('#4f46e5')}>+ Message reçu</button>
-        <button onClick={onToggleSnooze} style={s.ghostBtn('#7c3aed')}>Snooze</button>
+        <button onClick={onToggleSnooze} style={s.ghostBtn('#17807c')}>Snooze</button>
         {showReminderButton && (
           <button onClick={onToggleReminder} style={s.ghostBtn('#ea580c')}>{'⏰'} Relancer</button>
         )}

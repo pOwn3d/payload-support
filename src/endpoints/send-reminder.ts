@@ -1,14 +1,13 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml, emailWrapper, emailParagraph, emailButton } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFindByID, dbFind, dbCreate, dbUpdate } from '../utils/db'
 
 // Manual reminders are a deliberate admin action, so the cap is generous —
 // it only exists to stop a runaway script, not normal usage.
-const reminderLimiter = new RateLimiter(60 * 60 * 1000, 30) // 30 per hour per admin
 
 const MIN_HOURS = 1
 const MAX_HOURS = 24 * 30 // 30 days
@@ -38,7 +37,8 @@ function formatFr(date: Date, withTime: boolean): string {
  *
  * Admin-only, rate-limited.
  */
-export function createSendReminderEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createSendReminderEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const reminderLimiter = new RateLimiter(60 * 60 * 1000, 30, store)
   return {
     path: '/support/send-reminder',
     method: 'post',
@@ -48,7 +48,7 @@ export function createSendReminderEndpoint(slugs: CollectionSlugs): Endpoint {
 
         requireAdmin(req, slugs)
 
-        if (reminderLimiter.check(String(req.user.id))) {
+        if (await reminderLimiter.check(String(req.user.id), req)) {
           return Response.json(
             { error: 'Trop de relances. Réessayez dans une heure.' },
             { status: 429 },

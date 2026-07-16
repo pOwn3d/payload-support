@@ -224,7 +224,7 @@ export function DashboardClient({ tickets }: { tickets: TicketData[] }) {
         </div>
         <Link
           href="/support/tickets/new"
-          className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
+          className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-md active:scale-[0.98]"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -447,7 +447,7 @@ export function DashboardClient({ tickets }: { tickets: TicketData[] }) {
             {!searchQuery && tab === 'active' && (
               <Link
                 href="/support/tickets/new"
-                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                   <line x1="12" y1="5" x2="12" y2="19" />

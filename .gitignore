@@ -7,7 +7,6 @@ Icon?
 dist/
 
 # Lockfile unique (npm) — pas de pnpm
-pnpm-lock.yaml
 
 # IDE
 .idea/

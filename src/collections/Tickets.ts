@@ -7,6 +7,7 @@ import type {
   Where,
 } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import type { SupportCapabilities } from '../types'
 import { escapeHtml, emailWrapper, emailParagraph, emailButton } from '../utils/emailTemplate'
 import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
@@ -21,46 +22,73 @@ import { dbFind, dbCreate, dbDelete } from '../utils/db'
 
 // ─── Hooks ───────────────────────────────────────────────
 
-function createAssignTicketNumber(slugs: CollectionSlugs): CollectionBeforeChangeHook {
+const ticketNumberQueues = new Map<string, Promise<void>>()
+
+async function withTicketNumberLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+  const previous = ticketNumberQueues.get(key) ?? Promise.resolve()
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  const queued = previous.then(() => gate)
+  ticketNumberQueues.set(key, queued)
+  await previous
+  try {
+    return await operation()
+  } finally {
+    release()
+    if (ticketNumberQueues.get(key) === queued) ticketNumberQueues.delete(key)
+  }
+}
+
+function createAssignTicketNumber(
+  slugs: CollectionSlugs,
+  options?: { prefix?: string; padding?: number },
+): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
     if (operation === 'create') {
-      // Retry loop to handle unique constraint collisions (e.g. concurrent inserts in SQLite).
-      let retries = 3
-      while (retries > 0) {
-        try {
-          const countResult = await req.payload.count({
-            collection: slugs.tickets,
+      const value = await withTicketNumberLock(slugs.tickets, async () => {
+        const counterResult = await req.payload.find({
+          collection: slugs.counters as any,
+          where: { key: { equals: slugs.tickets } },
+          limit: 1,
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+        const counter = counterResult.docs[0] as { id: number | string; nextValue: number } | undefined
+        if (counter) {
+          const allocated = Number(counter.nextValue)
+          await req.payload.update({
+            collection: slugs.counters as any,
+            id: counter.id,
+            data: { nextValue: allocated + 1 },
             overrideAccess: true,
+            req,
           })
-          const baseNumber = countResult.totalDocs + 1
-          data.ticketNumber = `TK-${String(baseNumber).padStart(4, '0')}`
-
-          // Double-check: if this number already exists, append a timestamp suffix
-          const existing = await req.payload.find({
-            collection: slugs.tickets,
-            where: { ticketNumber: { equals: data.ticketNumber } },
-            limit: 1,
-            depth: 0,
-            overrideAccess: true,
-          })
-          if (existing.docs.length > 0) {
-            const suffix = Date.now() % 10000
-            data.ticketNumber = `TK-${String(baseNumber + suffix).padStart(4, '0')}`
-          }
-          break
-        } catch (error: any) {
-          if (
-            retries > 1 &&
-            (error?.message?.includes('UNIQUE') ||
-              error?.message?.includes('unique') ||
-              error?.code === 'SQLITE_CONSTRAINT')
-          ) {
-            retries--
-            continue
-          }
-          throw error
+          return allocated
         }
-      }
+
+        const tickets = await req.payload.find({
+          collection: slugs.tickets as any,
+          limit: 0,
+          depth: 0,
+          overrideAccess: true,
+          select: { ticketNumber: true },
+          req,
+        })
+        const highest = tickets.docs.reduce((max, ticket) => {
+          const match = String((ticket as { ticketNumber?: string }).ticketNumber || '').match(/(\d+)$/)
+          return match ? Math.max(max, Number(match[1])) : max
+        }, 0)
+        const allocated = highest + 1
+        await req.payload.create({
+          collection: slugs.counters as any,
+          data: { key: slugs.tickets, nextValue: allocated + 1 },
+          overrideAccess: true,
+          req,
+        })
+        return allocated
+      })
+      data.ticketNumber = `${options?.prefix ?? 'TK-'}${String(value).padStart(options?.padding ?? 4, '0')}`
     }
     return data
   }
@@ -162,7 +190,10 @@ function createTrackSLA(slugs: CollectionSlugs): CollectionAfterChangeHook {
   }
 }
 
-function createTrackAiSummaryOnResolve(slugs: CollectionSlugs): CollectionAfterChangeHook {
+function createTrackAiSummaryOnResolve(
+  slugs: CollectionSlugs,
+  generator?: SupportCapabilities['aiSummaries'],
+): CollectionAfterChangeHook {
   return async ({ doc, previousDoc, operation, req }) => {
     if (operation !== 'update' || !previousDoc) return doc
     const wasResolved = previousDoc.status === 'resolved'
@@ -188,8 +219,41 @@ function createTrackAiSummaryOnResolve(slugs: CollectionSlugs): CollectionAfterC
     if (!wasResolved && isResolved && !doc.aiSummary) {
       // setImmediate keeps the response snappy; failures are logged inside the util.
       setImmediate(() => {
-        generateTicketSynthesis({ payload: req.payload, slugs, ticketId: doc.id })
+        const operation = generator
+          ? generator.generate(req.payload, doc.id)
+          : generateTicketSynthesis({ payload: req.payload, slugs, ticketId: doc.id })
+        operation
           .catch((err) => console.error('[support] Background ai synthesis failed:', err))
+      })
+    }
+    return doc
+  }
+}
+
+function createTrackWaitingSince(): CollectionBeforeChangeHook {
+  return ({ data, originalDoc, operation }) => {
+    if (operation !== 'update') return data
+    const previous = originalDoc?.status
+    const next = data.status ?? previous
+    if (next === 'waiting_client' && previous !== 'waiting_client') {
+      data.waitingSince = new Date().toISOString()
+      data.autoCloseRemindedAt = null
+    } else if (next !== 'waiting_client' && previous === 'waiting_client') {
+      data.waitingSince = null
+      data.autoCloseRemindedAt = null
+    }
+    return data
+  }
+}
+
+function createGenerateTitleOnCreate(
+  generator: NonNullable<SupportCapabilities['aiTitles']>,
+): CollectionAfterChangeHook {
+  return ({ doc, operation, req }) => {
+    if (operation === 'create' && doc?.id && !doc.displayTitle) {
+      setImmediate(() => {
+        generator.generate(req.payload, doc.id)
+          .catch((err) => console.error('[support] Background title generation failed:', err))
       })
     }
     return doc
@@ -441,11 +505,14 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
   projectCollectionSlug?: string
   documentsCollectionSlug?: string
   notificationSlug?: string
+  ticketNumber?: { prefix?: string; padding?: number }
+  capabilities?: SupportCapabilities
 }): CollectionConfig {
   const notificationSlug = options?.notificationSlug || 'admin-notifications'
 
   // Build dynamic fields
   const dynamicFields: Field[] = []
+  const capabilities = options?.capabilities
 
   // Conversation UI field at the top
   dynamicFields.push({
@@ -467,6 +534,29 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
       label: 'Projet',
       admin: { position: 'sidebar' },
     })
+  }
+
+  if (capabilities?.aiTitles) {
+    dynamicFields.push(
+      {
+        name: 'displayTitle',
+        type: 'text',
+        label: "Titre d'affichage",
+        admin: { description: "Titre court suggéré par l'IA, éditable sans modifier le sujet email." },
+      },
+      {
+        name: 'displayTitleStatus',
+        type: 'select',
+        defaultValue: 'none',
+        options: [
+          { label: 'Aucun', value: 'none' },
+          { label: 'Génération en cours', value: 'pending' },
+          { label: 'Suggéré', value: 'suggested' },
+          { label: 'Validé', value: 'validated' },
+          { label: 'Échec', value: 'error' },
+        ],
+      },
+    )
   }
 
   // Billing collapsible fields
@@ -548,6 +638,41 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
       ],
     },
   ]
+
+  if (capabilities?.detailedBilling) {
+    billingFields.push(
+      {
+        name: 'billedAt',
+        type: 'date',
+        label: 'Facturé le',
+      },
+      {
+        name: 'billingLines',
+        type: 'array',
+        label: 'Lignes de facturation',
+        fields: [
+          { name: 'period', type: 'text', label: 'Période (AAAA-MM)' },
+          { name: 'label', type: 'text', label: 'Libellé' },
+          { name: 'amount', type: 'number', label: 'Montant (€)' },
+          { name: 'billingType', type: 'select', options: ['hourly', 'flat'], defaultValue: 'flat', label: 'Type' },
+          { name: 'billed', type: 'checkbox', defaultValue: false, label: 'Facturé' },
+          { name: 'billedAt', type: 'date', label: 'Facturé le' },
+        ],
+      },
+    )
+  }
+
+  if (capabilities?.volunteering) {
+    billingFields.push(
+      { name: 'volunteer', type: 'checkbox', defaultValue: false, label: 'Bénévolat (non facturé)' },
+      {
+        name: 'volunteerValue',
+        type: 'number',
+        label: 'Valeur offerte (€)',
+        admin: { condition: (data) => Boolean(data?.volunteer) },
+      },
+    )
+  }
 
   return {
     slug: slugs.tickets,
@@ -688,6 +813,19 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
           { name: 'mergedInto', type: 'relationship', relationTo: slugs.tickets, label: 'Fusionne dans', admin: { readOnly: true } },
           { name: 'autoCloseRemindedAt', type: 'date', label: 'Rappel auto-close envoye', admin: { readOnly: true, date: { displayFormat: 'dd/MM/yyyy HH:mm' } } },
           { name: 'autoCloseScheduledAt', type: 'date', index: true, label: 'Fermeture auto programmee', admin: { readOnly: true, date: { displayFormat: 'dd/MM/yyyy HH:mm' }, description: 'Echeance ferme posee par une relance manuelle. Le ticket se ferme apres cette date sans reponse client.' } },
+          { name: 'waitingSince', type: 'date', index: true, label: 'En attente depuis', admin: { readOnly: true } },
+          {
+            name: 'relanceDelayDays',
+            type: 'select',
+            defaultValue: '2',
+            label: 'Délai de relance client',
+            options: [
+              { label: '1 jour', value: '1' },
+              { label: '2 jours', value: '2' },
+              { label: '3 jours', value: '3' },
+            ],
+          },
+          { name: 'satisfactionRemindedAt', type: 'date', admin: { hidden: true, readOnly: true } },
         ],
       },
       // Sidebar
@@ -753,15 +891,17 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
     ],
     hooks: {
       beforeChange: [
-        createAssignTicketNumber(slugs),
+        createAssignTicketNumber(slugs, options?.ticketNumber),
         createAssignClientOnCreate(slugs),
         createAutoAssignAdmin(slugs),
         autoPaidAt,
+        createTrackWaitingSince(),
         createRestrictClientUpdates(slugs),
       ],
       afterChange: [
         createTrackSLA(slugs),
-        createTrackAiSummaryOnResolve(slugs),
+        createTrackAiSummaryOnResolve(slugs, capabilities?.aiSummaries),
+        ...(capabilities?.aiTitles ? [createGenerateTitleOnCreate(capabilities.aiTitles)] : []),
         createAssignSlaDeadlines(slugs, notificationSlug),
         createPauseSlaOnHold(slugs),
         createCheckSlaOnResolve(slugs, notificationSlug),

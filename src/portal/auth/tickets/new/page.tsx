@@ -317,7 +317,7 @@ export default function NewTicketPage() {
         )}
 
         {/* Main card */}
-        <div className={`rounded-2xl border bg-white dark:bg-slate-800/50 shadow-sm backdrop-blur-sm transition-all duration-200 ${
+        <div className={`rounded-2xl border bg-white dark:bg-slate-800/50 shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 ${
           isDragging
             ? 'border-blue-400 dark:border-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/30 shadow-blue-100/50'
             : 'border-slate-200 dark:border-slate-700/50'
@@ -335,7 +335,7 @@ export default function NewTicketPage() {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Ex: Erreur 404 sur la page contact"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
               {/* KB deflection — suggest existing articles before ticket creation */}
               <KbDeflection query={subject} limit={3} />
@@ -353,7 +353,7 @@ export default function NewTicketPage() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Decrivez votre probleme en detail. Plus vous donnez d'informations, plus nous pourrons vous aider rapidement."
-                className="w-full resize-y rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm leading-relaxed text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
+                className="w-full resize-y rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-4 py-3 text-sm leading-relaxed text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-blue-500/10"
               />
             </div>
 
@@ -385,7 +385,7 @@ export default function NewTicketPage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="group flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-900/30 px-6 py-4 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
+                className="group flex w-full items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-600 bg-slate-50/50 dark:bg-slate-900/30 px-6 py-4 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors">
@@ -461,7 +461,7 @@ export default function NewTicketPage() {
                   return (
                     <label
                       key={cat.value}
-                      className={`group relative flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all ${
+                      className={`group relative flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none ${
                         isActive
                           ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 dark:border-blue-400 dark:bg-blue-950/40'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600 dark:hover:bg-slate-800'
@@ -509,7 +509,7 @@ export default function NewTicketPage() {
                   return (
                     <label
                       key={p.value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all ${
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none ${
                         isActive
                           ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 dark:border-blue-400 dark:bg-blue-950/40'
                           : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600 dark:hover:bg-slate-800'
@@ -568,7 +568,7 @@ export default function NewTicketPage() {
                   id="project"
                   value={project}
                   onChange={(e) => setProject(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                 >
                   <option value="">Aucun projet specifique</option>
                   {projects.map((p) => (
@@ -590,7 +590,7 @@ export default function NewTicketPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

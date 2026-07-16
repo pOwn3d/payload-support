@@ -3,7 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { handleAuthError, AuthError } from '../utils/auth'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFindByID, dbFind, dbCreate, dbCount } from '../utils/db'
 
 // Simple RFC-5322 style sanity check — same level of strictness as the
@@ -16,7 +16,6 @@ const MAX_TRANSFERS_PER_DAY = 5
 // In-memory fail-closed rate limiter — enforced even when the persistent
 // emailLogs-based check is unavailable (collection disabled). Prevents the
 // endpoint from becoming an unbounded outbound mailer.
-const transferLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_DAY)
 
 /**
  * POST /api/support/tickets/:id/transfer
@@ -33,7 +32,8 @@ const transferLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_D
  *  - Logs the action in `email-logs` (action='transfer') when that collection exists
  *  - Rate-limited to 5 transfers per ticket per 24h
  */
-export function createTransferTicketEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createTransferTicketEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const transferLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_DAY, store)
   return {
     path: '/support/tickets/:id/transfer',
     method: 'post',
@@ -82,7 +82,7 @@ export function createTransferTicketEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Fail-closed in-memory rate limit (per user + ticket): enforced even
         // when the persistent emailLogs check below cannot run.
-        if (transferLimiter.check(`${req.user.id}:${ticketId}`)) {
+        if (await transferLimiter.check(`${req.user.id}:${ticketId}`, req)) {
           return Response.json(
             { error: `Limite atteinte (${MAX_TRANSFERS_PER_DAY} transferts par 24h sur ce ticket)` },
             { status: 429 },

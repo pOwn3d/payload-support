@@ -441,7 +441,7 @@ export function LiveChat() {
         width: 380,
         maxWidth: 'calc(100vw - 32px)',
         height: screen === 'identify' || screen === 'rating' ? 'auto' : 520,
-        maxHeight: 'calc(100vh - 32px)',
+        maxHeight: 'calc(100dvh - 32px)',
         borderRadius: 16,
         border: '3px solid #000',
         backgroundColor: '#fff',

@@ -23,6 +23,13 @@ export { resolveSlugs, DEFAULT_SLUGS } from './utils/slugs'
 export type { CollectionSlugs } from './utils/slugs'
 export { readSupportSettings, readUserPrefs, DEFAULT_SETTINGS, DEFAULT_USER_PREFS } from './utils/readSettings'
 export type { SupportSettings, UserPrefs } from './utils/readSettings'
+export { MemoryRateLimitStore, PayloadRateLimitStore, RateLimiter } from './utils/rateLimiter'
+export type { RateLimitEntry, RateLimitStore } from './utils/rateLimiter'
+export { DEFAULT_INBOUND_EMAIL_LIMITS, validateInboundEmailPayload, verifySecret } from './utils/webhookSecurity'
+export type { InboundEmailInput, InboundEmailLimits, InboundEmailValidationError } from './utils/webhookSecurity'
+
+// Endpoint factories for framework adapters (for example Next route handlers).
+export { createLoginEndpoint, createOAuthGoogleEndpoint, createTrackOpenEndpoint } from './endpoints'
 export { createAdminNotification } from './utils/adminNotification'
 export { dispatchWebhook } from './utils/webhookDispatcher'
 export { generateTicketSynthesis } from './utils/generateTicketSynthesis'

@@ -154,7 +154,7 @@ export function TicketReplyForm({ ticketId }: { ticketId: number | string }) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`rounded-xl transition-all ${
+      className={`rounded-xl transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none ${
         isDragging
           ? 'bg-blue-50/50 dark:bg-blue-900/20 ring-2 ring-blue-400/20'
           : ''
@@ -193,7 +193,7 @@ export function TicketReplyForm({ ticketId }: { ticketId: number | string }) {
             onChange={(e) => { setBody(e.target.value); setBodyHtml(''); sendTyping() }}
             placeholder="Écrivez votre message..."
             rows={5}
-            className="w-full resize-y rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm leading-relaxed text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+            className="w-full resize-y rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm leading-relaxed text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
           />
         </div>
 
@@ -222,7 +222,7 @@ export function TicketReplyForm({ ticketId }: { ticketId: number | string }) {
           <button
             type="submit"
             disabled={loading || (!body.trim() && !bodyHtml)}
-            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
+            className="ml-auto inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:bg-blue-700 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-sm"
           >
             {loading ? (
               <>
