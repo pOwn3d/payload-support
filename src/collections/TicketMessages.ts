@@ -1,5 +1,6 @@
 import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import type { SupportCapabilities } from '../types'
 import { escapeHtml, emailWrapper, emailButton, emailQuote, emailParagraph, emailRichContent, emailTrackingPixel } from '../utils/emailTemplate'
 import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
@@ -403,8 +404,70 @@ function createNotifyMentions(slugs: CollectionSlugs): CollectionAfterChangeHook
   }
 }
 
+function createSmsNotification(
+  slugs: CollectionSlugs,
+  capability: NonNullable<SupportCapabilities['sms']>,
+): CollectionAfterChangeHook {
+  return async ({ doc, operation, req }) => {
+    try {
+      if (operation !== 'create' || !doc.notifyBySms) return doc
+      if (doc.authorType !== 'admin' || doc.isInternal) return doc
+      if (doc.scheduledAt && !doc.scheduledSent) return doc
+      if (capability.adapter.isConfigured && !capability.adapter.isConfigured()) return doc
+
+      const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
+      const ticket = await req.payload.findByID({
+        collection: slugs.tickets,
+        id: ticketId,
+        depth: 1,
+        overrideAccess: true,
+      }) as Record<string, unknown>
+      const client = typeof ticket.client === 'object' && ticket.client
+        ? ticket.client as Record<string, unknown>
+        : null
+      if (!client) return doc
+      const target = (typeof doc.smsTo === 'string' && doc.smsTo.trim()) || String(client.phone || '')
+      if (!target) return doc
+      const fallback = `ConsilioWEB : nouvelle réponse au ticket ${String(ticket.ticketNumber || '')}.`
+      const message = (typeof doc.smsMessage === 'string' && doc.smsMessage.trim())
+        || (capability.buildMessage ? await capability.buildMessage({ client, ticket }) : fallback)
+      const result = await capability.adapter.send({
+        message,
+        to: target,
+        payload: req.payload,
+        ticket,
+        client,
+      })
+      if (!result.sent && !result.skipped) {
+        req.payload.logger?.warn(`[support:sms] Delivery failed: ${result.error || 'unknown error'}`)
+      }
+    } catch (error) {
+      req.payload.logger?.warn(`[support:sms] Adapter error: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    return doc
+  }
+}
+
+function createThreadCleanup(
+  capability: NonNullable<SupportCapabilities['threadCleanup']>,
+): CollectionAfterChangeHook {
+  return async ({ doc, operation, req }) => {
+    if (operation !== 'create' || doc.isInternal) return doc
+    if (doc.authorType !== 'client' && doc.authorType !== 'email') return doc
+    const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
+    if (!ticketId) return doc
+    try {
+      await capability.clean(req.payload, ticketId, doc.id)
+    } catch (error) {
+      req.payload.logger?.warn(`[support:thread-cleanup] ${error instanceof Error ? error.message : String(error)}`)
+    }
+    return doc
+  }
+}
+
 export function createTicketMessagesCollection(slugs: CollectionSlugs, options?: {
   notificationSlug?: string
+  capabilities?: SupportCapabilities
 }): CollectionConfig {
   const notificationSlug = options?.notificationSlug || 'admin-notifications'
 
@@ -458,10 +521,22 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs, options?:
       { name: 'emailSentAt', type: 'date', label: 'Email envoye le', admin: { hidden: true } },
       { name: 'emailSentTo', type: 'text', label: 'Email envoye a', admin: { hidden: true } },
       { name: 'emailOpenedAt', type: 'date', label: 'Email ouvert le', admin: { hidden: true } },
+      ...(options?.capabilities?.sms ? [
+        { name: 'notifyBySms', type: 'checkbox' as const, defaultValue: false, admin: { hidden: true } },
+        { name: 'smsTo', type: 'text' as const, admin: { hidden: true } },
+        { name: 'smsMessage', type: 'textarea' as const, admin: { hidden: true } },
+      ] : []),
+      ...(options?.capabilities?.threadCleanup ? [
+        { name: 'isMarkedAsNoise', type: 'checkbox' as const, defaultValue: false, admin: { hidden: true } },
+        { name: 'noiseReason', type: 'text' as const, admin: { hidden: true } },
+        { name: 'emailContext', type: 'json' as const, admin: { hidden: true } },
+        { name: 'emailBodyOriginal', type: 'textarea' as const, admin: { hidden: true } },
+      ] : []),
     ],
     hooks: {
       beforeChange: [createSanitizeMessageHtml(), createResolveMentions(slugs), createAssignAuthor(slugs)],
       afterChange: [
+        ...(options?.capabilities?.sms ? [createSmsNotification(slugs, options.capabilities.sms)] : []),
         createAutoUpdateStatus(slugs),
         createNotifyClient(slugs),
         createTrackFirstResponse(slugs),
@@ -471,6 +546,7 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs, options?:
         createFireMessageWebhooks(slugs),
         createDispatchWebhookOnReply(slugs),
         createNotifyMentions(slugs),
+        ...(options?.capabilities?.threadCleanup ? [createThreadCleanup(options.capabilities.threadCleanup)] : []),
       ],
     },
     access: {

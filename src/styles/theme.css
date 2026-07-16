@@ -136,7 +136,7 @@
   --support-cat-core: #2563eb;
   --support-cat-communication: #16a34a;
   --support-cat-productivity: #d97706;
-  --support-cat-advanced: #7c3aed;
+  --support-cat-advanced: #17807c;
 
   /* ------------------------------------------
    * 8. PROJECT STATUS COLORS
@@ -385,7 +385,7 @@
   --support-activity-line-color: var(--support-border-color);
   --support-activity-dot-default: var(--support-text-muted);
   --support-activity-dot-status: var(--support-primary);
-  --support-activity-dot-assign: #7c3aed;
+  --support-activity-dot-assign: #17807c;
   --support-activity-dot-merge: #0891b2;
 
   /* ------------------------------------------
@@ -465,10 +465,10 @@
    * Indicator for messages scheduled to be
    * sent at a future date/time.
    * ------------------------------------------ */
-  --support-scheduled-bg: #f5f3ff;
+  --support-scheduled-bg: #eef8f7;
   --support-scheduled-border: #a78bfa;
   --support-scheduled-text: #5b21b6;
-  --support-scheduled-icon: #7c3aed;
+  --support-scheduled-icon: #17807c;
 
   /* ------------------------------------------
    * 34. EMAIL TRACKING
@@ -615,8 +615,8 @@
 
   /* Scheduled */
   --support-scheduled-bg: #2e1065;
-  --support-scheduled-border: #7c3aed;
-  --support-scheduled-text: #c4b5fd;
+  --support-scheduled-border: #17807c;
+  --support-scheduled-text: #80bbb7;
 
   /* Email tracking */
   --support-email-pending: #64748b;

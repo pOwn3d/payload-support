@@ -1,6 +1,7 @@
 import type { CollectionConfig, CollectionAfterChangeHook, CollectionBeforeLoginHook } from 'payload'
 import { APIError } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import type { SupportCapabilities } from '../types'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 
@@ -92,7 +93,10 @@ function createEnforce2FA(slugs: CollectionSlugs): CollectionBeforeLoginHook {
 
 // ─── Collection factory ──────────────────────────────────
 
-export function createSupportClientsCollection(slugs: CollectionSlugs): CollectionConfig {
+export function createSupportClientsCollection(
+  slugs: CollectionSlugs,
+  options?: { capabilities?: SupportCapabilities },
+): CollectionConfig {
   return {
     slug: slugs.supportClients,
     labels: {
@@ -354,6 +358,44 @@ export function createSupportClientsCollection(slugs: CollectionSlugs): Collecti
           position: 'sidebar',
         },
       },
+      ...(options?.capabilities?.sms ? [
+        {
+          name: 'notifyBySmsChannel',
+          type: 'checkbox' as const,
+          defaultValue: false,
+          label: 'Canal SMS activé',
+          admin: { position: 'sidebar' as const },
+        },
+      ] : []),
+      ...(options?.capabilities?.aiTitles || options?.capabilities?.aiSummaries ? [
+        {
+          name: 'preferredFormality',
+          type: 'select' as const,
+          defaultValue: 'auto',
+          label: 'Formule IA',
+          options: [
+            { label: 'Auto', value: 'auto' },
+            { label: 'Tutoiement', value: 'tutoyer' },
+            { label: 'Vouvoiement', value: 'vouvoyer' },
+          ],
+          admin: { position: 'sidebar' as const },
+        },
+        {
+          name: 'preferredTone',
+          type: 'select' as const,
+          defaultValue: 'auto',
+          label: 'Ton IA',
+          options: [
+            { label: 'Auto', value: 'auto' },
+            { label: 'Neutre / professionnel', value: 'neutre' },
+            { label: 'Amical', value: 'amical' },
+            { label: 'Direct / concis', value: 'direct' },
+            { label: 'Formel', value: 'formel' },
+          ],
+          admin: { position: 'sidebar' as const },
+        },
+        { name: 'lastRewriteStyle', type: 'text' as const, admin: { hidden: true } },
+      ] : []),
     ],
     hooks: {
       beforeLogin: [createEnforce2FA(slugs)],

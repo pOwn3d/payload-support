@@ -82,7 +82,7 @@ function ResetPasswordForm() {
           </div>
           <Link
             href="/support/login"
-            className="block w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-center text-base font-black text-black shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
+            className="block w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-center text-base font-black text-black shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000]"
           >
             Se connecter
           </Link>
@@ -131,7 +131,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-base font-black text-black shadow-[4px_4px_0px_#000] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] disabled:opacity-50"
+            className="w-full rounded-xl border-3 border-black bg-[#00E5FF] px-6 py-3 text-base font-black text-black shadow-[4px_4px_0px_#000] transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_#000] disabled:opacity-50"
           >
             {loading ? 'Modification...' : 'Modifier le mot de passe'}
           </button>
@@ -143,7 +143,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-12">
       <Suspense fallback={<p className="text-gray-400">Chargement...</p>}>
         <ResetPasswordForm />
       </Suspense>

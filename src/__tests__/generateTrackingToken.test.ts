@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateTrackingToken } from '../endpoints/track-open'
+import { generateTrackingToken, verifyTrackingToken } from '../endpoints/track-open'
 
 describe('generateTrackingToken — determinism', () => {
   it('returns the same token for identical inputs (deterministic)', () => {
@@ -8,14 +8,28 @@ describe('generateTrackingToken — determinism', () => {
     expect(a).toBe(b)
   })
 
-  it('always returns exactly 16 characters', () => {
+  it('returns the complete SHA-256 HMAC', () => {
     const token = generateTrackingToken('1', '2', 'secret')
-    expect(token).toHaveLength(16)
+    expect(token).toHaveLength(64)
   })
 
   it('returns only hex characters (0-9 a-f)', () => {
     const token = generateTrackingToken('100', '200', 'anothersecret')
-    expect(token).toMatch(/^[0-9a-f]{16}$/)
+    expect(token).toMatch(/^[0-9a-f]{64}$/)
+  })
+})
+
+describe('verifyTrackingToken', () => {
+  it('accepts the matching ticket and message signature', () => {
+    const token = generateTrackingToken('42', '7', 'secret')
+    expect(verifyTrackingToken('42', '7', token, 'secret')).toBe(true)
+  })
+
+  it('rejects malformed and mismatched signatures without throwing', () => {
+    const token = generateTrackingToken('42', '7', 'secret')
+    expect(verifyTrackingToken('42', '8', token, 'secret')).toBe(false)
+    expect(verifyTrackingToken('42', '7', 'not-hex', 'secret')).toBe(false)
+    expect(verifyTrackingToken('42', '7', token.slice(2), 'secret')).toBe(false)
   })
 })
 

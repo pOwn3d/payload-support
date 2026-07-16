@@ -531,7 +531,7 @@
   gap: 8px;
   padding: 8px 14px;
   font-size: 12px;
-  color: #7c3aed;
+  color: #17807c;
   font-weight: 500;
 }
 
@@ -539,7 +539,7 @@
   display: flex;
   gap: 3px;
   span {
-    width: 5px; height: 5px; border-radius: 50%; background: #7c3aed;
+    width: 5px; height: 5px; border-radius: 50%; background: #17807c;
     animation: bounce 1.2s infinite;
     &:nth-child(2) { animation-delay: 150ms; }
     &:nth-child(3) { animation-delay: 300ms; }
@@ -612,7 +612,7 @@
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
-// Bouton IA — accent purple, pill style
+// AI button — teal accent, pill style
 .toolbarBtnAi {
   background: var(--theme-accent-50, color-mix(in srgb, var(--theme-accent-500, #6b46e8) 10%, transparent));
   border-color: color-mix(in srgb, var(--theme-accent-500, #6b46e8) 25%, transparent);

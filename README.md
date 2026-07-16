@@ -9,7 +9,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-1f8a5b)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-18+-1f8a5b)](https://nodejs.org)
 [![Payload](https://img.shields.io/badge/payload-3.x-1f8a5b)](https://payloadcms.com)
-[![Tests](https://img.shields.io/badge/tests-102%20passing-1f8a5b)](src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-124%20passing-1f8a5b)](src/__tests__)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-1f8a5b)](https://www.typescriptlang.org)
 
 </div>
@@ -154,6 +154,8 @@ supportPlugin({ features: { chat: false, pendingEmails: false }, locale: 'en' })
 ```ts
 supportPlugin({
   features: { ai: true, sla: true, roundRobin: true, webhooks: true, snooze: true },
+  rateLimitStore: 'payload', // shared, persistent limits for multi-instance deployments
+  ticketNumber: { prefix: 'TK-', padding: 6 },
   ai: { provider: 'ollama', model: 'qwen2.5', baseUrl: process.env.OLLAMA_API_URL },
   email: { fromName: 'Support ACME', fromAddress: 'support@acme.com', replyTo: 'support@acme.com' },
   allowedEmailDomains: ['acme.com'],          // restrict OAuth auto-registration
@@ -162,6 +164,50 @@ supportPlugin({
   basePath: '/support',
 })
 ```
+
+### Deployment adapters
+
+Version 2 keeps provider-specific code in the host application while the plugin owns the
+generic support workflow. Optional capabilities include SMS, inbound email, digests, AI
+titles and summaries, detailed billing, volunteering, thread cleanup and project suggestions.
+
+```ts
+supportPlugin({
+  rateLimitStore: 'payload',
+  capabilities: {
+    sms: {
+      adapter: {
+        isConfigured: () => Boolean(process.env.SMS_PROVIDER_ACCOUNT),
+        send: async ({ message, to }) => mySmsProvider.send({ message, to }),
+      },
+    },
+    inboundEmail: {
+      secret: process.env.SUPPORT_WEBHOOK_SECRET,
+      secretHeader: 'x-webhook-secret',
+      handle: handleInboundSupportEmail,
+    },
+    detailedBilling: true,
+    volunteering: true,
+  },
+})
+```
+
+### Upgrading from 1.x
+
+Version 2.0 is a security and ownership release with intentional breaking changes:
+
+1. Generate an additive Payload migration for the new `support-counters` collection and,
+   when `rateLimitStore: 'payload'` is enabled, `support-rate-limits`. Run it before restart.
+2. Regenerate Payload types and the admin import map.
+3. Remove duplicated host routes and enable the plugin endpoints (`skipEndpoints: false`).
+4. Read portal authentication exclusively from the `HttpOnly` cookie. Login, OAuth and 2FA
+   responses no longer expose the JWT in JSON.
+5. Send cron and webhook secrets only through their configured headers. Query-string secrets
+   are rejected.
+6. Custom rate-limit stores must implement the asynchronous `RateLimitStore` interface.
+
+The process-local memory store remains the default for development and single-instance use.
+Use `rateLimitStore: 'payload'` or a shared custom store in production with multiple instances.
 
 ### Run the AI agent on a ticket
 
@@ -212,6 +258,9 @@ import type { SupportPluginConfig, SupportFeatures } from '@consilioweb/payload-
 | `features` | `SupportFeatures` | all `true` | Toggle each feature on/off. |
 | `ai` | `AIProviderConfig` | `anthropic` | AI provider: `anthropic` \| `openai` \| `ollama` \| `custom`. |
 | `email` | `EmailConfig` | — | `fromName`, `fromAddress`, `replyTo`. |
+| `rateLimitStore` | `RateLimitStore \| 'payload'` | memory | Persistent/shared storage for endpoint limits. |
+| `ticketNumber` | `{ prefix?, padding? }` | `TK-`, no padding | Atomic sequential ticket-number formatting. |
+| `capabilities` | `SupportCapabilities` | — | Optional host adapters for SMS, inbound email, AI and deployment-specific workflows. |
 | `locale` | `'fr' \| 'en'` | `'fr'` | Admin/portal language. |
 | `basePath` | `string` | `'/support'` | Admin views prefix. |
 | `userCollectionSlug` | `string` | `'users'` | Agents collection. |
@@ -333,7 +382,10 @@ Security is a first-class concern — several guardrails are validated by integr
 - **Cross-client isolation** — a client can never read another's tickets/messages (filtered by owned tickets).
 - **2FA** enforced server-side (`beforeLogin`); **OAuth** verifies the Google email.
 - **Sanitization** of message HTML server-side (stored-XSS protection).
-- **HMAC-signed** webhooks, signed tracking pixel, fail-closed secrets.
+- **HMAC-signed** webhooks and tracking pixels with constant-time verification and idempotent writes.
+- **Cookie-only JWTs** for portal authentication (`HttpOnly`, `Secure`, `SameSite=Lax`).
+- **Persistent rate limiting** for authentication, 2FA, chats, invitations, transfers and AI endpoints.
+- **Bounded inbound email** payloads and attachments; cron/webhook secrets are accepted in headers only.
 
 ### Reporting Security Issues
 
@@ -362,7 +414,7 @@ Contributions are very welcome!
 Run the checks before submitting:
 
 ```bash
-npm run typecheck && npm test && npm run build
+pnpm typecheck && pnpm test && pnpm build
 ```
 
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" alt="" />
@@ -370,6 +422,15 @@ npm run typecheck && npm test && npm run build
 ## 📝 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
+
+### [2.0.0] — 2026-07-16
+
+- 🔐 Security hardening for authentication, tracking pixels, webhook/cron secrets, HTML/AI output and inbound-email limits.
+- 🚦 Asynchronous persistent rate limiting with a Payload-backed store and memory fallback.
+- 🔢 Atomic persistent ticket counters with configurable prefix and padding.
+- 🧩 Typed deployment adapters for SMS, inbound email, AI workflows, billing, volunteering, cleanup and project suggestions.
+- 🏗️ The plugin is now the single owner of generic support collections, hooks, views and endpoints.
+- ✅ 124 tests covering the security regressions and new capabilities.
 
 ### [1.1.1] — 2026-06-26
 

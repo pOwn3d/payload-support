@@ -24,7 +24,7 @@ export function FAQSearch({ articles }: { articles: Article[] }) {
   return (
     <div className="relative mb-10">
       {/* Search input */}
-      <div className={`relative rounded-2xl border bg-white dark:bg-slate-800/50 shadow-sm backdrop-blur-sm transition-all duration-200 ${
+      <div className={`relative rounded-2xl border bg-white dark:bg-slate-800/50 shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,transform] motion-reduce:transition-none duration-200 ${
         isFocused
           ? 'border-blue-500 ring-4 ring-blue-500/10 shadow-md'
           : 'border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600'

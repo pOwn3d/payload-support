@@ -3,6 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { dbFind, dbFindByID, dbDelete } from '../utils/db'
 import { emailWrapper, emailParagraph, escapeHtml } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
+import { verifySecret } from '../utils/webhookSecurity'
 
 /**
  * POST /api/support/process-digests   body: { frequency?: 'daily' | 'weekly' }
@@ -18,7 +19,7 @@ export function createProcessDigestsEndpoint(slugs: CollectionSlugs): Endpoint {
     method: 'post',
     handler: async (req) => {
       const secret = req.headers.get('x-cron-secret')
-      if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+      if (!verifySecret(secret, process.env.CRON_SECRET)) {
         return Response.json({ error: 'Non autorisé' }, { status: 401 })
       }
 

@@ -1,6 +1,14 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import type { SupportFeatures } from '../types'
+import type { RateLimitStore } from '../utils/rateLimiter'
+import type { SupportCapabilities } from '../types'
+import {
+  createGenerateMissingTitlesEndpoint,
+  createInboundEmailEndpoint,
+  createProjectSuggestionsEndpoint,
+  createTicketTitleEndpoint,
+} from './capabilities'
 
 import { createAiEndpoint } from './ai'
 import { createAiAgentEndpoint } from './ai-agent'
@@ -112,6 +120,8 @@ export { createInviteCollaboratorEndpoint } from './invite-collaborator'
 export interface SupportEndpointOptions {
   oauth?: OAuthGoogleOptions
   features?: Required<SupportFeatures>
+  rateLimitStore?: RateLimitStore
+  capabilities?: SupportCapabilities
 }
 
 /**
@@ -121,6 +131,7 @@ export interface SupportEndpointOptions {
  */
 export function createSupportEndpoints(slugs: CollectionSlugs, options?: SupportEndpointOptions): Endpoint[] {
   const f = options?.features
+  const rateLimitStore = options?.rateLimitStore
 
   // Core endpoints (always present)
   const endpoints: Endpoint[] = [
@@ -132,28 +143,28 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
     createExportCsvEndpoint(slugs),
     createExportDataEndpoint(slugs),
     createSeedKbEndpoint(slugs),
-    createLoginEndpoint(slugs),
-    createAuth2faEndpoint(slugs),
+    createLoginEndpoint(slugs, rateLimitStore),
+    createAuth2faEndpoint(slugs, rateLimitStore),
     createOAuthGoogleEndpoint(slugs, options?.oauth),
     createDeleteAccountEndpoint(slugs),
     createMergeClientsEndpoint(slugs),
-    createImportConversationEndpoint(slugs),
+    createImportConversationEndpoint(slugs, rateLimitStore),
     createPurgeLogsEndpoint(slugs),
-    createResendNotificationEndpoint(slugs),
+    createResendNotificationEndpoint(slugs, rateLimitStore),
     createUserPrefsGetEndpoint(slugs),
     createUserPrefsPostEndpoint(slugs),
     createEscalateEndpoint(slugs),
     createTicketFeedbackEndpoint(slugs),
-    createTransferTicketEndpoint(slugs),
-    createInviteCollaboratorEndpoint(slugs),
+    createTransferTicketEndpoint(slugs, rateLimitStore),
+    createInviteCollaboratorEndpoint(slugs, rateLimitStore),
   ]
 
   // Conditional endpoints based on feature flags
   if (!f || f.ai !== false) {
-    endpoints.push(createAiEndpoint(slugs))
-    endpoints.push(createAiAgentEndpoint(slugs))
-    endpoints.push(...createClientIntelligenceEndpoint(slugs))
-    endpoints.push(createTicketSynthesisEndpoint(slugs))
+    endpoints.push(createAiEndpoint(slugs, rateLimitStore))
+    endpoints.push(createAiAgentEndpoint(slugs, rateLimitStore))
+    endpoints.push(...createClientIntelligenceEndpoint(slugs, rateLimitStore))
+    endpoints.push(createTicketSynthesisEndpoint(slugs, options?.capabilities?.aiSummaries, rateLimitStore))
   }
   if (!f || f.bulkActions !== false) endpoints.push(createBulkActionEndpoint(slugs))
   if (!f || f.merge !== false) endpoints.push(createMergeTicketsEndpoint(slugs))
@@ -168,18 +179,18 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   if (!f || f.sla !== false) endpoints.push(createSlaCheckEndpoint(slugs))
   if (!f || f.autoClose !== false) {
     endpoints.push(createAutoCloseEndpoint(slugs))
-    endpoints.push(createSendReminderEndpoint(slugs))
+    endpoints.push(createSendReminderEndpoint(slugs, rateLimitStore))
   }
   if (!f || f.customStatuses !== false) endpoints.push(createStatusesEndpoint(slugs))
   if (!f || f.macros !== false) endpoints.push(createApplyMacroEndpoint(slugs))
   if (!f || f.roundRobin !== false) {
     endpoints.push(createRoundRobinConfigGetEndpoint(slugs), createRoundRobinConfigPostEndpoint(slugs))
   }
-  if (!f || f.chatbot !== false) endpoints.push(createChatbotEndpoint(slugs))
+  if (!f || f.chatbot !== false) endpoints.push(createChatbotEndpoint(slugs, rateLimitStore))
   if (!f || f.chat !== false) {
-    endpoints.push(createChatGetEndpoint(slugs), createChatPostEndpoint(slugs))
+    endpoints.push(createChatGetEndpoint(slugs), createChatPostEndpoint(slugs, rateLimitStore))
     endpoints.push(createChatStreamEndpoint(slugs))
-    endpoints.push(createAdminChatGetEndpoint(slugs), createAdminChatPostEndpoint(slugs))
+    endpoints.push(createAdminChatGetEndpoint(slugs), createAdminChatPostEndpoint(slugs, rateLimitStore))
     endpoints.push(createAdminChatStreamEndpoint(slugs))
   }
   if (!f || f.timeTracking !== false) {
@@ -197,6 +208,16 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   endpoints.push(createChannelsWebhookEndpoint(slugs))
   endpoints.push(createVapidKeyEndpoint())
   endpoints.push(createPushSubscribeEndpoint(slugs))
+  if (options?.capabilities?.inboundEmail) {
+    endpoints.push(createInboundEmailEndpoint(options.capabilities.inboundEmail, rateLimitStore))
+  }
+  if (options?.capabilities?.projectSuggestions) {
+    endpoints.push(createProjectSuggestionsEndpoint(slugs, options.capabilities.projectSuggestions, rateLimitStore))
+  }
+  if (options?.capabilities?.aiTitles) {
+    endpoints.push(createTicketTitleEndpoint(slugs, options.capabilities.aiTitles, rateLimitStore))
+    endpoints.push(createGenerateMissingTitlesEndpoint(slugs, options.capabilities.aiTitles, rateLimitStore))
+  }
 
   return endpoints
 }

@@ -1,15 +1,15 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter } from '../utils/rateLimiter'
+import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbCreate } from '../utils/db'
 
-const loginLimiter = new RateLimiter(15 * 60_000, 10) // 10 per 15 min
 
 /**
  * POST /api/support/login
  * Client login endpoint.
  */
-export function createLoginEndpoint(slugs: CollectionSlugs): Endpoint {
+export function createLoginEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
+  const loginLimiter = new RateLimiter(15 * 60_000, 10, store)
   return {
     path: '/support/login',
     method: 'post',
@@ -19,7 +19,7 @@ export function createLoginEndpoint(slugs: CollectionSlugs): Endpoint {
       // the primary brute-force control is Payload's account lock (maxLoginAttempts).
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
 
-      if (loginLimiter.check(ip)) {
+      if (await loginLimiter.check(ip, req)) {
         return Response.json(
           { error: 'Trop de tentatives. Réessayez dans quelques minutes.' },
           { status: 429 },
@@ -66,7 +66,6 @@ export function createLoginEndpoint(slugs: CollectionSlugs): Endpoint {
           JSON.stringify({
             message: 'Login successful',
             user: result.user,
-            token: result.token,
             exp: result.exp,
           }),
           { status: 200, headers },

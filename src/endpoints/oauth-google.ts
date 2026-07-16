@@ -210,7 +210,7 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAut
             `payload-token=${token}; HttpOnly; ${cookieSecure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=${tokenExpiration}`,
           )
 
-          return new Response(JSON.stringify({ token, user: clientDoc, exp }), {
+          return new Response(JSON.stringify({ user: clientDoc, exp }), {
             status: 200,
             headers,
           })

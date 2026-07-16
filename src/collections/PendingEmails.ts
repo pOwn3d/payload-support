@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { verifySecret } from '../utils/webhookSecurity'
 
 // ─── Collection factory ──────────────────────────────────
 
@@ -20,7 +21,7 @@ export function createPendingEmailsCollection(slugs: CollectionSlugs): Collectio
         // Allow admin users or webhook calls with secret header
         if (req.user?.collection === slugs.users) return true
         const webhookSecret = req.headers.get('x-webhook-secret')
-        if (webhookSecret && process.env.SUPPORT_WEBHOOK_SECRET && webhookSecret === process.env.SUPPORT_WEBHOOK_SECRET) return true
+        if (verifySecret(webhookSecret, process.env.SUPPORT_WEBHOOK_SECRET)) return true
         return false
       },
     },
