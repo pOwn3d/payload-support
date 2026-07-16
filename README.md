@@ -9,7 +9,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-1f8a5b)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-18+-1f8a5b)](https://nodejs.org)
 [![Payload](https://img.shields.io/badge/payload-3.x-1f8a5b)](https://payloadcms.com)
-[![Tests](https://img.shields.io/badge/tests-124%20passing-1f8a5b)](src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-132%20passing-1f8a5b)](src/__tests__)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-1f8a5b)](https://www.typescriptlang.org)
 
 </div>
@@ -422,6 +422,12 @@ pnpm typecheck && pnpm test && pnpm build
 ## 📝 Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for the full history.
+
+### [2.0.1] — 2026-07-16
+
+- 🌍 Loads the complete shared FR/EN catalogs in every support admin view, fixing raw keys such as ticket statuses, relative dates, time tracking, tags and billing labels.
+- 🧭 Removes translation-key collisions in the support dashboard and settings views.
+- ✅ Adds regression coverage for all 518 literal translation keys used by the support UI and keeps both locales aligned (132 tests passing).
 
 ### [2.0.0] — 2026-07-16
 
