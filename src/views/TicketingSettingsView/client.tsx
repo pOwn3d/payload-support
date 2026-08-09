@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from 'lucide-react'
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
-import { getFeatures, saveFeatures, DEFAULT_FEATURES, type TicketingFeatures } from '../../components/TicketConversation/config'
+import { DEFAULT_FEATURES, type TicketingFeatures } from '../../components/TicketConversation/config'
+import { useFeatures } from '../../components/TicketConversation/hooks/useFeatures'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import ts from '../../styles/TicketingSettings.module.scss'
 
@@ -301,7 +302,7 @@ export const TicketingSettingsClient: React.FC = () => {
   const { t } = useTranslation()
   const FEATURE_LIST = React.useMemo(() => getFeatureList(t), [t])
   const CATEGORIES = React.useMemo(() => getCategories(t), [t])
-  const [features, setFeatures] = useState<TicketingFeatures>(() => getFeatures())
+  const { features, setFeatures, save: saveFeatures } = useFeatures()
   const [settings, setSettings] = useState<AllSettings>(DEFAULT_SETTINGS)
   const [signature, setSignature] = useState('')
   const [saved, setSaved] = useState(false)
@@ -355,15 +356,16 @@ export const TicketingSettingsClient: React.FC = () => {
 
   const handleSave = async () => {
     setSaving(true)
-    // Save features to localStorage (UI-only flags)
-    saveFeatures(features)
-    // Save global settings + per-user prefs
+    // Feature flags and the other blocks share one preference row, so the two
+    // writes are sequenced: running them in parallel would make the second
+    // request merge onto settings read before the first one landed.
+    const featuresOk = await saveFeatures(features)
     const [settingsOk, prefsOk] = await Promise.all([
       saveSettingsToAPI(settings),
       saveUserPrefs({ locale: settings.locale.language, signature }),
     ])
     setSaving(false)
-    if (settingsOk && prefsOk) {
+    if (featuresOk && settingsOk && prefsOk) {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     }

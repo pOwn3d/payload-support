@@ -133,16 +133,10 @@ function createAutoAssignAdmin(slugs: CollectionSlugs): CollectionBeforeChangeHo
       const { payload } = req
       let roundRobinEnabled = false
       try {
-        const prefs = await payload.find({
-          collection: 'payload-preferences',
-          where: { key: { equals: 'support-round-robin' } },
-          limit: 1,
-          depth: 0,
-          overrideAccess: true,
-        })
-        if (prefs.docs.length > 0) {
-          roundRobinEnabled = (prefs.docs[0].value as { enabled?: boolean })?.enabled === true
-        }
+        // Single source of truth: the `features` block of the support settings,
+        // which also falls back to the legacy `support-round-robin` row.
+        const settings = await readSupportSettings(payload)
+        roundRobinEnabled = settings.features.roundRobin === true
       } catch (err) { console.warn('[support] Failed to read round-robin preferences:', err) }
 
       const admins = await payload.find({

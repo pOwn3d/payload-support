@@ -268,6 +268,38 @@ import type { SupportPluginConfig, SupportFeatures } from '@consilioweb/payload-
 | `collectionSlugs` | `object` | — | Collection slug overrides. |
 | `skipCollections` / `skipViews` / `skipEndpoints` | `boolean` | `false` | Skip injecting that part. |
 
+### Build-time vs runtime feature flags
+
+Two distinct things share the word "features", and they act at different moments:
+
+| | `supportPlugin({ features })` | Runtime flags (Settings view) |
+|---|---|---|
+| Type | `SupportFeatures` | `TicketingFeatures` |
+| Decides | which collections and endpoints **exist** | which UI sections are **shown**, plus round-robin and auto-close |
+| Changed by | editing `payload.config.ts` + redeploy | an admin, in the ticketing settings view |
+| Stored in | code | the `features` block of the `support-settings` preference row |
+
+Turning a feature off at build time removes its collection and endpoints, so the
+matching runtime flag has nothing left to show. Runtime flags only ever narrow
+what a build-time-enabled feature exposes.
+
+Runtime flags are read through `GET /api/support/settings` and written through
+`POST /api/support/settings` (admin-only). They apply to every browser and to
+server-side code — the auto-assign hook and the auto-close cron read the same
+values. `localStorage` is still written, but only as a cache so an admin screen
+stays usable when the settings call fails; it is never authoritative.
+
+Two flags are projections, deliberately not stored twice: `features.autoClose`
+mirrors `settings.autoClose.enabled`, and `features.autoCloseDays` mirrors
+`settings.autoClose.daysBeforeClose`.
+
+> **Upgrading from ≤ 2.0.1** — flags used to live in each browser's
+> `localStorage` (`ticketing_features`). The first admin view loaded after the
+> upgrade pushes that browser's values to the server, once, if the server has
+> none yet; from then on the server wins. Nothing to run by hand, nothing is
+> lost. If several machines disagree, the first one to load seeds the server and
+> the others adopt its copy.
+
 ### Environment variables
 
 | Env var | Required | Description |

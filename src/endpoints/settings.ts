@@ -1,59 +1,21 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-import { invalidateSupportSettingsCache } from '../utils/readSettings'
-import { dbFind } from '../utils/db'
-
-const PREF_KEY = 'support-settings'
-
-interface SupportSettings {
-  email: {
-    fromAddress: string
-    fromName: string
-    replyToAddress: string
-  }
-  ai: {
-    provider: 'anthropic' | 'openai' | 'gemini' | 'ollama'
-    model: string
-    enableSentiment: boolean
-    enableSynthesis: boolean
-    enableSuggestion: boolean
-    enableRewrite: boolean
-  }
-  sla: {
-    firstResponseMinutes: number
-    resolutionMinutes: number
-    businessHoursOnly: boolean
-    escalationEmail: string
-  }
-  autoClose: {
-    enabled: boolean
-    daysBeforeClose: number
-    reminderDaysBefore: number
-  }
-}
-
-const DEFAULT_SUPPORT_SETTINGS: SupportSettings = {
-  email: { fromAddress: '', fromName: 'Support', replyToAddress: '' },
-  ai: {
-    provider: 'anthropic',
-    model: 'claude-haiku-4-5-20251001',
-    enableSentiment: true,
-    enableSynthesis: true,
-    enableSuggestion: true,
-    enableRewrite: true,
-  },
-  sla: {
-    firstResponseMinutes: 120,
-    resolutionMinutes: 1440,
-    businessHoursOnly: true,
-    escalationEmail: '',
-  },
-  autoClose: { enabled: true, daysBeforeClose: 7, reminderDaysBefore: 2 },
-}
+import {
+  SUPPORT_SETTINGS_PREF_KEY as PREF_KEY,
+  invalidateSupportSettingsCache,
+  mergeSupportSettings,
+  readSupportSettingsState,
+  type SupportSettings,
+} from '../utils/readSettings'
+import { stripProjectedFeatures } from '../utils/features'
 
 /**
  * GET /api/support/settings — Read support settings
+ *
+ * `featuresConfigured` tells the admin UI whether the server has ever had
+ * feature flags saved; a client still holding pre-2.1 `localStorage` flags uses
+ * it to seed the server once instead of losing its configuration.
  */
 export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -65,25 +27,9 @@ export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
 
         requireAdmin(req, slugs)
 
-        const prefs = await dbFind(payload, 'payload-preferences', {
-          where: { key: { equals: PREF_KEY } },
-          limit: 1,
-          depth: 0,
-          overrideAccess: true,
-        })
+        const { settings, featuresConfigured } = await readSupportSettingsState(payload)
 
-        let settings = { ...DEFAULT_SUPPORT_SETTINGS }
-        if (prefs.docs.length > 0) {
-          const stored = prefs.docs[0].value as Partial<SupportSettings>
-          settings = {
-            email: { ...DEFAULT_SUPPORT_SETTINGS.email, ...stored.email },
-            ai: { ...DEFAULT_SUPPORT_SETTINGS.ai, ...stored.ai },
-            sla: { ...DEFAULT_SUPPORT_SETTINGS.sla, ...stored.sla },
-            autoClose: { ...DEFAULT_SUPPORT_SETTINGS.autoClose, ...stored.autoClose },
-          }
-        }
-
-        return Response.json(settings)
+        return Response.json({ ...settings, featuresConfigured })
       } catch (error) {
         const authResponse = handleAuthError(error)
         if (authResponse) return authResponse
@@ -95,7 +41,11 @@ export function createSettingsGetEndpoint(slugs: CollectionSlugs): Endpoint {
 }
 
 /**
- * POST /api/support/settings — Save all support settings (admin-only)
+ * POST /api/support/settings — Save support settings (admin-only)
+ *
+ * The body is merged onto the CURRENT settings, not onto the defaults: the
+ * feature-flag screen posts `{ features }` alone, and that must not reset the
+ * email / AI / SLA blocks.
  */
 export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -109,19 +59,20 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         const body = (await req.json!()) as Partial<SupportSettings>
 
-        const merged: SupportSettings = {
-          email: { ...DEFAULT_SUPPORT_SETTINGS.email, ...body.email },
-          ai: { ...DEFAULT_SUPPORT_SETTINGS.ai, ...body.ai },
-          sla: { ...DEFAULT_SUPPORT_SETTINGS.sla, ...body.sla },
-          autoClose: { ...DEFAULT_SUPPORT_SETTINGS.autoClose, ...body.autoClose },
-        }
+        const { settings: current } = await readSupportSettingsState(payload)
+        const merged = mergeSupportSettings(body, current)
 
         await payload.db.upsert({
           collection: 'payload-preferences',
           data: {
             key: PREF_KEY,
             user: { relationTo: req.user!.collection, value: req.user!.id },
-            value: merged as unknown as Record<string, unknown>,
+            value: {
+              ...merged,
+              // Persist the flags without the two projected ones, so `features`
+              // and the `autoClose` block can never drift apart.
+              features: stripProjectedFeatures(merged.features),
+            } as unknown as Record<string, unknown>,
           },
           req: { payload, user: req.user } as any,
           where: {
@@ -135,7 +86,7 @@ export function createSettingsPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         invalidateSupportSettingsCache()
 
-        return Response.json(merged)
+        return Response.json({ ...merged, featuresConfigured: true })
       } catch (error) {
         const authResponse = handleAuthError(error)
         if (authResponse) return authResponse

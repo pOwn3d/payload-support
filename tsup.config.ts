@@ -115,6 +115,10 @@ export default defineConfig([
       'src/components/**/*.css',
       'src/styles/**/*.css',
       'src/styles/**/*.scss',
+      // Isomorphic module shared by the client views and the server bundle.
+      // Emitted here too so that the relative imports from dist/views and
+      // dist/components resolve at runtime.
+      'src/utils/features.ts',
       '!src/**/*.d.ts',
     ],
     loader: {
@@ -160,6 +164,7 @@ export default defineConfig([
 
       walkJs('dist/views', addJsExtensions)
       walkJs('dist/components', addJsExtensions)
+      walkJs('dist/utils', addJsExtensions)
       // Fix views.js barrel too
       try {
         addJsExtensions('dist/views.js')

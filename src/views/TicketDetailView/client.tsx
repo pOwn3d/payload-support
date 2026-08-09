@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { RichTextEditor, type RichTextEditorHandle } from '../../components/RichTextEditor/index'
 import { hasCodeBlocks, MessageWithCodeBlocks, CodeBlockRendererHtml } from '../../components/TicketConversation/components/CodeBlock'
 import { CodeBlockInserter } from '../../components/TicketConversation/components/CodeBlockInserter'
-import { getFeatures } from '../shared/config'
+import { useFeatures } from '../../components/TicketConversation/hooks/useFeatures'
 import { computeSlaState, formatSlaRemaining } from '../shared/sla'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import { DATE_LOCALE } from '../shared/dateLocale'
@@ -21,7 +21,7 @@ export const TicketDetailClient: React.FC = () => {
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const ticketId = searchParams.get('id')
-  const features = getFeatures()
+  const { features } = useFeatures()
   const editorRef = useRef<RichTextEditorHandle>(null)
   const threadEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
