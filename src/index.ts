@@ -21,8 +21,12 @@ export { DEFAULT_FEATURES } from './types'
 // Utils
 export { resolveSlugs, DEFAULT_SLUGS } from './utils/slugs'
 export type { CollectionSlugs } from './utils/slugs'
-export { readSupportSettings, readUserPrefs, DEFAULT_SETTINGS, DEFAULT_USER_PREFS } from './utils/readSettings'
-export type { SupportSettings, UserPrefs } from './utils/readSettings'
+export { readSupportSettings, readSupportSettingsState, readUserPrefs, DEFAULT_SETTINGS, DEFAULT_USER_PREFS } from './utils/readSettings'
+export type { SupportSettings, SupportSettingsState, UserPrefs } from './utils/readSettings'
+// Runtime feature flags (server-authoritative, see utils/features.ts). Distinct
+// from the build-time `SupportFeatures` passed to `supportPlugin()`.
+export { DEFAULT_TICKETING_FEATURES, normalizeFeatures, projectAutoClose, stripProjectedFeatures } from './utils/features'
+export type { TicketingFeatures } from './utils/features'
 export { MemoryRateLimitStore, PayloadRateLimitStore, RateLimiter } from './utils/rateLimiter'
 export type { RateLimitEntry, RateLimitStore } from './utils/rateLimiter'
 export { DEFAULT_INBOUND_EMAIL_LIMITS, validateInboundEmailPayload, verifySecret } from './utils/webhookSecurity'

@@ -4,6 +4,55 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Runtime feature flags are now server-side.** They used to live in each
+  browser's `localStorage` under `ticketing_features`, so they never followed an
+  admin from one machine to another and server-side code could not see them.
+  They are stored in the `features` block of the `support-settings` preference
+  row, read through `/api/support/settings`, and `localStorage` is demoted to a
+  cache that keeps the screens usable when that call fails.
+- **`roundRobin` finally has an effect.** The admin toggle wrote to
+  `localStorage` while the ticket auto-assign hook read a separate
+  `support-round-robin` preference row that nothing ever wrote — round-robin was
+  therefore always off. Both paths now read and write
+  `settings.features.roundRobin`; the legacy row is still honoured on read until
+  the first save.
+- **`autoClose` / `autoCloseDays` are no longer stored twice.** They are
+  projections of the pre-existing `settings.autoClose` block (which the
+  auto-close cron already used) and are recomputed on read, so the two can no
+  longer disagree.
+- `POST /api/support/settings` now merges onto the current settings instead of
+  onto the defaults, so a partial body no longer resets the other blocks.
+- `GET /api/support/settings` additionally returns `features` and
+  `featuresConfigured`.
+
+### Migration
+- Flags already set in a browser are pushed to the server **once**, the first
+  time an admin view loads while the server has no `features` block yet. After
+  that the server always wins. Nothing to run by hand; nothing is lost.
+- When several browsers hold different flags, the first one to load after the
+  upgrade seeds the server; the others adopt the server values.
+
+### Breaking
+- `saveFeatures(features)` now returns `Promise<boolean>` (it performs the
+  server write) instead of `void`. Callers that ignored the return value are
+  unaffected.
+- `DEFAULT_FEATURES` exported from `views/shared` and
+  `components/TicketConversation/config` is now an alias of
+  `DEFAULT_TICKETING_FEATURES` (same values).
+
+### Fixed
+- Corrupted or hand-edited stored flags are normalized on read: unknown keys are
+  dropped and wrongly-typed values fall back to their default.
+
+### Tests
+- 35 tests covering normalization, the `autoClose` projection, the cache and its
+  failure modes (SSR, storage that throws), the offline fallbacks of
+  `fetchFeatures` / `saveFeatures`, the one-shot `localStorage` migration, and
+  the server-side merge including the legacy round-robin fallback.
+
 ## [2.0.1] — 2026-07-16
 
 ### Fixed

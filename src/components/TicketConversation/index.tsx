@@ -21,14 +21,14 @@ import { useTicketActions } from './hooks/useTicketActions'
 import { useReply } from './hooks/useReply'
 import { useAI } from './hooks/useAI'
 import { useDocumentIdFromUrl } from './hooks/useDocumentIdFromUrl'
-import { getFeatures, type TicketingFeatures } from './config'
+import { useFeatures } from './hooks/useFeatures'
 import { SkeletonText } from './SkeletonText'
 import { RewriteDropdown } from './RewriteDropdown'
 import '../../styles/theme.css'
 
 const TicketConversation: React.FC = () => {
   const { id } = useDocumentIdFromUrl()
-  const [features] = useState<TicketingFeatures>(() => getFeatures())
+  const { features } = useFeatures()
   const [messages, setMessages] = useState<Message[]>([])
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
   const [client, setClient] = useState<ClientInfo | null>(null)
