@@ -3,13 +3,13 @@ import type {
   CollectionBeforeChangeHook,
   CollectionAfterChangeHook,
   CollectionBeforeDeleteHook,
+  CollectionBeforeValidateHook,
   Field,
   Where,
 } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import type { SupportCapabilities } from '../types'
 import { escapeHtml, emailWrapper, emailParagraph, emailButton } from '../utils/emailTemplate'
-import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
 import { dispatchWebhook } from '../utils/webhookDispatcher'
 import { readSupportSettings } from '../utils/readSettings'
@@ -96,10 +96,49 @@ function createAssignTicketNumber(
 
 function createAssignClientOnCreate(slugs: CollectionSlugs): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
-    if (operation === 'create' && req.user?.collection === slugs.supportClients && !data.client) {
+    // Unconditional, NOT `if (!data.client)`: a support-client posting an explicit
+    // `client` id would otherwise open a ticket in someone else's name.
+    if (operation === 'create' && req.user?.collection === slugs.supportClients) {
       data.client = req.user.id
     }
     return data
+  }
+}
+
+/**
+ * Fields a support-client is allowed to submit when opening a ticket from the
+ * portal. Everything else (billing, SLA, assignment, counters, AI bookkeeping,
+ * `client`, `source`) is server-owned.
+ */
+const CLIENT_CREATABLE_TICKET_FIELDS = ['subject', 'category', 'priority', 'project'] as const
+
+/**
+ * Allow-list the payload of a client-initiated ticket creation.
+ *
+ * `access.create` grants any authenticated support-client the right to create a
+ * ticket, and Payload happily persists every field it is handed — including
+ * `paymentStatus: 'paid'`, `billable: false`, `assignedTo` or `slaPolicy`, all of
+ * which the billing endpoints read back as trusted input.
+ *
+ * Runs as `beforeValidate` so the later `beforeChange` hooks (ticket number
+ * allocation, round-robin assignment) can still set the server-owned fields they
+ * own. Update is already covered by `createRestrictClientUpdates`.
+ */
+function createRestrictClientCreate(slugs: CollectionSlugs): CollectionBeforeValidateHook {
+  return async ({ data, operation, req }) => {
+    if (operation !== 'create') return data
+    if (req.user?.collection !== slugs.supportClients) return data
+
+    const incoming = (data ?? {}) as Record<string, unknown>
+    const sanitized: Record<string, unknown> = {}
+    for (const field of CLIENT_CREATABLE_TICKET_FIELDS) {
+      if (incoming[field] !== undefined) sanitized[field] = incoming[field]
+    }
+    // Clients open tickets; they do not get to pick the initial workflow state.
+    sanitized.status = 'open'
+    sanitized.client = req.user.id
+    sanitized.source = 'portal'
+    return sanitized
   }
 }
 
@@ -378,62 +417,6 @@ function createNotifyClientOnResolve(slugs: CollectionSlugs): CollectionAfterCha
   }
 }
 
-function createFireTicketWebhooks(slugs: CollectionSlugs): CollectionAfterChangeHook {
-  return async ({ doc, previousDoc, operation, req }) => {
-    const { payload } = req
-
-    if (operation === 'create') {
-      // ticket_created
-      fireWebhooks(payload, slugs, 'ticket_created', {
-        id: doc.id,
-        ticketNumber: doc.ticketNumber,
-        subject: doc.subject,
-        status: doc.status,
-        priority: doc.priority,
-        category: doc.category,
-      })
-      return doc
-    }
-
-    if (operation === 'update' && previousDoc) {
-      // ticket_resolved
-      if (previousDoc.status !== doc.status && doc.status === 'resolved') {
-        fireWebhooks(payload, slugs, 'ticket_resolved', {
-          id: doc.id,
-          ticketNumber: doc.ticketNumber,
-          subject: doc.subject,
-          previousStatus: previousDoc.status,
-        })
-
-        // Invalidate client summary cache so it refreshes on next view
-        const clientId = typeof doc.client === 'object' ? doc.client?.id : doc.client
-        if (clientId) {
-          payload.update({
-            collection: 'client-summaries',
-            where: { client: { equals: clientId } },
-            data: { generatedAt: new Date(0).toISOString() }, // Force cache expiry
-            overrideAccess: true,
-          }).catch(() => { /* silent — collection might not exist yet */ })
-        }
-      }
-
-      // ticket_assigned
-      const oldAssigned = typeof previousDoc.assignedTo === 'object' ? previousDoc.assignedTo?.id : previousDoc.assignedTo
-      const newAssigned = typeof doc.assignedTo === 'object' ? doc.assignedTo?.id : doc.assignedTo
-      if (newAssigned && oldAssigned !== newAssigned) {
-        fireWebhooks(payload, slugs, 'ticket_assigned', {
-          id: doc.id,
-          ticketNumber: doc.ticketNumber,
-          subject: doc.subject,
-          assignedTo: newAssigned,
-        })
-      }
-    }
-
-    return doc
-  }
-}
-
 function createNotifyAdminOnNewTicket(slugs: CollectionSlugs, notificationSlug: string): CollectionAfterChangeHook {
   return async ({ doc, operation, req }) => {
     if (operation !== 'create') return doc
@@ -456,24 +439,82 @@ function createNotifyAdminOnNewTicket(slugs: CollectionSlugs, notificationSlug: 
   }
 }
 
+/**
+ * Single outbound-webhook dispatcher for tickets.
+ *
+ * Until 2.x two dispatchers were registered side by side on these very hooks with
+ * identical guards, so every subscriber received TWO POSTs per event, with two
+ * incompatible body shapes and two auth schemes — the legacy one shipping the
+ * endpoint secret in clear in `X-Webhook-Secret`, which defeated the HMAC of the
+ * other. Only the HMAC path remains; its payloads absorb the legacy fields
+ * (`id`, `status`, `priority`, `category`, `previousStatus`, `assignedTo`) so
+ * consumers of either shape keep working.
+ */
 function createDispatchWebhookOnTicket(slugs: CollectionSlugs): CollectionAfterChangeHook {
   return async ({ doc, previousDoc, operation, req }) => {
+    const { payload } = req
+
     if (operation === 'create') {
       dispatchWebhook(
-        { ticketId: doc.id, ticketNumber: doc.ticketNumber, subject: doc.subject },
+        {
+          ticketId: doc.id,
+          id: doc.id,
+          ticketNumber: doc.ticketNumber,
+          subject: doc.subject,
+          status: doc.status,
+          priority: doc.priority,
+          category: doc.category,
+        },
         'ticket_created',
-        req.payload,
+        payload,
         slugs,
       )
+      return doc
     }
 
-    if (operation === 'update' && previousDoc?.status !== doc.status && doc.status === 'resolved') {
-      dispatchWebhook(
-        { ticketId: doc.id, ticketNumber: doc.ticketNumber, subject: doc.subject },
-        'ticket_resolved',
-        req.payload,
-        slugs,
-      )
+    if (operation === 'update' && previousDoc) {
+      if (previousDoc.status !== doc.status && doc.status === 'resolved') {
+        dispatchWebhook(
+          {
+            ticketId: doc.id,
+            id: doc.id,
+            ticketNumber: doc.ticketNumber,
+            subject: doc.subject,
+            previousStatus: previousDoc.status,
+          },
+          'ticket_resolved',
+          payload,
+          slugs,
+        )
+
+        // Invalidate client summary cache so it refreshes on next view
+        const clientId = typeof doc.client === 'object' ? doc.client?.id : doc.client
+        if (clientId) {
+          payload.update({
+            collection: 'client-summaries',
+            where: { client: { equals: clientId } },
+            data: { generatedAt: new Date(0).toISOString() }, // Force cache expiry
+            overrideAccess: true,
+          }).catch(() => { /* silent — collection might not exist yet */ })
+        }
+      }
+
+      const oldAssigned = typeof previousDoc.assignedTo === 'object' ? previousDoc.assignedTo?.id : previousDoc.assignedTo
+      const newAssigned = typeof doc.assignedTo === 'object' ? doc.assignedTo?.id : doc.assignedTo
+      if (newAssigned && oldAssigned !== newAssigned) {
+        dispatchWebhook(
+          {
+            ticketId: doc.id,
+            id: doc.id,
+            ticketNumber: doc.ticketNumber,
+            subject: doc.subject,
+            assignedTo: newAssigned,
+          },
+          'ticket_assigned',
+          payload,
+          slugs,
+        )
+      }
     }
 
     return doc
@@ -620,7 +661,10 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
             { label: 'Paiement partiel', value: 'partial' },
             { label: 'Payé', value: 'paid' },
           ],
-          access: { update: ({ req }) => req.user?.collection === 'users' },
+          // `slugs.users`, not the literal 'users': the users collection slug is
+          // configurable, and a hard-coded one silently opens this field to everybody
+          // on a host that renamed it.
+          access: { update: ({ req }) => req.user?.collection === slugs.users },
           admin: { width: '50%', condition: (data) => !!data?.invoice },
         },
         {
@@ -884,6 +928,7 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
       { name: 'totalTimeMinutes', type: 'number', defaultValue: 0, label: 'Temps total (minutes)', admin: { readOnly: true, position: 'sidebar' } },
     ],
     hooks: {
+      beforeValidate: [createRestrictClientCreate(slugs)],
       beforeChange: [
         createAssignTicketNumber(slugs, options?.ticketNumber),
         createAssignClientOnCreate(slugs),
@@ -904,7 +949,6 @@ export function createTicketsCollection(slugs: CollectionSlugs, options?: {
         createNotifyClientOnResolve(slugs),
         createTicketStatusEmail(slugs),
         createNotifyAdminOnNewTicket(slugs, notificationSlug),
-        createFireTicketWebhooks(slugs),
         createDispatchWebhookOnTicket(slugs),
         createApplyAutomationRules(slugs),
       ],

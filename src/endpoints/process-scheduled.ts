@@ -1,7 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { escapeHtml } from '../utils/emailTemplate'
-import { fireWebhooks } from '../utils/fireWebhooks'
+import { dispatchWebhook } from '../utils/webhookDispatcher'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFind, dbFindByID, dbUpdate } from '../utils/db'
 import { verifySecret } from '../utils/webhookSecurity'
@@ -112,13 +112,18 @@ export function createProcessScheduledEndpoint(slugs: CollectionSlugs): Endpoint
             }
 
             // Fire webhook for the now-sent reply
-            fireWebhooks(payload, slugs, 'ticket_replied', {
-              ticketId,
-              messageId: msg.id,
-              authorType: msg.authorType,
-              scheduled: true,
-              body: msg.body?.length > 500 ? msg.body.slice(0, 500) + '...' : msg.body,
-            })
+            dispatchWebhook(
+              {
+                ticketId,
+                messageId: msg.id,
+                authorType: msg.authorType,
+                scheduled: true,
+                body: msg.body?.length > 500 ? msg.body.slice(0, 500) + '...' : msg.body,
+              },
+              'ticket_replied',
+              payload,
+              slugs,
+            )
 
             results.processed++
           } catch (err) {

@@ -165,12 +165,17 @@ export const TicketInboxClient: React.FC = () => {
       try {
         // Exclude snoozed tickets from the counts too (mirrors the list query).
         const sn = `where[and][0][or][0][snoozeUntil][exists]=false&where[and][0][or][1][snoozeUntil][less_than_equal]=${encodeURIComponent(new Date().toISOString())}`
+        // `/count` is a real SQL COUNT. The previous limit=0 idiom did NOT mean
+        // "no document": Payload disables pagination for limit=0, skips the count
+        // query and derives totalDocs from the rows it just materialised — so each
+        // of these five counters used to read the whole tickets table (relations
+        // included) just to display a badge.
         const [all, openRes, waiting, resolved, breach] = await Promise.all([
-          fetch(`/api/tickets?limit=0&depth=0&${sn}`, { credentials: 'include' }),
-          fetch(`/api/tickets?limit=0&depth=0&where[status][equals]=open&${sn}`, { credentials: 'include' }),
-          fetch(`/api/tickets?limit=0&depth=0&where[status][equals]=waiting_client&${sn}`, { credentials: 'include' }),
-          fetch(`/api/tickets?limit=0&depth=0&where[status][equals]=resolved&${sn}`, { credentials: 'include' }),
-          fetch(`/api/tickets?limit=0&depth=0&where[or][0][slaFirstResponseBreached][equals]=true&where[or][1][slaResolutionBreached][equals]=true&${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?where[status][equals]=open&${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?where[status][equals]=waiting_client&${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?where[status][equals]=resolved&${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?where[or][0][slaFirstResponseBreached][equals]=true&where[or][1][slaResolutionBreached][equals]=true&${sn}`, { credentials: 'include' }),
         ])
         const [a, o, w, r, b] = await Promise.all([all.json(), openRes.json(), waiting.json(), resolved.json(), breach.json()])
         setCounts({

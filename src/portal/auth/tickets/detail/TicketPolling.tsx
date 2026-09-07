@@ -30,8 +30,12 @@ export function TicketPolling({
 
     const interval = setInterval(async () => {
       try {
+        // `/count` returns a single number. The previous limit=0 idiom did NOT return
+        // zero documents — Payload disables pagination for limit=0 and derives
+        // totalDocs from the rows it materialised, so every open portal tab used to
+        // re-download its whole conversation every 30 s to read one counter.
         const res = await fetch(
-          `/api/ticket-messages?where[ticket][equals]=${ticketId}&limit=0&depth=0`,
+          `/api/ticket-messages/count?where[ticket][equals]=${ticketId}`,
           { credentials: 'include' },
         )
         if (res.status === 401 || res.status === 403) {

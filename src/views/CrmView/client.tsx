@@ -144,26 +144,25 @@ export const CrmClient: React.FC = () => {
   const fetchDetail = useCallback(async (clientId: number) => {
     setDetailLoading(true)
     try {
-      const [clientRes, ticketsRes, projectsRes, timeRes] = await Promise.all([
+      const [clientRes, ticketsRes, projectsRes] = await Promise.all([
         fetch(`/api/support-clients/${clientId}?depth=0`),
         fetch(`/api/tickets?where[client][equals]=${clientId}&sort=-createdAt&limit=20&depth=0`),
         fetch(`/api/projects?where[client][equals]=${clientId}&depth=0`),
-        fetch(`/api/time-entries?limit=0&depth=0`),
       ])
 
       const client = clientRes.ok ? await clientRes.json() : null
       const tickets = ticketsRes.ok ? (await ticketsRes.json()).docs || [] : []
       const projects = projectsRes.ok ? (await projectsRes.json()).docs || [] : []
 
-      // Get time entries for this client's tickets
-      const ticketIds = tickets.map((t: { id: number }) => t.id)
-      let totalTimeMinutes = 0
-      if (timeRes.ok) {
-        const timeData = await timeRes.json()
-        totalTimeMinutes = timeData.docs
-          .filter((e: { ticket: number }) => ticketIds.includes(e.ticket))
-          .reduce((sum: number, e: { duration: number }) => sum + (e.duration || 0), 0)
-      }
+      // Sum the per-ticket rollup maintained by the TimeEntries afterChange /
+      // afterDelete hooks. This used to download the ENTIRE time-entries table
+      // (via limit=0, which does not mean "no document") only to keep the rows whose
+      // ticket is one of the 20 listed here — same result, O(1) payload instead of
+      // O(all time entries ever recorded).
+      const totalTimeMinutes = tickets.reduce(
+        (sum: number, t: { totalTimeMinutes?: number }) => sum + (t.totalTimeMinutes || 0),
+        0,
+      )
 
       const openTickets = tickets.filter((t: { status: string }) =>
         ['open', 'waiting_client'].includes(t.status),

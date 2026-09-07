@@ -2,12 +2,13 @@ import type { Payload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { readSupportSettings, type SupportSettings } from './readSettings'
 import { dbFindByID, dbUpdate, dbFind } from './db'
+import { resolveOllamaBaseUrl } from './aiProvider'
 
 function getClient(aiSettings: SupportSettings['ai']) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Anthropic = require('@anthropic-ai/sdk').default
   if (aiSettings.provider === 'ollama') {
-    const baseURL = process.env.OLLAMA_API_URL || 'https://ollama.orkelis.app/v1'
+    const baseURL = resolveOllamaBaseUrl()
     return new Anthropic({ apiKey: 'ollama', baseURL })
   }
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })

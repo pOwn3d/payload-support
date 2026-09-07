@@ -91,12 +91,33 @@ function createEnforce2FA(slugs: CollectionSlugs): CollectionBeforeLoginHook {
   }
 }
 
+/**
+ * Field-level write guard for the commercial / security fields.
+ *
+ * `access.update` on this collection intentionally lets a support-client PATCH
+ * their OWN document (the portal profile page writes firstName, phone, the
+ * notification toggles and the 2FA switch). Payload persists every other field of
+ * that same PATCH too, so without a field guard a client could self-promote
+ * (`tier`), rewrite the sales notes, or — worst — set `googleId`, which the Google
+ * OAuth callback resolves BEFORE the email and would hand them another account.
+ *
+ * Internal writers (2FA endpoints, OAuth linking, beforeLogin) all go through
+ * `overrideAccess: true`, which bypasses field access, so they are unaffected.
+ * `twoFactorEnabled` is deliberately NOT locked: it is a legitimate self-service
+ * toggle on the portal profile page.
+ */
+function createAdminOnlyFieldUpdate(slugs: CollectionSlugs) {
+  return ({ req }: { req: { user?: { collection?: string } | null } }) =>
+    req.user?.collection === slugs.users
+}
+
 // ─── Collection factory ──────────────────────────────────
 
 export function createSupportClientsCollection(
   slugs: CollectionSlugs,
   options?: { capabilities?: SupportCapabilities },
 ): CollectionConfig {
+  const adminOnlyFieldUpdate = createAdminOnlyFieldUpdate(slugs)
   return {
     slug: slugs.supportClients,
     labels: {
@@ -226,6 +247,7 @@ export function createSupportClientsCollection(
         access: {
           // Admin-only: never serialize commercial notes onto the client's own doc.
           read: ({ req }) => req.user?.collection === slugs.users,
+          update: adminOnlyFieldUpdate,
         },
         admin: {
           description: 'Notes commerciales (visible uniquement par les admins)',
@@ -235,6 +257,7 @@ export function createSupportClientsCollection(
         name: 'tier',
         type: 'select',
         label: 'Plan',
+        access: { update: adminOnlyFieldUpdate },
         options: [
           { label: 'Free', value: 'free' },
           { label: 'Basic', value: 'basic' },
@@ -248,6 +271,7 @@ export function createSupportClientsCollection(
         type: 'relationship',
         relationTo: slugs.users,
         label: 'Agent referent',
+        access: { update: adminOnlyFieldUpdate },
         admin: { position: 'sidebar' },
       },
       {
@@ -263,17 +287,20 @@ export function createSupportClientsCollection(
       {
         name: 'twoFactorCode',
         type: 'text',
+        access: { update: adminOnlyFieldUpdate },
         admin: { hidden: true },
       },
       {
         name: 'twoFactorExpiry',
         type: 'date',
+        access: { update: adminOnlyFieldUpdate },
         admin: { hidden: true },
       },
       {
         // Set by /support/2fa "verify"; gates login via the beforeLogin hook.
         name: 'twoFactorVerifiedAt',
         type: 'date',
+        access: { update: adminOnlyFieldUpdate },
         admin: { hidden: true },
       },
       {
@@ -281,6 +308,7 @@ export function createSupportClientsCollection(
         name: 'googleId',
         type: 'text',
         index: true,
+        access: { update: adminOnlyFieldUpdate },
         admin: { hidden: true },
       },
       {
@@ -352,6 +380,7 @@ export function createSupportClientsCollection(
         access: {
           // Admin-only: never serialize internal notes onto the client's own doc.
           read: ({ req }) => req.user?.collection === slugs.users,
+          update: adminOnlyFieldUpdate,
         },
         admin: {
           description: 'Visible uniquement par les admins',

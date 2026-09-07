@@ -85,6 +85,11 @@ export default defineConfig([
   // which are emitted as separate files in the individual build below.
   {
     ...sharedConfig,
+    // ESM only. The CJS barrel emitted `require('./views/X/index')`, which Node
+    // resolves to the ESM `index.js` first (the package is `type: module`) and
+    // throws ERR_REQUIRE_ESM — the `.cjs` siblings were unreachable anyway.
+    // Payload 3 and Next are ESM-first, so there is nothing to keep here.
+    format: ['esm'],
     external: [
       ...clientExternals,
       // Externalize all view individual files so the barrel just re-exports
@@ -99,6 +104,10 @@ export default defineConfig([
   // correctly at runtime.
   {
     ...sharedConfig,
+    // ESM only (same reason as the views barrel). Declarations for these files are
+    // emitted separately by `tsc -p tsconfig.types.json`: tsup's dts pass cannot
+    // handle ~100 unbundled entries in reasonable time.
+    format: ['esm'],
     dts: false,
     bundle: false,
     external: clientExternals,

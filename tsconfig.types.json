@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "./.types-out",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/types/**/*.d.ts",
+    "src/views/**/*.ts",
+    "src/views/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx"
+  ]
+}

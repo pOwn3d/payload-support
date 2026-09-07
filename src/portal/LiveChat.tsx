@@ -29,6 +29,13 @@ export function LiveChat() {
   const lastFetchRef = useRef<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pollIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Mirror of `messages`. The poll decision (and the unread badge) MUST be taken
+  // outside the setMessages updater: React skips the updater on the eager-state
+  // path, so a flag assigned inside it is only ever written on the very first
+  // update — after which `hasNewMessages` stays false, the adaptive backoff climbs
+  // to its 30 s ceiling and never comes back down, mid-conversation. Same pattern
+  // as ChatWidget.tsx.
+  const messagesRef = useRef<ChatMessage[]>([])
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -42,6 +49,7 @@ export function LiveChat() {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
+    messagesRef.current = messages
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
@@ -61,31 +69,32 @@ export function LiveChat() {
 
       const data = await res.json()
       if (data.messages?.length > 0) {
-        let hadNewMessages = false
-        setMessages((prev) => {
-          const existingIds = new Set(prev.map((m) => String(m.id)))
-          const newMsgs = data.messages.filter(
-            (m: ChatMessage) => !existingIds.has(String(m.id)),
-          )
-          if (newMsgs.length === 0) return prev
+        const existingIds = new Set(messagesRef.current.map((m) => String(m.id)))
+        const newMsgs: ChatMessage[] = data.messages.filter(
+          (m: ChatMessage) => !existingIds.has(String(m.id)),
+        )
+        lastFetchRef.current = data.messages[data.messages.length - 1].createdAt
+        if (newMsgs.length === 0) return false
 
-          hadNewMessages = true
-
-          // Count agent messages as unread if chat panel is closed
-          if (screen === 'closed') {
-            const agentNewMsgs = newMsgs.filter(
-              (m: ChatMessage) => m.senderType === 'agent',
-            )
-            if (agentNewMsgs.length > 0) {
-              setUnreadCount((prev) => prev + agentNewMsgs.length)
-            }
+        // Count agent messages as unread if chat panel is closed. Kept OUT of the
+        // updater: nesting a setState there also double-counted the badge under
+        // StrictMode's double invocation in dev.
+        if (screen === 'closed') {
+          const agentNewMsgs = newMsgs.filter((m) => m.senderType === 'agent')
+          if (agentNewMsgs.length > 0) {
+            setUnreadCount((prev) => prev + agentNewMsgs.length)
           }
+        }
 
-          return [...prev, ...newMsgs]
+        setMessages((prev) => {
+          // Re-dedupe against the authoritative state: the mirror can lag by one
+          // commit if a message was appended optimistically in the meantime.
+          const prevIds = new Set(prev.map((m) => String(m.id)))
+          const trulyNew = newMsgs.filter((m) => !prevIds.has(String(m.id)))
+          if (trulyNew.length === 0) return prev
+          return [...prev, ...trulyNew]
         })
-        lastFetchRef.current =
-          data.messages[data.messages.length - 1].createdAt
-        return hadNewMessages
+        return true
       }
       return false
     } catch {
@@ -127,6 +136,8 @@ export function LiveChat() {
       // If we have a session, fetch messages
       if (session.sessionId) {
         lastFetchRef.current = null
+        // Synchronous too: pollMessages() runs before the mirroring effect commits.
+        messagesRef.current = []
         setMessages([])
         pollMessages()
       }
