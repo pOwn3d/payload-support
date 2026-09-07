@@ -23,3 +23,11 @@ docs/
 
 # AI assistant session artifacts
 .claude/
+
+# Type-emission scratch dir (see scripts/copy-subpath-types.mjs)
+.types-out/
+
+# Local SQLite scratch DB created by the integration test harness.
+*.db
+*.db-shm
+*.db-wal

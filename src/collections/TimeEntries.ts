@@ -1,45 +1,69 @@
-import type { CollectionConfig, CollectionAfterChangeHook } from 'payload'
+import type { CollectionConfig, CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
+import type { Payload } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 
 // ─── Hooks ───────────────────────────────────────────────
 
+async function recalculateTicketTime(
+  payload: Payload,
+  slugs: CollectionSlugs,
+  ticketId: number | string,
+): Promise<void> {
+  // Sum all time entries for this ticket, paginating to avoid loading all at once
+  let totalMinutes = 0
+  let page = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const entries = await payload.find({
+      collection: slugs.timeEntries,
+      where: { ticket: { equals: ticketId } },
+      limit: 100,
+      page,
+      depth: 0,
+      overrideAccess: true,
+      select: { duration: true },
+    })
+
+    for (const entry of entries.docs) {
+      totalMinutes += ((entry.duration as number) || 0)
+    }
+
+    hasMore = entries.hasNextPage ?? false
+    page++
+  }
+
+  await payload.update({
+    collection: slugs.tickets,
+    id: ticketId,
+    data: { totalTimeMinutes: totalMinutes },
+    overrideAccess: true,
+  })
+}
+
 function createRecalculateTicketTime(slugs: CollectionSlugs): CollectionAfterChangeHook {
   return async ({ doc, req }) => {
     if (!doc.ticket) return
-
-    const { payload } = req
     const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
+    await recalculateTicketTime(req.payload, slugs, ticketId)
+  }
+}
 
-    // Sum all time entries for this ticket, paginating to avoid loading all at once
-    let totalMinutes = 0
-    let page = 1
-    let hasMore = true
-
-    while (hasMore) {
-      const entries = await payload.find({
-        collection: slugs.timeEntries,
-        where: { ticket: { equals: ticketId } },
-        limit: 100,
-        page,
-        depth: 0,
-        overrideAccess: true,
-        select: { duration: true },
-      })
-
-      for (const entry of entries.docs) {
-        totalMinutes += ((entry.duration as number) || 0)
-      }
-
-      hasMore = entries.hasNextPage ?? false
-      page++
+/**
+ * Deleting a time entry has to re-roll the ticket total too. Without this the
+ * rollup only ever grows: `tickets.totalTimeMinutes` is what the invoice endpoint
+ * and the CRM view bill on, so a removed entry stayed billed forever.
+ */
+function createRecalculateTicketTimeOnDelete(slugs: CollectionSlugs): CollectionAfterDeleteHook {
+  return async ({ doc, req }) => {
+    if (!doc?.ticket) return
+    const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
+    try {
+      await recalculateTicketTime(req.payload, slugs, ticketId)
+    } catch (err) {
+      // The entry is already gone; never fail the delete on the rollup refresh.
+      console.error('[support] Failed to recalculate ticket time after delete:', err)
     }
-
-    await payload.update({
-      collection: slugs.tickets,
-      id: ticketId,
-      data: { totalTimeMinutes: totalMinutes },
-      overrideAccess: true,
-    })
   }
 }
 
@@ -105,6 +129,7 @@ export function createTimeEntriesCollection(slugs: CollectionSlugs): CollectionC
     ],
     hooks: {
       afterChange: [createRecalculateTicketTime(slugs)],
+      afterDelete: [createRecalculateTicketTimeOnDelete(slugs)],
     },
     access: {
       create: ({ req }) => req.user?.collection === slugs.users,

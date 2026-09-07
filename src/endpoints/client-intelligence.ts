@@ -3,12 +3,13 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { readSupportSettings, type SupportSettings } from '../utils/readSettings'
 import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { resolveOllamaBaseUrl } from '../utils/aiProvider'
 
 async function getClient(aiSettings: SupportSettings['ai']) {
   const moduleName = '@anthropic-ai/sdk'
   const { default: Anthropic } = await import(moduleName)
   if (aiSettings.provider === 'ollama') {
-    const baseURL = process.env.OLLAMA_API_URL || 'https://ollama.orkelis.app/v1'
+    const baseURL = resolveOllamaBaseUrl()
     return new Anthropic({ apiKey: 'ollama', baseURL })
   }
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })

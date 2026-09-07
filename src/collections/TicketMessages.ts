@@ -1,8 +1,8 @@
 import type { CollectionConfig, CollectionBeforeChangeHook, CollectionAfterChangeHook, Where } from 'payload'
+import { APIError } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import type { SupportCapabilities } from '../types'
 import { escapeHtml, emailWrapper, emailButton, emailQuote, emailParagraph, emailRichContent, emailTrackingPixel } from '../utils/emailTemplate'
-import { fireWebhooks } from '../utils/fireWebhooks'
 import { createAdminNotification } from '../utils/adminNotification'
 import { dispatchWebhook } from '../utils/webhookDispatcher'
 import { readSupportSettings } from '../utils/readSettings'
@@ -12,6 +12,38 @@ import { sanitizeMessageHtml } from '../utils/sanitizeHtml'
 import { queueClientNotification } from '../utils/notificationQueue'
 import { sendPushToUser } from '../utils/push'
 import { dbFind, dbCreate, dbFindByID } from '../utils/db'
+
+/**
+ * Cross-tenant write guard for support-clients.
+ *
+ * `access.create` only checks WHICH collection the actor belongs to, so any
+ * authenticated support-client could POST a message onto an arbitrary ticket id.
+ * That is not just a data-integrity issue: the `afterChange` notification hooks
+ * would then mail the injected body to the real ticket owner from the legitimate
+ * support address (phishing over a trusted channel).
+ *
+ * We reuse `resolveAccessibleTicketIds()` — the same boundary `access.read` uses —
+ * so read and write scopes cannot drift apart. Staff writes and every internal
+ * `overrideAccess` write are untouched: they carry no `support-clients` user.
+ */
+function createRestrictClientTicketTarget(slugs: CollectionSlugs): CollectionBeforeChangeHook {
+  return async ({ data, operation, req, originalDoc }) => {
+    if (req.user?.collection !== slugs.supportClients) return data
+
+    const raw = (data as { ticket?: unknown }).ticket
+      ?? (operation === 'update' ? (originalDoc as { ticket?: unknown } | undefined)?.ticket : undefined)
+    const targetId = raw && typeof raw === 'object' ? (raw as { id?: unknown }).id : raw
+    if (targetId === undefined || targetId === null || targetId === '') {
+      throw new APIError('Ticket cible requis.', 400)
+    }
+
+    const accessible = await resolveAccessibleTicketIds(req.payload, slugs, req.user.id)
+    if (!accessible.some((id) => String(id) === String(targetId))) {
+      throw new APIError('Ticket inaccessible.', 403)
+    }
+    return data
+  }
+}
 
 function createAssignAuthor(slugs: CollectionSlugs): CollectionBeforeChangeHook {
   return async ({ data, operation, req }) => {
@@ -300,26 +332,12 @@ function createNotifyAdminOnClientMessage(slugs: CollectionSlugs, notificationSl
   }
 }
 
-function createFireMessageWebhooks(slugs: CollectionSlugs): CollectionAfterChangeHook {
-  return async ({ doc, operation, req }) => {
-    if (operation !== 'create') return doc
-    // Don't fire for scheduled messages that haven't been sent yet
-    if (doc.scheduledAt && !doc.scheduledSent) return doc
-    // Don't fire for internal notes
-    if (doc.isInternal) return doc
-
-    const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
-    fireWebhooks(req.payload, slugs, 'ticket_replied', {
-      ticketId,
-      messageId: doc.id,
-      authorType: doc.authorType,
-      body: doc.body?.length > 500 ? doc.body.slice(0, 500) + '...' : doc.body,
-    })
-
-    return doc
-  }
-}
-
+/**
+ * Single outbound-webhook dispatcher for replies. See the matching comment in
+ * Tickets.ts: a second, unsigned dispatcher used to fire on this exact hook with
+ * the same guards, doubling every delivery. The `body` excerpt of the legacy
+ * payload is carried over so existing consumers do not regress.
+ */
 function createDispatchWebhookOnReply(slugs: CollectionSlugs): CollectionAfterChangeHook {
   return async ({ doc, operation, req }) => {
     if (operation !== 'create') return doc
@@ -328,7 +346,12 @@ function createDispatchWebhookOnReply(slugs: CollectionSlugs): CollectionAfterCh
 
     const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
     dispatchWebhook(
-      { ticketId, messageId: doc.id, authorType: doc.authorType },
+      {
+        ticketId,
+        messageId: doc.id,
+        authorType: doc.authorType,
+        body: doc.body?.length > 500 ? doc.body.slice(0, 500) + '...' : doc.body,
+      },
       'ticket_replied',
       req.payload,
       slugs,
@@ -534,7 +557,7 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs, options?:
       ] : []),
     ],
     hooks: {
-      beforeChange: [createSanitizeMessageHtml(), createResolveMentions(slugs), createAssignAuthor(slugs)],
+      beforeChange: [createRestrictClientTicketTarget(slugs), createSanitizeMessageHtml(), createResolveMentions(slugs), createAssignAuthor(slugs)],
       afterChange: [
         ...(options?.capabilities?.sms ? [createSmsNotification(slugs, options.capabilities.sms)] : []),
         createAutoUpdateStatus(slugs),
@@ -543,7 +566,6 @@ export function createTicketMessagesCollection(slugs: CollectionSlugs, options?:
         createCheckSlaOnReply(slugs, notificationSlug),
         createSyncTicketReplyToChat(slugs),
         createNotifyAdminOnClientMessage(slugs, notificationSlug),
-        createFireMessageWebhooks(slugs),
         createDispatchWebhookOnReply(slugs),
         createNotifyMentions(slugs),
         ...(options?.capabilities?.threadCleanup ? [createThreadCleanup(options.capabilities.threadCleanup)] : []),

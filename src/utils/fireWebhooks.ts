@@ -6,6 +6,12 @@ import { dbFind, dbUpdate } from './db'
  * Fire all active webhooks matching the given event.
  * Uses fire-and-forget pattern (Promise.allSettled) so hook callers are never blocked.
  * Each webhook request has a 10-second timeout.
+ *
+ * @deprecated Use `dispatchWebhook` instead. This transport sends the endpoint
+ * secret IN CLEAR in the `X-Webhook-Secret` header, which contradicts the
+ * description of the `secret` field (HMAC-SHA256 signature) and defeats the point
+ * of signing. No hook in the plugin calls it any more — it stays exported only
+ * because it is part of the public surface, and will be removed in the next major.
  */
 export async function fireWebhooks(
   payload: Payload,

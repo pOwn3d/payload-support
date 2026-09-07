@@ -29,6 +29,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # A `limit=0` query param in a Payload REST URL does NOT mean "return no
+      # document": the find operation disables pagination, skips the count query and
+      # derives totalDocs from the rows it just materialised - i.e. a full table read
+      # to display a counter. Use /api/<collection>/count instead.
+      - name: Guard - no limit=0 in REST URLs
+        run: |
+          if grep -rnE '[?&]limit=0' --include='*.ts' --include='*.tsx' src/; then
+            echo '::error::limit=0 found in a REST URL - use /api/<collection>/count instead'
+            exit 1
+          fi
+
       - name: Typecheck
         run: pnpm typecheck
 

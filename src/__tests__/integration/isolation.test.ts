@@ -79,3 +79,117 @@ describe('cross-client isolation (P0-4 / P0-7)', () => {
     expect((asAdmin as { opportunities?: string }).opportunities).toBe('SECRET-DEAL')
   }, 60_000)
 })
+
+/**
+ * Cross-tenant WRITE boundary. Read isolation above is worthless if a client can
+ * simply grant themselves access (ticket-collaborators), post into someone else's
+ * thread, open a ticket in another client's name with forged billing flags, or
+ * overwrite their own privileged fields.
+ */
+describe('cross-client write isolation', () => {
+  it('a client cannot grant themselves collaborator access to a foreign ticket', async () => {
+    const payload = await buildTestPayload()
+
+    const attacker = await payload.create({ collection: 'support-clients', data: { email: 'w-attacker@example.com', password: PW, firstName: 'W', lastName: 'A', company: 'W' }, overrideAccess: true })
+    const victim = await payload.create({ collection: 'support-clients', data: { email: 'w-victim@example.com', password: PW, firstName: 'W', lastName: 'V', company: 'V' }, overrideAccess: true })
+    const victimTicket = await payload.create({ collection: 'tickets', data: { subject: 'victim', client: victim.id, status: 'open', priority: 'normal' }, overrideAccess: true })
+
+    await expect(
+      payload.create({
+        collection: 'ticket-collaborators',
+        data: { ticket: victimTicket.id, client: attacker.id, invitedBy: attacker.id, role: 'collaborator' },
+        overrideAccess: false,
+        user: { ...attacker, collection: 'support-clients' } as never,
+      }),
+    ).rejects.toThrow()
+  }, 60_000)
+
+  it('a client cannot post a message into a foreign ticket', async () => {
+    const payload = await buildTestPayload()
+
+    const attacker = await payload.create({ collection: 'support-clients', data: { email: 'm-attacker@example.com', password: PW, firstName: 'M', lastName: 'A', company: 'M' }, overrideAccess: true })
+    const victim = await payload.create({ collection: 'support-clients', data: { email: 'm-victim@example.com', password: PW, firstName: 'M', lastName: 'V', company: 'V' }, overrideAccess: true })
+    const victimTicket = await payload.create({ collection: 'tickets', data: { subject: 'victim thread', client: victim.id, status: 'open', priority: 'normal' }, overrideAccess: true })
+    const ownTicket = await payload.create({ collection: 'tickets', data: { subject: 'own thread', client: attacker.id, status: 'open', priority: 'normal' }, overrideAccess: true })
+
+    await expect(
+      payload.create({
+        collection: 'ticket-messages',
+        data: { ticket: victimTicket.id, body: 'PHISHING' },
+        overrideAccess: false,
+        user: { ...attacker, collection: 'support-clients' } as never,
+      }),
+    ).rejects.toThrow()
+
+    // …but their own ticket still accepts a reply (the guard must not close the portal).
+    const ok = await payload.create({
+      collection: 'ticket-messages',
+      data: { ticket: ownTicket.id, body: 'legit reply' },
+      overrideAccess: false,
+      user: { ...attacker, collection: 'support-clients' } as never,
+    })
+    expect((ok as { body?: string }).body).toBe('legit reply')
+  }, 60_000)
+
+  it('a client-created ticket is forced onto their own account, without forged billing flags', async () => {
+    const payload = await buildTestPayload()
+
+    const attacker = await payload.create({ collection: 'support-clients', data: { email: 't-attacker@example.com', password: PW, firstName: 'T', lastName: 'A', company: 'T' }, overrideAccess: true })
+    const victim = await payload.create({ collection: 'support-clients', data: { email: 't-victim@example.com', password: PW, firstName: 'T', lastName: 'V', company: 'V' }, overrideAccess: true })
+
+    const created = await payload.create({
+      collection: 'tickets',
+      data: {
+        subject: 'forged',
+        client: victim.id,
+        priority: 'urgent',
+        status: 'resolved',
+        paymentStatus: 'paid',
+        billable: false,
+      } as never,
+      overrideAccess: false,
+      user: { ...attacker, collection: 'support-clients' } as never,
+      depth: 0,
+    })
+
+    const doc = created as unknown as Record<string, unknown>
+    expect(String(doc.client)).toBe(String(attacker.id))
+    expect(doc.paymentStatus).not.toBe('paid')
+    expect(doc.billable).not.toBe(false)
+    expect(doc.status).toBe('open')
+    // The portal legitimately lets the client pick a priority — it must survive.
+    expect(doc.priority).toBe('urgent')
+  }, 60_000)
+
+  it('a client cannot self-promote their tier or write googleId on their own doc', async () => {
+    const payload = await buildTestPayload()
+
+    const client = await payload.create({ collection: 'support-clients', data: { email: 'p-self@example.com', password: PW, firstName: 'P', lastName: 'S', company: 'P', tier: 'free' }, overrideAccess: true })
+
+    const updated = await payload.update({
+      collection: 'support-clients',
+      id: client.id,
+      data: { firstName: 'Renamed', tier: 'enterprise', googleId: 'attacker-google-sub', notes: 'wiped', twoFactorVerifiedAt: new Date().toISOString() } as never,
+      overrideAccess: false,
+      user: { ...client, collection: 'support-clients' } as never,
+    })
+
+    // The legitimate self-service field went through…
+    expect((updated as { firstName?: string }).firstName).toBe('Renamed')
+
+    // …the privileged ones did not. Re-read as admin: field-level read access
+    // hides notes/opportunities from the client's own serialized doc.
+    const admin = await payload.create({ collection: 'users', data: { email: 'admin-priv@example.com', password: PW } as never, overrideAccess: true })
+    const asAdmin = await payload.findByID({
+      collection: 'support-clients',
+      id: client.id,
+      overrideAccess: false,
+      user: { ...admin, collection: 'users' } as never,
+    }) as unknown as Record<string, unknown>
+
+    expect(asAdmin.tier).toBe('free')
+    expect(asAdmin.googleId).toBeFalsy()
+    expect(asAdmin.notes).toBeFalsy()
+    expect(asAdmin.twoFactorVerifiedAt).toBeFalsy()
+  }, 60_000)
+})

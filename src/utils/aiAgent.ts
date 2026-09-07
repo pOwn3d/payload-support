@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { readSupportSettings, type SupportSettings } from './readSettings'
 import { dbFind, dbFindByID, dbCreate, dbUpdate } from './db'
+import { resolveOllamaBaseUrl } from './aiProvider'
 
 export interface AgentDecision {
   action: 'reply' | 'escalate'
@@ -61,7 +62,7 @@ export async function applyAgentDecision(
 function getClient(aiSettings: SupportSettings['ai']) {
   const Anthropic = require('@anthropic-ai/sdk').default
   if (aiSettings.provider === 'ollama') {
-    return new Anthropic({ apiKey: 'ollama', baseURL: process.env.OLLAMA_API_URL || 'https://ollama.orkelis.app/v1' })
+    return new Anthropic({ apiKey: 'ollama', baseURL: resolveOllamaBaseUrl() })
   }
   return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 }

@@ -32,7 +32,12 @@ export function createTicketCollaboratorsCollection(slugs: CollectionSlugs): Col
         }
         return false
       },
-      create: ({ req }) => !!req.user,
+      // Staff only. This collection is the source of truth for
+      // resolveAccessibleTicketIds(), which widens `read` on tickets, messages
+      // and the activity log — so letting any authenticated principal POST here
+      // let a support client grant themselves access to any ticket by id.
+      // The /invite endpoint is unaffected: it writes with overrideAccess: true.
+      create: ({ req }) => req.user?.collection === slugs.users,
       update: () => false,
       delete: ({ req }) => req.user?.collection === slugs.users,
     },

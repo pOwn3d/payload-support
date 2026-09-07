@@ -3,7 +3,16 @@ import type { BasePayload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { dbFind, dbUpdate } from './db'
 
-type WebhookEvent = 'ticket_created' | 'ticket_resolved' | 'ticket_replied' | 'sla_breached'
+/**
+ * Outbound webhook events. Must stay in sync with the `events` options of the
+ * webhook-endpoints collection.
+ */
+export type WebhookEvent =
+  | 'ticket_created'
+  | 'ticket_resolved'
+  | 'ticket_replied'
+  | 'ticket_assigned'
+  | 'sla_breached'
 
 /**
  * Dispatch outbound webhooks for a given event.
@@ -21,9 +30,12 @@ export function dispatchWebhook(
   event: WebhookEvent,
   payload: BasePayload,
   slugs: CollectionSlugs,
-): void {
-  // Fire and forget — do not await
-  void _dispatch(data, event, payload, slugs)
+): Promise<void> {
+  // Fire and forget for callers (hooks never await it); the promise is returned so
+  // tests — and any caller that wants to — can wait for delivery to settle.
+  const done = _dispatch(data, event, payload, slugs)
+  void done
+  return done
 }
 
 async function _dispatch(
@@ -49,9 +61,9 @@ async function _dispatch(
 
     const body = JSON.stringify({ event, data, timestamp: new Date().toISOString() })
 
-    for (const endpoint of endpoints) {
-      void _sendToEndpoint(endpoint as any, body, payload, slugs)
-    }
+    await Promise.allSettled(
+      endpoints.map((endpoint) => _sendToEndpoint(endpoint as any, body, payload, slugs)),
+    )
   } catch (err) {
     console.error(`[webhook] Failed to fetch endpoints for event ${event}:`, err)
   }

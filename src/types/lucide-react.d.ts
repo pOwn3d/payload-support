@@ -1,7 +1,15 @@
 /**
  * Ambient stub for 'lucide-react'.
- * lucide-react is an optional peer dependency — the host application installs it.
- * This stub satisfies TypeScript when the plugin is type-checked in isolation.
+ *
+ * lucide-react is a REQUIRED peer dependency — three unconditionally registered
+ * components import it statically, so a host without it fails at build time.
+ * It is deliberately not a devDependency here; this stub is what lets the plugin
+ * type-check in isolation without pulling the icon set into the repo.
+ *
+ * Keep the icon list below in sync with the actual imports:
+ *   src/portal/LiveChat.tsx
+ *   src/views/PendingEmailsView/client.tsx
+ *   src/views/TicketingSettingsView/client.tsx
  */
 declare module 'lucide-react' {
   import type { FC, SVGProps } from 'react'

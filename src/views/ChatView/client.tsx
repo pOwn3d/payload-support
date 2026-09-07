@@ -40,6 +40,11 @@ export const ChatViewClient: React.FC = () => {
   const sessionsPollTimeout = useRef<NodeJS.Timeout>(undefined)
   const messagesPollInterval = useRef(3000)
   const messagesPollTimeout = useRef<NodeJS.Timeout>(undefined)
+  // Serialized snapshot of the last sessions payload. The change detection MUST
+  // live outside the setSessions updater: React skips the updater entirely on the
+  // eager-state path, so a flag assigned inside it stops being written after the
+  // first render and the adaptive backoff then climbs to its ceiling and stays there.
+  const sessionsSnapshotRef = useRef<string>('')
 
   // Fetch sessions list
   const [sessionExpired, setSessionExpired] = useState(false)
@@ -50,15 +55,14 @@ export const ChatViewClient: React.FC = () => {
       if (res.status === 401 || res.status === 403) { setSessionExpired(true); return }
       if (res.ok) {
         const data = await res.json()
-        setSessions((prev) => {
-          const newActive = data.active || []
-          const newClosed = data.closed || []
-          if (JSON.stringify(prev.active) !== JSON.stringify(newActive) || JSON.stringify(prev.closed) !== JSON.stringify(newClosed)) {
-            hadChanges = true
-            return { active: newActive, closed: newClosed }
-          }
-          return prev
-        })
+        const newActive = data.active || []
+        const newClosed = data.closed || []
+        const snapshot = JSON.stringify([newActive, newClosed])
+        if (snapshot !== sessionsSnapshotRef.current) {
+          sessionsSnapshotRef.current = snapshot
+          hadChanges = true
+          setSessions({ active: newActive, closed: newClosed })
+        }
       }
     } catch { /* ignore */ }
     setLoading(false)
