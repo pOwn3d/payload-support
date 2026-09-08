@@ -122,11 +122,17 @@ export function createClientSummariesCollection(slugs: CollectionSlugs): Collect
         admin: { readOnly: true },
       },
     ],
+    // Staff-only, on the SAME source of truth as every other collection and as
+    // `requireAdmin`: `slugs.users`. The literal `'users'` this used to compare
+    // against is the DEFAULT slug, not the configured one — on a host app whose
+    // staff collection is renamed (`collectionSlugs.users: 'admins'`) it named
+    // the front-office collection instead, opening read/create/update/delete on
+    // AI-generated client intelligence to it while locking the real agents out.
     access: {
-      create: ({ req }) => req.user?.collection === 'users',
-      read: ({ req }) => req.user?.collection === 'users',
-      update: ({ req }) => req.user?.collection === 'users',
-      delete: ({ req }) => req.user?.collection === 'users',
+      create: ({ req }) => req.user?.collection === slugs.users,
+      read: ({ req }) => req.user?.collection === slugs.users,
+      update: ({ req }) => req.user?.collection === slugs.users,
+      delete: ({ req }) => req.user?.collection === slugs.users,
     },
     timestamps: true,
   }

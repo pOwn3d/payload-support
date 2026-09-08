@@ -16,6 +16,7 @@ import { TypingIndicator } from './TypingIndicator'
 import { MessageActions, EditedBadge, DeletedMessage } from './MessageActions'
 import { ReadReceipt } from './ReadReceipt'
 import { TransferAndInviteActions } from './TransferAndInviteActions'
+import { PlainMessageBody } from './MessageBody'
 // Document type for ticket attachments
 type PayloadDocument = { filename?: string; title?: string; url?: string }
 
@@ -655,12 +656,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                             dangerouslySetInnerHTML={{ __html: msg.bodyHtml }}
                           />
                         ) : (
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed" dangerouslySetInnerHTML={{
-                            __html: msg.body
-                              .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                              .replace(/\[code:(\d+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-semibold">🔗 Voir le code partagé</a>')
-                              .replace(/\n/g, '<br/>')
-                          }} />
+                          <PlainMessageBody body={msg.body} />
                         )}
 
                         {/* Attachments */}

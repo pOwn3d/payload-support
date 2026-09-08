@@ -2,6 +2,7 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbCreate } from '../utils/db'
+import { issueTwoFactorChallenge } from '../utils/twoFactorChallenge'
 
 
 /**
@@ -9,7 +10,7 @@ import { dbCreate } from '../utils/db'
  * Client login endpoint.
  */
 export function createLoginEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const loginLimiter = new RateLimiter(15 * 60_000, 10, store)
+  const loginLimiter = new RateLimiter(15 * 60_000, 10, store, 'login')
   return {
     path: '/support/login',
     method: 'post',
@@ -75,8 +76,20 @@ export function createLoginEndpoint(slugs: CollectionSlugs, store?: RateLimitSto
 
         // 2FA gate: password was correct but a fresh 2FA verification is required.
         // No session/cookie is issued (Payload rolled it back on the throw).
+        //
+        // The password check just succeeded, so this is where the short-lived
+        // proof for `POST /support/2fa {action:'send'}` is minted: without it,
+        // that endpoint would keep letting an anonymous caller burn a victim's
+        // send quota and lock them out of their own account.
         if (errorMessage.includes('2FA_REQUIRED')) {
-          return Response.json({ requires2FA: true }, { status: 200 })
+          let challenge: string | undefined
+          try {
+            challenge = issueTwoFactorChallenge(email)
+          } catch {
+            // PAYLOAD_SECRET missing: 2FA cannot operate at all (codes are
+            // hashed with it). Answer without a challenge — fail closed.
+          }
+          return Response.json({ requires2FA: true, ...(challenge ? { challenge } : {}) }, { status: 200 })
         }
 
         let errorReason = 'Identifiants incorrects'

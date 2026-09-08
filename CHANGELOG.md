@@ -4,6 +4,245 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [4.0.0] - 2026-09-08
+
+Security release: every hole below is present in 3.0.0 and closed here. Upgrade
+first, then read *Changed* — several of the hardenings alter a request or
+response shape, or revoke an access an existing account had.
+
+### Security
+
+- **Any authenticated account, on any auth collection, could take over the
+  plugin's server settings.** The plugin stores them in Payload's native
+  `payload-preferences` under the key `support-settings`. That collection accepts
+  a write from *any* authenticated principal whatever its auth collection — a
+  support client, or a front-office member / subscriber of the host app — while
+  the read filtered on the key alone and took the most recently updated row. A
+  planted row therefore became the settings the whole plugin ran on, at most 60 s
+  later (the cache TTL). What that controls: `email.replyToAddress`, used as the
+  `replyTo` of nearly every outbound mail (reply notifications, reminders,
+  auto-close, digests, scheduled messages, resends, invitations, transfers, SLA
+  escalations), so client email replies could be redirected to an outsider — a
+  cross-tenant leak of ticket content — plus `sla.escalationEmail`,
+  `ai.provider` and every `features` flag. Every read is now scoped to
+  `user.relationTo = <staff collection>`, taken from the plugin's own resolved
+  `collectionSlugs.users` (published on `config.custom.supportStaffCollection`),
+  not from `config.admin.user`, which Payload silently defaults to the *first*
+  auth collection of the host app. **To audit:** any `payload-preferences` row
+  keyed `support-settings` whose owner is not a staff user, and the `replyTo` /
+  escalation addresses your `email-logs` actually used.
+- **The same key-only read applied to per-agent preferences, and ids collide
+  between auth collections.** `email-signature-<id>` and
+  `support-user-prefs-<id>` were read back by key alone: support client #7 could
+  write the row that agent #7's signature and locale were loaded from. Both
+  families are now read with the same staff scope, on the read *and* the write
+  path (`/support/signature`, `/support/user-prefs`).
+- **Stored XSS in the client portal, injectable by an unauthenticated email
+  sender.** A message with no `bodyHtml` was rendered with
+  `dangerouslySetInnerHTML` after an escaper that replaced `&`, `<` and `>` but
+  not the double quote, and the `[code:N](url)` link target was then re-injected
+  into an `href` attribute whose value the URL pattern was allowed to close.
+  Script then ran in the portal session of the ticket owner and of every
+  collaborator. The injection point needs no account: the inbound-email pipeline
+  copies `pendingEmail.body` verbatim into a ticket message
+  (`endpoints/pending-emails-process.ts`), and `sanitizeMessageHtml` only ever
+  looked at `bodyHtml`. Plain-text bodies are now rendered as JSX and link
+  targets are parsed and restricted to `http:` / `https:`.
+- **Any authenticated account could forge a live-chat message attributed to
+  another client and signed as a support agent.** `chat-messages` had
+  `create: ({ req }) => !!req.user` and, unlike `tickets` and `ticket-messages`,
+  no hook validating the row: `client`, `senderType: 'agent'` and the `agent`
+  relation were all taken from the body. The forged line was rendered by the
+  agent console and by the targeted client as a genuine conversation — phishing
+  over a trusted channel. `create` is now staff and support-clients only, and a
+  support-client write has `client` forced to the caller, `senderType` forced to
+  `client`, `agent` stripped, and is refused when the `session` already belongs
+  to someone else.
+- **`GET /support/email-stats`, documented as admin-only, accepted any
+  authenticated session.** The guard was `!!req.user`. A support client, or a
+  user of any other auth collection of the host app, could read the whole
+  `email-logs` aggregate — volume, failure rate, processing time, per-action and
+  per-day breakdown — even though that collection's own `read` is staff-only,
+  because the pages are fetched with `overrideAccess: true`. It was also an
+  amplification primitive: up to 25 000 rows read and materialised per call, with
+  no rate limit. Now `requireAdmin` plus 20 requests/minute per principal.
+- **A ticket collaborator invited as `viewer` could post in the thread.** The
+  role was persisted and the invitation email promised "lecteur (consultation)",
+  but nothing ever read the field back — the only boundary was "a collaborator
+  row exists". A read-only invitee could write a message and fan out the whole
+  notification chain (email to the owner and the agents, webhooks, first-response
+  SLA). `resolveAccessibleTicketIds` now takes a `'read' | 'write'` mode and the
+  `ticket-messages` guard asks for `'write'`, which only accepts rows carrying
+  `role: 'collaborator'`.
+- **Google OAuth: the CSRF state was compared against a value taken from the
+  request body, and the whole path skipped 2FA.** The callback read both
+  `state` and `cookieState` from the same JSON body, so for any non-browser
+  caller the check was satisfied by sending one string twice; the binding to the
+  browser rested entirely on integrator-side code. And because this path mints
+  its session by hand (`getFieldsToSign` + `jwtSign`) instead of calling
+  `payload.login`, the `beforeLogin` hook enforcing 2FA never ran: a client who
+  had turned on `twoFactorEnabled` from their profile bypassed their second
+  factor entirely by clicking "Sign in with Google". The state is now issued as
+  an `HttpOnly` cookie at the `login` step, read back server-side from the
+  `Cookie` header, compared in constant time and expired after use; the callback
+  replays the 2FA rule before minting anything and answers
+  `{ requires2FA: true }` with no token.
+- **An anonymous caller could lock any 2FA-enabled client out of their account,
+  knowing only their email address.** `POST /support/2fa {action:'send'}`
+  required no proof that the password step had succeeded, and its only guard was
+  a limiter keyed on the *victim's* email (3 per hour). Three requests burned the
+  quota; the victim then logged in correctly, was asked for a code, and no mail
+  was ever sent — renewable indefinitely. Each send also overwrote a
+  `twoFactorCode` already in flight, and mailed a third-party address from the
+  support domain. `action: 'send'` now requires the short-lived `challenge`
+  minted by `/support/login` (and by the Google callback) alongside
+  `requires2FA` — an HMAC over `PAYLOAD_SECRET`, checked *before* the limiter so
+  an unauthenticated caller consumes no budget, sends no mail and overwrites no
+  code.
+- **Blind SSRF through webhook endpoint URLs.** `webhook-endpoints.url` was a
+  plain `text` field with no validation, and the dispatcher called `fetch()` on
+  it with the default redirect policy on every ticket event. A staff account
+  could point it at `http://169.254.169.254/…`, a loopback port or any internal
+  service and read the outcome back from `lastStatus` in the admin — an internal
+  service-mapping oracle. Three layers now apply, on the current transport and on
+  the deprecated `fireWebhooks` alike: `https:` only and literal private /
+  loopback / link-local / IPv4-mapped-IPv6 hosts rejected at save time; the name
+  re-resolved and re-checked immediately before the call, failing closed on a
+  timeout, an empty answer or a resolver error; and redirects followed manually,
+  with both checks re-run on every hop.
+- **`POST/GET /support/typing` was an unauthenticated-in-practice memory sink and
+  a name oracle.** The guard was `!!req.user` — any account of any auth
+  collection — `ticketId` was never validated and went straight into a
+  module-level `Map` key, and nothing ever swept that map (`cleanExpired` ran on
+  the read path only, for the single id being read). A loop of POSTs with a long
+  random `ticketId` grew the map without bound until the Node process died,
+  taking the public portal and the Payload admin with it. The `GET` also handed
+  the typing agent's first name to any authenticated caller for any ticket id.
+  Ids are now shape-validated, the caller must be staff or a support client *and*
+  able to read that ticket (checked through the `tickets` access rules), the map
+  is capped at 500 entries with expiry sweeping and oldest-first eviction, and a
+  caller with no right to the ticket gets the same "idle" body as a quiet one.
+- **`client-summaries` compared `req.user.collection` against the literal
+  `'users'`** instead of the configured `collectionSlugs.users` — the only
+  collection in the plugin that did. On a host app whose staff collection is
+  renamed (`collectionSlugs: { users: 'admins' }`) while a `users` collection
+  holds the front office, that literal named the front office: its members could
+  read, create, edit and delete AI-generated client intelligence (summaries,
+  recurring topics, key facts, per-client ticket history) over the REST API,
+  while the real agents were locked out of it. `admin.hidden: true` hides the
+  nav entry, not the API.
+- **Rate-limit counters were shared across endpoints and across auth
+  collections.** Keys went to the store unprefixed, so with
+  `rateLimitStore: 'payload'` — the setting documented for multi-instance
+  deployments — different limiters collided on the same string. Ids are
+  per-collection sequences, so `String(user.id)` made support client #7 and agent
+  #7 one budget: sending chat messages kept a *chosen* agent 429-ed on reminders,
+  notification resends and invitations. On the `ip` key, ten chatbot requests
+  carrying a victim's address in `X-Forwarded-For` locked that address out of
+  `/support/login` for 15 minutes. And inside `/support/2fa`, the send and verify
+  limiters shared one counter. Every key is now namespaced per endpoint, and an
+  authenticated caller's key carries its auth collection.
+- **Two endpoints turned the support domain into an outbound mailer.**
+  `POST /support/tickets/:id/transfer` sends a caller-chosen 1 000-character
+  message to an arbitrary address from the operator's From address, and both its
+  quotas were per *ticket* — which a client can create at will, resetting them.
+  `POST /support/tickets/:id/invite` creates a full `support-clients` account for
+  any unknown address and triggers both an invitation and a password-reset mail,
+  capped only per hour and per ticket. Ticket-independent per-user ceilings now
+  apply to support clients: 15 transfers / 24 h, and 30 invitations that create a
+  new account / 7 days. Staff are exempt.
+- **`POST /support/chatbot` let an anonymous caller run up the operator's AI
+  bill.** The endpoint is public by design, and its only guard was a limiter
+  keyed on the first hop of `X-Forwarded-For` — a value the caller supplies, so
+  rotating it yields a fresh window every time. Each accepted call ships ~50 KB
+  of knowledge base to the Anthropic API. A global hourly ceiling, keyed on
+  nothing the caller controls, now bounds the spend; over budget the endpoint
+  *degrades* instead of failing, returning the "open a ticket" deflection it
+  already returns with an empty knowledge base, so a flood cannot mute the
+  chatbot for legitimate visitors.
+- **The portal shell identified a client by duck typing.** The authenticated
+  layout accepted any session whose document had a `company` field, rather than
+  one belonging to the support-clients collection — a common field on a
+  front-office or subscriber document, so those users entered the portal shell
+  instead of being redirected to the login page. The pages themselves query with
+  `overrideAccess: false`, so no ticket data leaked; the guard now tests
+  `user.collection`.
+
+### Fixed
+
+- The settings cache was a single shared slot, so the first read decided which
+  settings every later caller saw regardless of the scope it asked for. It is now
+  keyed by the staff scope the read was made under, and bounded.
+- When a `support-settings` row exists but none is owned by the staff collection,
+  the plugin now logs a warning naming the collection it looked under instead of
+  silently running on `DEFAULT_SETTINGS` — the failure mode when
+  `collectionSlugs.users` and the row's owner disagree, which turns AI calls and
+  auto-close back on.
+- A `webhook-endpoints` row whose URL is no longer acceptable stays editable: the
+  URL is validated only when it is actually written, so such a row can still be
+  renamed, re-scoped or deactivated, and the dispatcher's `lastStatus: 0`
+  bookkeeping still lands on it. A field-level `validate` would have frozen every
+  pre-existing row on any unrelated edit.
+
+### Changed
+
+- `POST /support/oauth/google` no longer reads `cookieState` from the request
+  body; `{ action: 'login' }` answers with
+  `Set-Cookie: support-oauth-state=…; HttpOnly; SameSite=Lax`. A hand-written
+  Google button must drop `cookieState` from the callback payload and let the
+  browser carry the cookie (`credentials: 'include'` cross-origin).
+- `POST /support/login` returns `challenge` next to `requires2FA`, and
+  `POST /support/2fa {action:'send'}` requires it — a caller that omits it gets
+  `401`. The Google callback returns the same field with `requires2FA`. The
+  bundled portal login page was updated; a custom portal must forward the value.
+- `GET /support/email-stats` is staff-only. A dashboard calling it with a portal
+  client session now gets `403`.
+- A collaborator row with no explicit `role`, or `role: 'viewer'`, grants read
+  access only. Rows created before 4.0.0 default to `viewer`, so an invitee who
+  was posting messages stops being able to — set their row to `collaborator` to
+  restore it.
+- `webhook-endpoints` accepts `https://` only, and rejects literal private,
+  loopback and link-local hosts at save time. An endpoint saved earlier with an
+  `http://` URL or an internal host stops delivering (`lastStatus: 0`) and must
+  be re-pointed; `SUPPORT_ALLOW_INSECURE_WEBHOOKS=1` re-allows `http://` for
+  local development.
+- `POST /support/chatbot` answers `200` with
+  `{ answer: null, suggestion: 'create_ticket', aiUnavailable: true }` once the
+  hourly ceiling is reached. Tune it with `SUPPORT_CHATBOT_MAX_PER_HOUR`
+  (default `200`) or the new third argument of `createChatbotEndpoint`.
+- `RateLimiter` takes an optional fourth `namespace` argument and prefixes every
+  key it writes with it, and authenticated callers are keyed
+  `<collection>:<id>`. Rows already in the rate-limits collection no longer match
+  the new keys, so counters restart once on upgrade.
+- `readSupportSettings`, `readSupportSettingsState` and `readUserPrefs` take an
+  optional trailing `staffSlug`. Called without it inside a plugin-built config
+  they resolve the staff collection from `config.custom`, so no call site needs
+  to change.
+- `supportPlugin()` writes `config.custom.supportStaffCollection`. A host app
+  that replaces `custom` wholesale after the plugin runs will strip it.
+- README: the two new environment variables, the OAuth state contract, the
+  webhook URL rules, and the `/support/2fa` and `/support/email-stats` rows of
+  the endpoint table.
+
+### Added
+
+- `SUPPORT_CHATBOT_MAX_PER_HOUR` and `SUPPORT_ALLOW_INSECURE_WEBHOOKS`
+  environment variables.
+- `utils/urlSafety.ts` — `validateWebhookUrl`, `isBlockedHost`,
+  `assertPublicHost`, `safeFetch`, `BlockedRequestError` — and
+  `utils/twoFactorChallenge.ts` — `issueTwoFactorChallenge`,
+  `verifyTwoFactorChallenge`. Internal modules, not re-exported from the package
+  barrel.
+- `principalRateKey(user)` and `RateLimiter#scopedKey(key)`.
+- 74 tests covering every item above: `securityHardening`,
+  `securityHardeningPass2`, and integration suites for collaborator roles,
+  settings ownership, staff-slug registration, typing access and the webhook URL
+  guard.
+- `.github/workflows/security.yml` — `pnpm audit --audit-level high`, gitleaks
+  and CodeQL (`security-extended`), on every push and pull request plus weekly —
+  and `.github/dependabot.yml`. Every GitHub Action in the three workflows is
+  pinned to a commit SHA.
+
 ## [3.0.0] - 2026-09-07
 
 Closes the cross-tenant write holes an external audit found in the client portal,

@@ -1,7 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml, emailWrapper, emailParagraph, emailButton } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFindByID, dbFind, dbCreate, dbUpdate } from '../utils/db'
@@ -38,7 +38,7 @@ function formatFr(date: Date, withTime: boolean): string {
  * Admin-only, rate-limited.
  */
 export function createSendReminderEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const reminderLimiter = new RateLimiter(60 * 60 * 1000, 30, store)
+  const reminderLimiter = new RateLimiter(60 * 60 * 1000, 30, store, 'send-reminder')
   return {
     path: '/support/send-reminder',
     method: 'post',
@@ -48,7 +48,7 @@ export function createSendReminderEndpoint(slugs: CollectionSlugs, store?: RateL
 
         requireAdmin(req, slugs)
 
-        if (await reminderLimiter.check(String(req.user.id), req)) {
+        if (await reminderLimiter.check(principalRateKey(req.user), req)) {
           return Response.json(
             { error: 'Trop de relances. Réessayez dans une heure.' },
             { status: 429 },

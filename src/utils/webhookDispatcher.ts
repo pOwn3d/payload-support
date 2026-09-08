@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import type { BasePayload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { dbFind, dbUpdate } from './db'
+import { safeFetch } from './urlSafety'
 
 /**
  * Outbound webhook events. Must stay in sync with the `events` options of the
@@ -90,7 +91,10 @@ async function _sendToEndpoint(
       headers['X-Webhook-Signature'] = signature
     }
 
-    const response = await fetch(endpoint.url, {
+    // safeFetch: rejects non-https and private / loopback / link-local targets,
+    // re-resolves the name before connecting (DNS rebinding) and re-checks every
+    // redirect hop instead of letting undici follow a 302 into the private range.
+    const response = await safeFetch(endpoint.url, {
       method: 'POST',
       headers,
       body,

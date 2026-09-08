@@ -3,14 +3,72 @@ import { getFieldsToSign, jwtSign } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto from 'crypto'
 import { dbFind, dbUpdate, dbCreate, dbFindByID } from '../utils/db'
+import { issueTwoFactorChallenge } from '../utils/twoFactorChallenge'
 
 /**
  * POST /api/support/oauth/google
  * Google OAuth — handles both login redirect and callback.
- * Body: { action: 'login' } or { code: string, state: string, cookieState: string }
+ * Body: { action: 'login' } or { code: string, state: string }
+ *
+ * The CSRF state is NOT taken from the body: `action: 'login'` issues it as an
+ * HttpOnly cookie and the callback reads it back from the `Cookie` header.
  */
 export interface OAuthGoogleOptions {
   allowedEmailDomains?: string[]
+}
+
+/** Name of the HttpOnly cookie carrying the CSRF state between the two steps. */
+export const OAUTH_STATE_COOKIE = 'support-oauth-state'
+
+/** Same window as the Google authorization code: 10 minutes is plenty. */
+const OAUTH_STATE_MAX_AGE = 600
+
+/**
+ * A successful `/support/2fa` verify stamps `twoFactorVerifiedAt`; the marker is
+ * valid for this window then consumed. Mirrors `TWO_FA_WINDOW_MS` in
+ * `collections/SupportClients.ts` — the two MUST stay in sync.
+ */
+const TWO_FA_WINDOW_MS = 5 * 60 * 1000
+
+/**
+ * Read one cookie from the request's own `Cookie` header.
+ *
+ * The callback used to compare `state` against a `cookieState` ALSO taken from
+ * the JSON body: two values from the same attacker-controlled place, so the CSRF
+ * check was a no-op for any non-browser caller (send the same string twice). The
+ * state is now issued as an HttpOnly cookie at the `login` step and read back
+ * here, server-side — the only place a browser cannot forge it from script.
+ */
+export function readCookie(header: string | null | undefined, name: string): string | null {
+  if (!header) return null
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=')
+    if (eq === -1) continue
+    if (part.slice(0, eq).trim() !== name) continue
+    try {
+      return decodeURIComponent(part.slice(eq + 1).trim())
+    } catch {
+      return part.slice(eq + 1).trim()
+    }
+  }
+  return null
+}
+
+/**
+ * Expire the state cookie: it is single-use, and leaving it live for the rest of
+ * its 10 minutes keeps a consumed CSRF token replayable for no benefit.
+ */
+export function clearedStateCookie(): string {
+  const secure = process.env.NODE_ENV === 'production'
+  return `${OAUTH_STATE_COOKIE}=; HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=0`
+}
+
+/** Constant-time comparison — the state is a secret for the length of the flow. */
+function statesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  const left = crypto.createHash('sha256').update(a).digest()
+  const right = crypto.createHash('sha256').update(b).digest()
+  return crypto.timingSafeEqual(left, right)
 }
 
 export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAuthGoogleOptions): Endpoint {
@@ -31,7 +89,7 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAut
 
       try {
         const body = await req.json!()
-        const { action, code, state: queryState, cookieState } = body
+        const { action, code, state: queryState } = body
 
         // Step 1: Generate OAuth URL
         if (action === 'login') {
@@ -46,16 +104,30 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAut
             prompt: 'select_account',
           })
 
-          return Response.json({
-            url: `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-            state: oauthState,
-          })
+          const secure = process.env.NODE_ENV === 'production'
+          const loginHeaders = new Headers({ 'Content-Type': 'application/json' })
+          loginHeaders.append(
+            'Set-Cookie',
+            `${OAUTH_STATE_COOKIE}=${oauthState}; HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=${OAUTH_STATE_MAX_AGE}`,
+          )
+
+          return new Response(
+            JSON.stringify({
+              url: `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+              // Kept for callers that echo it back in the redirect URL; the
+              // server no longer trusts anything the caller returns.
+              state: oauthState,
+            }),
+            { status: 200, headers: loginHeaders },
+          )
         }
 
         // Step 2: Handle callback (code exchange)
         if (code) {
-          // Validate state
-          if (!cookieState || !queryState || cookieState !== queryState) {
+          // Validate state against the HttpOnly cookie set at the `login` step —
+          // NOT against a second copy taken from the request body.
+          const issuedState = readCookie(req.headers.get('cookie'), OAUTH_STATE_COOKIE)
+          if (!statesMatch(issuedState, queryState)) {
             return Response.json({ error: 'state_mismatch' }, { status: 400 })
           }
 
@@ -158,6 +230,54 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAut
             }) as { id: number | string; email: string }
           }
 
+          // Replay the 2FA rule BEFORE minting anything.
+          //
+          // This path never calls `payload.login`, so the `beforeLogin` hook
+          // `createEnforce2FA` (collections/SupportClients.ts) never runs: a
+          // client who turned 2FA on from the portal profile page could skip it
+          // entirely by clicking "Sign in with Google". Same contract as
+          // `endpoints/login.ts`: no token, `{ requires2FA: true }`, and the
+          // verified marker is single-use.
+          const twoFactorDoc = (await dbFindByID(payload, slugs.supportClients, {
+            id: clientDoc.id,
+            depth: 0,
+            overrideAccess: true,
+            showHiddenFields: true,
+          })) as { twoFactorEnabled?: boolean; twoFactorVerifiedAt?: string | null }
+
+          if (twoFactorDoc?.twoFactorEnabled) {
+            const raw = twoFactorDoc.twoFactorVerifiedAt
+            const verifiedAt = raw ? new Date(raw).getTime() : 0
+            if (!(verifiedAt > Date.now() - TWO_FA_WINDOW_MS)) {
+              // The authorization code is spent: the client has to restart the
+              // whole flow after verifying, so the state goes with it.
+              //
+              // Google just proved this identity, so the client is entitled to
+              // request a code: hand out the same short-lived challenge
+              // `endpoints/login.ts` mints, or `POST /support/2fa` would refuse
+              // to send one.
+              let challenge: string | undefined
+              try {
+                challenge = issueTwoFactorChallenge(clientDoc.email)
+              } catch {
+                // PAYLOAD_SECRET missing — 2FA is inoperable anyway; fail closed.
+              }
+              return new Response(JSON.stringify({ requires2FA: true, ...(challenge ? { challenge } : {}) }), {
+                status: 200,
+                headers: new Headers({
+                  'Content-Type': 'application/json',
+                  'Set-Cookie': clearedStateCookie(),
+                }),
+              })
+            }
+            // Consume the marker so the verified window cannot be replayed.
+            await dbUpdate(payload, slugs.supportClients, {
+              id: clientDoc.id,
+              data: { twoFactorVerifiedAt: null },
+              overrideAccess: true,
+            })
+          }
+
           // Mint a Payload session WITHOUT touching the user's password.
           // Uses Payload's own jwtSign/getFieldsToSign so the token format matches
           // exactly, and replicates addSessionToUser for the sessions array.
@@ -209,6 +329,8 @@ export function createOAuthGoogleEndpoint(slugs: CollectionSlugs, options?: OAut
             'Set-Cookie',
             `payload-token=${token}; HttpOnly; ${cookieSecure ? 'Secure; ' : ''}SameSite=Lax; Path=/; Max-Age=${tokenExpiration}`,
           )
+          // The state has done its job — do not leave it replayable.
+          headers.append('Set-Cookie', clearedStateCookie())
 
           return new Response(JSON.stringify({ user: clientDoc, exp }), {
             status: 200,

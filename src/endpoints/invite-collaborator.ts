@@ -4,7 +4,7 @@ import { handleAuthError, AuthError } from '../utils/auth'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
 import { randomBytes } from 'crypto'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFindByID, dbFind, dbCreate, dbUpdate, dbCount } from '../utils/db'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -12,6 +12,21 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Anti-abuse limits: an invite can create a placeholder account AND send an
 // email, so cap both the volume per user and the collaborators per ticket.
 const MAX_COLLABORATORS_PER_TICKET = 20
+
+/**
+ * Long-window ceiling on ACCOUNT CREATIONS per inviter.
+ *
+ * The two existing quotas are per hour (10 invites) and per ticket (20
+ * collaborators); neither bounds the total number of `support-clients` rows a
+ * single client can conjure, nor the total number of third parties it can mail,
+ * since a client can open as many tickets as it wants. This one is only consumed
+ * when the invited address has NO account yet — inviting an existing client
+ * (the normal case) never touches it.
+ *
+ * Applied to support-clients only: staff onboarding is a legitimate bulk flow.
+ */
+const MAX_NEW_ACCOUNTS_PER_INVITER = 30
+const NEW_ACCOUNT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 /**
  * POST /api/support/tickets/:id/invite
@@ -31,7 +46,8 @@ const MAX_COLLABORATORS_PER_TICKET = 20
  *  - Returns { ok, invitedTo, role }.
  */
 export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const inviteLimiter = new RateLimiter(60 * 60 * 1000, 10, store)
+  const inviteLimiter = new RateLimiter(60 * 60 * 1000, 10, store, 'invite-collaborator')
+  const newAccountLimiter = new RateLimiter(NEW_ACCOUNT_WINDOW_MS, MAX_NEW_ACCOUNTS_PER_INVITER, store, 'invite-collaborator:new-account')
   return {
     path: '/support/tickets/:id/invite',
     method: 'post',
@@ -75,7 +91,7 @@ export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs, store?:
         }
 
         // Anti-abuse: cap invite volume per user (in-memory, fail-closed).
-        if (await inviteLimiter.check(String(req.user.id), req)) {
+        if (await inviteLimiter.check(principalRateKey(req.user), req)) {
           return Response.json({ error: 'Trop d\'invitations. Réessayez plus tard.' }, { status: 429 })
         }
 
@@ -107,6 +123,16 @@ export function createInviteCollaboratorEndpoint(slugs: CollectionSlugs, store?:
         if (existing.docs.length > 0) {
           inviteeId = (existing.docs[0] as any).id
         } else {
+          // Creating an account for an address nobody vouched for — bounded over a
+          // long window so the endpoint cannot be used to mass-create ghost
+          // accounts and mail arbitrary third parties.
+          if (!isAdmin && await newAccountLimiter.check(principalRateKey(req.user), req)) {
+            return Response.json(
+              { error: 'Trop de nouveaux comptes invités. Réessayez plus tard.' },
+              { status: 429 },
+            )
+          }
+
           // Create a placeholder client; password is random — the invitee will reset
           // via the forgotPassword flow triggered by the SupportClients afterChange hook.
           const tempPassword = randomBytes(16).toString('hex')

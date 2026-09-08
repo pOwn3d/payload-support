@@ -2,7 +2,7 @@ import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { runAiAgent } from '../utils/aiAgent'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 
 /**
  * POST /api/support/ai-agent   body: { ticketId, confidenceThreshold? }
@@ -11,14 +11,14 @@ import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
  * (when confident) or escalates to a human with an internal note. Admin-only.
  */
 export function createAiAgentEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const limiter = new RateLimiter(60_000, 10, store)
+  const limiter = new RateLimiter(60_000, 10, store, 'ai-agent')
   return {
     path: '/support/ai-agent',
     method: 'post',
     handler: async (req) => {
       try {
         requireAdmin(req, slugs)
-        if (await limiter.check(String(req.user!.id), req)) {
+        if (await limiter.check(principalRateKey(req.user), req)) {
           return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
         }
         let body: { ticketId?: number | string; confidenceThreshold?: number } = {}

@@ -32,6 +32,10 @@ function SupportLoginContent() {
 
   // 2FA state
   const [needs2FA, setNeeds2FA] = useState(false)
+  // Proof that the password step succeeded, minted by /support/login. Required
+  // by /support/2fa {action:'send'} — that endpoint no longer sends a code to
+  // anyone who merely knows the address.
+  const [challenge, setChallenge] = useState('')
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [sending2FA, setSending2FA] = useState(false)
 
@@ -60,10 +64,11 @@ function SupportLoginContent() {
       if (data.requires2FA) {
         // Send 2FA code
         setSending2FA(true)
+        setChallenge(data.challenge || '')
         const codeRes = await fetch('/api/support/2fa', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'send', email }),
+          body: JSON.stringify({ action: 'send', email, challenge: data.challenge }),
         })
 
         if (codeRes.ok) {
@@ -130,12 +135,15 @@ function SupportLoginContent() {
       const res = await fetch('/api/support/2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send', email }),
+        body: JSON.stringify({ action: 'send', email, challenge }),
       })
       if (res.ok) {
         setError('')
       } else {
-        setError('Erreur lors du renvoi du code.')
+        // 401 = the challenge expired (10 min): the password must be re-entered.
+        setError(res.status === 401
+          ? 'Session expirée. Reconnectez-vous pour recevoir un nouveau code.'
+          : 'Erreur lors du renvoi du code.')
       }
     } catch {
       setError('Erreur de connexion.')

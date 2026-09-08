@@ -2,7 +2,7 @@ import type { Endpoint, PayloadRequest } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { readSupportSettings, type SupportSettings } from '../utils/readSettings'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { resolveOllamaBaseUrl } from '../utils/aiProvider'
 
 async function getClient(aiSettings: SupportSettings['ai']) {
@@ -29,11 +29,11 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
  * Force-refreshes the summary.
  */
 export function createClientIntelligenceEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint[] {
-  const limiter = new RateLimiter(60_000, 20, store)
+  const limiter = new RateLimiter(60_000, 20, store, 'client-intelligence')
   const getHandler = async (req: PayloadRequest) => {
     try {
       requireAdmin(req, slugs)
-      if (await limiter.check(String(req.user!.id), req)) {
+      if (await limiter.check(principalRateKey(req.user), req)) {
         return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }
       const payload = req.payload
@@ -71,7 +71,7 @@ export function createClientIntelligenceEndpoint(slugs: CollectionSlugs, store?:
   const postHandler = async (req: PayloadRequest) => {
     try {
       requireAdmin(req, slugs)
-      if (await limiter.check(String(req.user!.id), req)) {
+      if (await limiter.check(principalRateKey(req.user), req)) {
         return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }
       const payload = req.payload

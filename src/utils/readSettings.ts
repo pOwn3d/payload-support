@@ -13,6 +13,50 @@ const USER_PREFS_KEY_PREFIX = 'support-user-prefs'
 /** Pre-2.1 standalone round-robin row — read as a fallback, then folded into `features`. */
 const LEGACY_ROUND_ROBIN_KEY = 'support-round-robin'
 
+/**
+ * Key under which `plugin.ts` publishes the resolved staff collection slug on
+ * `config.custom`. It is the ONE source of truth shared by the read path (here)
+ * and the write path (`requireAdmin` → `slugs.users`).
+ */
+export const SUPPORT_STAFF_SLUG_CONFIG_KEY = 'supportStaffCollection'
+
+/**
+ * Owner scope for every `payload-preferences` row this plugin reads back.
+ *
+ * `payload-preferences` is writable by ANY authenticated principal, whatever its
+ * auth collection: Payload's `POST /api/payload-preferences/:key` handler only
+ * checks `!!req.user` before upserting the row. Reading a plugin-wide row by key
+ * alone therefore lets a front-office user (or a support-client) plant their own
+ * row and have the whole plugin read it — replyTo addresses, SLA escalation
+ * address, AI provider, feature flags.
+ *
+ * Every read below is constrained to `user.relationTo = <staff collection>`, the
+ * same scope the WRITE path already uses (endpoints/settings.ts, signature.ts,
+ * user-prefs.ts all upsert with `req.user.collection`, and all three are guarded
+ * by `requireAdmin`, which compares against `slugs.users`).
+ *
+ * TWO SOURCES OF TRUTH WERE THE BUG: this used to resolve the scope from
+ * `config.admin.user`, which Payload defaults to the FIRST auth collection of
+ * the app when the integrator did not declare it (config/sanitize.js). On a host
+ * whose first auth collection is the front office and whose staff collection is
+ * declared through `collectionSlugs.users`, the read scope named the front
+ * office while the write scope named the staff — and the poisoning this scope
+ * was added to defeat was open again. So the plugin now PUBLISHES the resolved
+ * `slugs.users` on `config.custom` (see plugin.ts) and reads it back here.
+ * `config.admin.user` remains a last-resort fallback for callers using these
+ * helpers outside of a plugin-built config; there is no plugin deployment in
+ * which it is consulted.
+ */
+export function resolveStaffPrefSlug(payload: Payload, staffSlug?: string): string {
+  if (staffSlug) return staffSlug
+  const config = (payload as unknown as {
+    config?: { admin?: { user?: string }; custom?: Record<string, unknown> }
+  }).config
+  const registered = config?.custom?.[SUPPORT_STAFF_SLUG_CONFIG_KEY]
+  if (typeof registered === 'string' && registered) return registered
+  return config?.admin?.user || 'users'
+}
+
 export interface SupportSettings {
   email: { fromAddress: string; fromName: string; replyToAddress: string }
   ai: { provider: string; model: string; enableSentiment: boolean; enableSynthesis: boolean; enableSuggestion: boolean; enableRewrite: boolean }
@@ -44,8 +88,17 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
 // (the afterChange hook chain). The settings doc changes rarely, so a short TTL
 // + explicit invalidation on save (endpoints/settings.ts) avoids redundant DB
 // reads of the same `payload-preferences` row.
-let settingsCache: { value: SupportSettingsState; ts: number } | null = null
+// Keyed by the STAFF SLUG the read was scoped to: a single shared slot would
+// serve one install's (or one test's) settings to another whose scope differs.
+// Bounded — the key comes from config, never from a request — but capped anyway
+// so an integrator calling the exported helper with arbitrary slugs cannot grow
+// it without limit.
+const settingsCache = new Map<string, { value: SupportSettingsState; ts: number }>()
 const SETTINGS_TTL_MS = 60_000
+const SETTINGS_CACHE_MAX = 8
+
+/** Rate-limits the "settings row exists but is not staff-owned" warning, per scope. */
+const warnedForeignSettingsRow = new Set<string>()
 
 export interface SupportSettingsState {
   settings: SupportSettings
@@ -59,7 +112,8 @@ export interface SupportSettingsState {
 
 /** Invalidate the settings cache — call right after writing support settings. */
 export function invalidateSupportSettingsCache(): void {
-  settingsCache = null
+  settingsCache.clear()
+  warnedForeignSettingsRow.clear()
 }
 
 /**
@@ -85,9 +139,14 @@ export function mergeSupportSettings(
   }
 }
 
-export async function readSupportSettingsState(payload: Payload): Promise<SupportSettingsState> {
-  if (settingsCache && Date.now() - settingsCache.ts < SETTINGS_TTL_MS) {
-    return settingsCache.value
+export async function readSupportSettingsState(
+  payload: Payload,
+  staffSlug?: string,
+): Promise<SupportSettingsState> {
+  const staff = resolveStaffPrefSlug(payload, staffSlug)
+  const cached = settingsCache.get(staff)
+  if (cached && Date.now() - cached.ts < SETTINGS_TTL_MS) {
+    return cached.value
   }
   let value: SupportSettingsState = {
     settings: mergeSupportSettings(null),
@@ -95,7 +154,10 @@ export async function readSupportSettingsState(payload: Payload): Promise<Suppor
   }
   try {
     const prefs = await dbFind(payload, 'payload-preferences', {
-      where: { key: { equals: PREF_KEY } },
+      // Sibling keys are AND-ed by Payload. The `user.relationTo` clause is the
+      // security boundary: without it any authenticated principal can plant a
+      // `support-settings` row and own the plugin's server settings.
+      where: { key: { equals: PREF_KEY }, 'user.relationTo': { equals: staff } },
       // The upsert is scoped per admin user, so several rows can share the key.
       // Sorting makes "last write wins" deterministic instead of arbitrary.
       sort: '-updatedAt',
@@ -110,24 +172,63 @@ export async function readSupportSettingsState(payload: Payload): Promise<Suppor
       // Honour it until the first save writes `features` — after that the
       // legacy row is ignored, and both write paths land in `features`.
       if (!featuresConfigured) {
-        settings.features.roundRobin = await readLegacyRoundRobin(payload)
+        settings.features.roundRobin = await readLegacyRoundRobin(payload, staff)
       }
 
       value = { settings, featuresConfigured }
+    } else {
+      await warnOnForeignSettingsRow(payload, staff)
     }
   } catch { /* fallback to defaults */ }
-  settingsCache = { value, ts: Date.now() }
+  if (settingsCache.size >= SETTINGS_CACHE_MAX && !settingsCache.has(staff)) settingsCache.clear()
+  settingsCache.set(staff, { value, ts: Date.now() })
   return value
 }
 
-export async function readSupportSettings(payload: Payload): Promise<SupportSettings> {
-  return (await readSupportSettingsState(payload)).settings
+/**
+ * The scoped read came back empty. That is normal on a fresh install, but it is
+ * also what an operator sees when the settings row was written under another
+ * owner than the resolved staff collection: the row exists, is ignored,
+ * and the whole plugin silently runs on the defaults — a `try/catch` away from
+ * any signal. So: if a row with this key exists under ANOTHER owner, say so.
+ *
+ * Same message covers the other case, deliberately: a `support-settings` row
+ * owned by a non-staff principal is exactly the poisoning attempt this scope was
+ * added to defeat, and the operator should hear about it. Once per cache window
+ * at most (the extra query only runs when nothing was found).
+ */
+async function warnOnForeignSettingsRow(payload: Payload, staff: string): Promise<void> {
+  if (warnedForeignSettingsRow.has(staff)) return
+  try {
+    const any = await dbFind(payload, 'payload-preferences', {
+      where: { key: { equals: PREF_KEY } },
+      limit: 1, depth: 0, overrideAccess: true,
+    })
+    if (any.docs.length === 0) return // fresh install — nothing to report
+    if (warnedForeignSettingsRow.size >= SETTINGS_CACHE_MAX) warnedForeignSettingsRow.clear()
+    warnedForeignSettingsRow.add(staff)
+    console.warn(
+      `[support] A "${PREF_KEY}" preference row exists but none is owned by the "${staff}" collection: ` +
+        'the plugin is running on its DEFAULT settings. Either the staff auth collection differs from ' +
+        '`admin.user`, or the row was written by a principal that is not staff — in which case it is ' +
+        'ignored on purpose.',
+    )
+  } catch {
+    /* diagnostic only — never let it change the outcome */
+  }
 }
 
-async function readLegacyRoundRobin(payload: Payload): Promise<boolean> {
+export async function readSupportSettings(
+  payload: Payload,
+  staffSlug?: string,
+): Promise<SupportSettings> {
+  return (await readSupportSettingsState(payload, staffSlug)).settings
+}
+
+async function readLegacyRoundRobin(payload: Payload, staff: string): Promise<boolean> {
   try {
     const prefs = await dbFind(payload, 'payload-preferences', {
-      where: { key: { equals: LEGACY_ROUND_ROBIN_KEY } },
+      where: { key: { equals: LEGACY_ROUND_ROBIN_KEY }, 'user.relationTo': { equals: staff } },
       limit: 1, depth: 0, overrideAccess: true,
     })
     if (prefs.docs.length > 0) {
@@ -137,11 +238,20 @@ async function readLegacyRoundRobin(payload: Payload): Promise<boolean> {
   return DEFAULT_TICKETING_FEATURES.roundRobin
 }
 
-export async function readUserPrefs(payload: Payload, userId: string | number): Promise<UserPrefs> {
+export async function readUserPrefs(
+  payload: Payload,
+  userId: string | number,
+  staffSlug?: string,
+): Promise<UserPrefs> {
   try {
     const key = `${USER_PREFS_KEY_PREFIX}-${userId}`
+    // Ids collide across auth collections: a support-client with id 7 would
+    // otherwise own `support-user-prefs-7`, the row read back for agent 7.
     const prefs = await dbFind(payload, 'payload-preferences', {
-      where: { key: { equals: key } },
+      where: {
+        key: { equals: key },
+        'user.relationTo': { equals: resolveStaffPrefSlug(payload, staffSlug) },
+      },
       limit: 1, depth: 0, overrideAccess: true,
     })
     if (prefs.docs.length > 0) {

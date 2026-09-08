@@ -1,5 +1,41 @@
-import type { CollectionConfig } from 'payload'
+import { APIError } from 'payload'
+import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
+import { WEBHOOK_URL_MESSAGES, validateWebhookUrl } from '../utils/urlSafety'
+
+/**
+ * First SSRF layer: the value is fetched by the SERVER on every ticket event, so
+ * a loopback / private / link-local target (or a non-https scheme) must never be
+ * SAVED. The send path re-checks the resolved address and every redirect hop —
+ * see `utils/urlSafety.ts`.
+ *
+ * Why a collection hook rather than a field `validate`: Payload re-validates the
+ * MERGED document on every write, so a field-level guard also fires on partial
+ * updates that never mention `url`. A row saved before this guard existed (or
+ * seeded through `payload.db`, which runs no hooks) then became totally
+ * immutable — impossible to rename, to re-scope its events, even to set
+ * `active: false` — and the dispatcher's own bookkeeping write (`lastStatus: 0`,
+ * issued inside a `catch` that swallows errors) failed silently, leaving a dead
+ * endpoint looking healthy in the admin.
+ *
+ * So only a URL actually being SET or CHANGED is checked. Leaving an existing
+ * bad value alone costs nothing: the send path refuses to call it anyway.
+ */
+function createValidateWebhookUrl(): CollectionBeforeValidateHook {
+  return ({ data, operation, originalDoc }) => {
+    const incoming = (data as { url?: unknown } | undefined)?.url
+    if (incoming === undefined || incoming === null) return data
+
+    const previous = (originalDoc as { url?: unknown } | undefined)?.url
+    if (operation === 'update' && incoming === previous) return data
+
+    const result = validateWebhookUrl(incoming)
+    if (!result.ok) {
+      throw new APIError(WEBHOOK_URL_MESSAGES[result.reason || 'invalid_url'], 400)
+    }
+    return data
+  }
+}
 
 // ─── Collection factory ──────────────────────────────────
 
@@ -36,8 +72,11 @@ export function createWebhookEndpointsCollection(slugs: CollectionSlugs): Collec
         type: 'text',
         required: true,
         label: 'URL',
+        // The SSRF check lives in the collection `beforeValidate` above, NOT in a
+        // field `validate`: the latter re-runs on the merged document and would
+        // freeze every pre-existing row on any unrelated edit.
         admin: {
-          description: 'URL du webhook à appeler (POST)',
+          description: 'URL https:// du webhook à appeler (POST). Les adresses privées et loopback sont refusées.',
         },
       },
       {
@@ -91,6 +130,9 @@ export function createWebhookEndpointsCollection(slugs: CollectionSlugs): Collec
         },
       },
     ],
+    hooks: {
+      beforeValidate: [createValidateWebhookUrl()],
+    },
     timestamps: true,
   }
 }

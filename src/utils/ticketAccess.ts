@@ -13,11 +13,24 @@ import { dbFind } from './db'
  *
  * Returns an empty array when the client has no accessible tickets — callers MUST
  * treat that as "deny" (e.g. filter on a sentinel id) rather than "allow all".
+ *
+ * `mode` selects which of the two scopes is wanted:
+ *  - `'read'` (default) — owned tickets + every ticket collaborated on, whatever
+ *    the role. This is the historical behaviour and what `access.read` needs.
+ *  - `'write'` — owned tickets + collaborated tickets whose row carries
+ *    `role === 'collaborator'`. The invitation endpoint offers two roles and the
+ *    invitation email promises "lecteur (consultation)" for `viewer`, but nothing
+ *    ever read the field back: a viewer could post into the thread and trigger the
+ *    whole notification chain. Rows with no explicit role are treated as viewers
+ *    (the collection's own `defaultValue`), i.e. read-only — fail closed.
  */
+export type TicketAccessMode = 'read' | 'write'
+
 export async function resolveAccessibleTicketIds(
   payload: Payload,
   slugs: CollectionSlugs,
   clientId: number | string,
+  mode: TicketAccessMode = 'read',
 ): Promise<Array<number | string>> {
   const ids = new Set<number | string>()
 
@@ -41,7 +54,9 @@ export async function resolveAccessibleTicketIds(
       overrideAccess: true,
     })
     for (const r of collab.docs) {
-      const row = r as { ticket?: number | string | { id?: number | string } }
+      const row = r as { ticket?: number | string | { id?: number | string }; role?: string }
+      // `viewer` (and any row without an explicit role) grants read only.
+      if (mode === 'write' && row.role !== 'collaborator') continue
       const tid = typeof row.ticket === 'object' ? row.ticket?.id : row.ticket
       if (tid !== undefined && tid !== null) ids.add(tid)
     }

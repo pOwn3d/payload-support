@@ -132,7 +132,7 @@ ONLY JSON, nothing else.`,
  * Import a conversation from markdown into the ticket system.
  */
 export function createImportConversationEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const importLimiter = new RateLimiter(3_600_000, 10, store)
+  const importLimiter = new RateLimiter(3_600_000, 10, store, 'import-conversation')
   return {
     path: '/support/import-conversation',
     method: 'post',

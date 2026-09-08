@@ -1,7 +1,7 @@
 import type { Endpoint, Where } from 'payload'
 import type { SupportCapabilities } from '../types'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import {
   validateInboundEmailPayload,
   verifySecret,
@@ -12,7 +12,7 @@ export function createInboundEmailEndpoint(
   capability: NonNullable<SupportCapabilities['inboundEmail']>,
   store?: RateLimitStore,
 ): Endpoint {
-  const limiter = new RateLimiter(60_000, 60, store)
+  const limiter = new RateLimiter(60_000, 60, store, 'inbound-email')
   return {
     path: '/support-webhook/inbound-email',
     method: 'post',
@@ -51,7 +51,7 @@ export function createProjectSuggestionsEndpoint(
   capability: NonNullable<SupportCapabilities['projectSuggestions']>,
   store?: RateLimitStore,
 ): Endpoint {
-  const limiter = new RateLimiter(60_000, 20, store)
+  const limiter = new RateLimiter(60_000, 20, store, 'suggest-projects')
   return {
     path: '/support/suggest-projects',
     method: 'post',
@@ -59,7 +59,7 @@ export function createProjectSuggestionsEndpoint(
       if (!req.user || req.user.collection !== slugs.users) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      const key = req.user?.id ? String(req.user.id) : 'anonymous'
+      const key = principalRateKey(req.user)
       if (await limiter.check(key, req)) {
         return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }
@@ -73,7 +73,7 @@ export function createTicketTitleEndpoint(
   capability: NonNullable<SupportCapabilities['aiTitles']>,
   store?: RateLimitStore,
 ): Endpoint {
-  const limiter = new RateLimiter(60_000, 20, store)
+  const limiter = new RateLimiter(60_000, 20, store, 'ticket-title')
   return {
     path: '/support/ticket-title',
     method: 'post',
@@ -100,7 +100,7 @@ export function createGenerateMissingTitlesEndpoint(
   capability: NonNullable<SupportCapabilities['aiTitles']>,
   store?: RateLimitStore,
 ): Endpoint {
-  const limiter = new RateLimiter(60_000, 5, store)
+  const limiter = new RateLimiter(60_000, 5, store, 'generate-missing-titles')
   return {
     path: '/support/generate-missing-titles',
     method: 'post',

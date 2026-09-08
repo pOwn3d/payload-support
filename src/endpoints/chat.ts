@@ -2,7 +2,7 @@ import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import crypto from 'crypto'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { requireClient, handleAuthError } from '../utils/auth'
 import { dbFind, dbCreate } from '../utils/db'
 
@@ -67,8 +67,8 @@ export function createChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
  * Send a message or start a new chat session. Client-only.
  */
 export function createChatPostEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const chatSessionLimiter = new RateLimiter(3_600_000, 5, store)
-  const chatMessageLimiter = new RateLimiter(60_000, 15, store)
+  const chatSessionLimiter = new RateLimiter(3_600_000, 5, store, 'chat:session')
+  const chatMessageLimiter = new RateLimiter(60_000, 15, store, 'chat:message')
   return {
     path: '/support/chat',
     method: 'post',
@@ -86,10 +86,12 @@ export function createChatPostEndpoint(slugs: CollectionSlugs, store?: RateLimit
         }
         const { action, session, message } = body
         const userId = String(req.user.id)
+        // Collection-qualified: agent #7 and support-client #7 must not share a budget.
+        const rateKey = principalRateKey(req.user)
 
         // Start a new session
         if (action === 'start') {
-          if (await chatSessionLimiter.check(userId, req)) {
+          if (await chatSessionLimiter.check(rateKey, req)) {
             return Response.json({ error: 'Trop de sessions créées. Réessayez plus tard.' }, { status: 429 })
           }
 
@@ -111,7 +113,7 @@ export function createChatPostEndpoint(slugs: CollectionSlugs, store?: RateLimit
 
         // Send a message
         if (action === 'send' && session && message) {
-          if (await chatMessageLimiter.check(userId, req)) {
+          if (await chatMessageLimiter.check(rateKey, req)) {
             return Response.json({ error: 'Trop de messages. Attendez un moment.' }, { status: 429 })
           }
 

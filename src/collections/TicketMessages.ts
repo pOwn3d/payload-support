@@ -37,7 +37,10 @@ function createRestrictClientTicketTarget(slugs: CollectionSlugs): CollectionBef
       throw new APIError('Ticket cible requis.', 400)
     }
 
-    const accessible = await resolveAccessibleTicketIds(req.payload, slugs, req.user.id)
+    // 'write' scope: a collaborator invited as `viewer` may READ the thread but
+    // must not post into it — the invitation email promises exactly that, and a
+    // message from a viewer would fan out the whole notification chain.
+    const accessible = await resolveAccessibleTicketIds(req.payload, slugs, req.user.id, 'write')
     if (!accessible.some((id) => String(id) === String(targetId))) {
       throw new APIError('Ticket inaccessible.', 403)
     }

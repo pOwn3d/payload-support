@@ -19,7 +19,14 @@ export function createSignatureGetEndpoint(slugs: CollectionSlugs): Endpoint {
         requireAdmin(req, slugs)
 
         const prefs = await dbFind(payload, 'payload-preferences', {
-          where: { key: { equals: `${PREF_KEY}-${req.user.id}` } },
+          // Scope to the staff auth collection: `payload-preferences` accepts a
+          // write from ANY authenticated principal, and ids collide between auth
+          // collections — a support-client with the same id would otherwise own
+          // the `email-signature-<id>` row read back for the agent.
+          where: {
+            key: { equals: `${PREF_KEY}-${req.user.id}` },
+            'user.relationTo': { equals: slugs.users },
+          },
           limit: 1,
           depth: 0,
           overrideAccess: true,
@@ -57,7 +64,7 @@ export function createSignaturePostEndpoint(slugs: CollectionSlugs): Endpoint {
         const key = `${PREF_KEY}-${req.user.id}`
 
         const existing = await dbFind(payload, 'payload-preferences', {
-          where: { key: { equals: key } },
+          where: { key: { equals: key }, 'user.relationTo': { equals: slugs.users } },
           limit: 1,
           depth: 0,
           overrideAccess: true,
