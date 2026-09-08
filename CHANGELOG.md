@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.1] - 2026-09-08
+
+Fixes a packaging defect that made 5.0.0 and 6.0.0 unusable: a host application
+could not build against them. If you are on either, this is the version to take
+— and it is the one that finally makes the 5.0.0 security fix applicable.
+
+### Fixed
+
+- **`dist/views/shared/viewAccess.js` imported `../../utils/readSettings.js`,
+  which was never emitted.** That file is produced by the unbundled tsup pass,
+  which preserves relative imports verbatim, and `readSettings.ts` was not one
+  of that pass's entries. The import trace runs through `dist/views.js`, which
+  the Payload import map pulls in, so **every** install that registers the
+  plugin's views hit it — it was not conditional on any option:
+  `Module not found: Can't resolve '../../utils/readSettings.js'`.
+
+  The entry list already carried the same fix for a sibling module, with a
+  comment saying exactly why. `readSettings.ts` is the same case and was
+  missed when `viewAccess.ts` was added in 5.0.0. `db.ts` had the same gap one
+  level deeper and is emitted too now.
+
+  What hid it: `viewAccess.ts` imports a runtime value. An `import type` would
+  have been erased at compilation and left no trace. Nothing in our toolchain
+  could see it — `tsc` and vitest both read `src/`, where the module exists.
+
+### Added
+
+- `scripts/verify-dist-imports.mjs`, wired into `pnpm build`. It walks every
+  emitted file, extracts the relative imports and fails the build when one
+  points at a file that is not there. It caught the `db.ts` gap immediately
+  after the first fix, which is the argument for having it.
+
 ## [6.0.0] - 2026-09-08
 
 **Not a security release.** Nothing below closes a vulnerability, and an install

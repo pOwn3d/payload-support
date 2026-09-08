@@ -1,6 +1,6 @@
 {
   "name": "@consilioweb/payload-support",
-  "version": "6.0.0",
+  "version": "6.0.1",
   "description": "Payload CMS plugin — professional support & ticketing system with AI, SLA, time tracking, live chat, and more",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -52,10 +52,11 @@
     "scripts/uninstall.mjs",
     "scripts/uninstall-data.mjs",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "scripts"
   ],
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.types.json && node scripts/copy-subpath-types.mjs",
+    "build": "tsup && tsc -p tsconfig.types.json && node scripts/copy-subpath-types.mjs && node scripts/verify-dist-imports.mjs",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build",
     "test": "vitest run",

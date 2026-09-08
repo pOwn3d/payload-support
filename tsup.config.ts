@@ -122,10 +122,19 @@ export default defineConfig([
       'src/components/**/*.css',
       'src/styles/**/*.css',
       'src/styles/**/*.scss',
-      // Isomorphic module shared by the client views and the server bundle.
+      // Isomorphic modules shared by the client views and the server bundle.
       // Emitted here too so that the relative imports from dist/views and
       // dist/components resolve at runtime.
+      //
+      // Miss one and nothing complains until a HOST application builds: `tsc`
+      // and vitest both read `src/`, where the module exists, and tsup has no
+      // reason to object either. `readSettings.ts` was the omission that shipped
+      // — `views/shared/viewAccess.ts` imports a *value* from it, and a value
+      // import survives compilation where an `import type` would have been
+      // erased. `scripts/verify-dist-imports.mjs` now fails the build on it.
       'src/utils/features.ts',
+      'src/utils/readSettings.ts',
+      'src/utils/db.ts',
       '!src/**/*.d.ts',
     ],
     loader: {
