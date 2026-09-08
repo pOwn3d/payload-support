@@ -36,7 +36,12 @@ function challengeSecret(): string {
   return secret
 }
 
-function normalizeEmail(email: string): string {
+/**
+ * The address the challenge is signed over. Also the rate-limit key of both 2FA
+ * branches: signing over the normalized form while keying the limiter on the raw
+ * one would give a single challenge one budget PER CASING VARIANT.
+ */
+export function normalizeEmail(email: string): string {
   return String(email).trim().toLowerCase()
 }
 

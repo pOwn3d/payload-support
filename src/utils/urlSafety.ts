@@ -2,7 +2,7 @@ import { lookup } from 'dns/promises'
 
 /**
  * SSRF guards for every URL the SERVER follows on behalf of a user-supplied
- * value (today: outbound webhook endpoints).
+ * value: outbound webhook endpoints, and Web Push subscription endpoints.
  *
  * `webhook-endpoints.url` is a plain `text` field with no validation, writable by
  * any member of the staff collection, and `_sendToEndpoint` used to `fetch()` it
@@ -142,6 +142,41 @@ export const WEBHOOK_URL_MESSAGES: Record<NonNullable<UrlValidationResult['reaso
   invalid_url: 'URL invalide.',
   scheme_not_allowed: 'Seules les URL https:// sont acceptées.',
   private_host: 'Les adresses privées, loopback et link-local sont interdites (SSRF).',
+}
+
+/**
+ * A `push-subscriptions.endpoint` is the same shape of hole as a webhook URL,
+ * from the same actor: `requireAdmin` only checks that the caller belongs to the
+ * staff collection, the field is plain `text` with no `validate`, no collection
+ * hook rewrites it, and `web-push` then hands the hostname and PORT straight to
+ * `https.request` with no allowlist of its own. Pointing it at an internal
+ * service turned every client reply into an outbound request of the attacker's
+ * choosing, with a 1-bit oracle: a 404/410 deletes the row, and staff can read
+ * `push-subscriptions` back.
+ *
+ * Stricter than `validateWebhookUrl` on two points, both because `web-push`
+ * behaves differently from `fetch`:
+ *  - https only, with NO `SUPPORT_ALLOW_INSECURE_WEBHOOKS` escape hatch —
+ *    `web-push` calls `https.request` whatever the scheme says, so an `http://`
+ *    endpoint is a broken subscription, not a dev convenience;
+ *  - an explicit length cap, because unlike a webhook URL this value arrives
+ *    from an HTTP body and is persisted verbatim.
+ */
+const MAX_PUSH_ENDPOINT_LENGTH = 2048
+
+export function validatePushEndpoint(raw: unknown): UrlValidationResult {
+  if (typeof raw !== 'string' || !raw.trim() || raw.length > MAX_PUSH_ENDPOINT_LENGTH) {
+    return { ok: false, reason: 'invalid_url' }
+  }
+  let url: URL
+  try {
+    url = new URL(raw.trim())
+  } catch {
+    return { ok: false, reason: 'invalid_url' }
+  }
+  if (url.protocol !== 'https:') return { ok: false, reason: 'scheme_not_allowed' }
+  if (isBlockedHost(url.hostname)) return { ok: false, reason: 'private_host' }
+  return { ok: true, url }
 }
 
 /**

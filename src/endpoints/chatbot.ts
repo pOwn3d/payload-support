@@ -1,6 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { clientIpRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFind } from '../utils/db'
 
 
@@ -41,7 +41,7 @@ export function createChatbotEndpoint(
     method: 'post',
     handler: async (req) => {
       try {
-        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
+        const ip = clientIpRateKey(req)
         if (await chatbotLimiter.check(ip, req)) {
           return Response.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
         }

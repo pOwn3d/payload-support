@@ -4,7 +4,7 @@ import crypto, { createHmac } from 'crypto'
 import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
 import { dbFind, dbUpdate } from '../utils/db'
-import { verifyTwoFactorChallenge } from '../utils/twoFactorChallenge'
+import { issueTwoFactorChallenge, normalizeEmail, verifyTwoFactorChallenge } from '../utils/twoFactorChallenge'
 
 function generateSecureCode(): string {
   const buf = crypto.randomBytes(4)
@@ -46,7 +46,35 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
           return Response.json({ error: 'Paramètres manquants' }, { status: 400 })
         }
 
-        const genericSendResponse = { success: true, message: 'Si un compte existe, un code a été envoyé.' }
+        // Both limiters are keyed on the SAME normalized address the challenge is
+        // signed over. Keyed on the raw input, one challenge bought one budget per
+        // casing variant of the address it was minted for.
+        const limiterKey = normalizeEmail(email)
+
+        /**
+         * A challenge is a 10-minute proof that the password step succeeded. It
+         * is refreshed on every accepted `send` so it outlives exactly as long as
+         * the code that send just minted: without this, a resend late in the
+         * window produced a code whose challenge expired before the user could
+         * type it, and `verify` answered 401 on a perfectly valid code.
+         *
+         * Returned on EVERY `send` reply, including the throttled and the
+         * unknown-address ones, so the response shape never tells the caller
+         * whether the account exists.
+         */
+        const sendResponse = (): Response => {
+          let refreshed: string | undefined
+          try {
+            refreshed = issueTwoFactorChallenge(email)
+          } catch {
+            // PAYLOAD_SECRET vanished mid-flight: answer without a challenge.
+          }
+          return Response.json({
+            success: true,
+            message: 'Si un compte existe, un code a été envoyé.',
+            ...(refreshed ? { challenge: refreshed } : {}),
+          })
+        }
 
         if (action === 'send') {
           // The challenge is checked BEFORE the limiter on purpose: the limiter
@@ -60,8 +88,8 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
             )
           }
 
-          if (await sendLimiter.check(email, req)) {
-            return Response.json(genericSendResponse)
+          if (await sendLimiter.check(limiterKey, req)) {
+            return sendResponse()
           }
 
           const clients = await dbFind(payload, slugs.supportClients, {
@@ -72,7 +100,7 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
           })
 
           if (clients.docs.length === 0) {
-            return Response.json(genericSendResponse)
+            return sendResponse()
           }
 
           const client = clients.docs[0] as any
@@ -101,15 +129,29 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
             </div>`,
           })
 
-          return Response.json(genericSendResponse)
+          return sendResponse()
         }
 
         if (action === 'verify') {
+          // Same proof, same reason, same position as `send` above: the limiter
+          // below is keyed on the VICTIM's email, so an unauthenticated caller
+          // able to reach it could burn the 5 attempts and leave the victim —
+          // holding the right password AND the right code — locked out of the
+          // only route that clears the 2FA gate, renewably, every 15 minutes.
+          // Only `send` got this guard in the previous pass; `verify` is the
+          // other half of the same door.
+          if (!verifyTwoFactorChallenge(email, challenge)) {
+            return Response.json(
+              { error: 'Authentification requise avant la vérification d\'un code.' },
+              { status: 401 },
+            )
+          }
+
           if (!code) {
             return Response.json({ error: 'Code manquant' }, { status: 400 })
           }
 
-          if (await verifyLimiter.check(email, req)) {
+          if (await verifyLimiter.check(limiterKey, req)) {
             return Response.json(
               { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
               { status: 429 },
@@ -159,7 +201,10 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
             overrideAccess: true,
           })
 
-          verifyLimiter.reset(email)
+          // `req` is REQUIRED here: PayloadRateLimitStore throws without it, and
+          // this reset runs after the marker was written — a throw turned a
+          // successful verification into a 500 for the caller.
+          await verifyLimiter.reset(limiterKey, req)
 
           return Response.json({ success: true, verified: true })
         }

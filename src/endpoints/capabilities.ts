@@ -1,7 +1,7 @@
 import type { Endpoint, Where } from 'payload'
 import type { SupportCapabilities } from '../types'
 import type { CollectionSlugs } from '../utils/slugs'
-import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { clientIpRateKey, principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import {
   validateInboundEmailPayload,
   verifySecret,
@@ -21,9 +21,7 @@ export function createInboundEmailEndpoint(
       if (!verifySecret(req.headers.get(secretHeader), capability.secret)) {
         return Response.json({ error: 'Unauthorized' }, { status: 401 })
       }
-      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-        || req.headers.get('x-real-ip')
-        || 'unknown'
+      const ip = clientIpRateKey(req)
       if (await limiter.check(ip, req)) {
         return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
       }

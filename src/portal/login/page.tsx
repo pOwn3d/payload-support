@@ -33,8 +33,11 @@ function SupportLoginContent() {
   // 2FA state
   const [needs2FA, setNeeds2FA] = useState(false)
   // Proof that the password step succeeded, minted by /support/login. Required
-  // by /support/2fa {action:'send'} — that endpoint no longer sends a code to
-  // anyone who merely knows the address.
+  // by BOTH branches of /support/2fa: `send` no longer mails a code to anyone
+  // who merely knows the address, and `verify` no longer lets such a caller
+  // burn the 5 verification attempts of the address they typed. Each accepted
+  // `send` returns a refreshed proof, so it stays valid as long as the code it
+  // just minted — keep the latest one.
   const [challenge, setChallenge] = useState('')
   const [twoFactorCode, setTwoFactorCode] = useState('')
   const [sending2FA, setSending2FA] = useState(false)
@@ -72,6 +75,8 @@ function SupportLoginContent() {
         })
 
         if (codeRes.ok) {
+          const codeData = await codeRes.json().catch(() => ({}))
+          if (codeData?.challenge) setChallenge(codeData.challenge)
           setNeeds2FA(true)
         } else {
           setError('Erreur lors de l\'envoi du code de vérification.')
@@ -98,13 +103,16 @@ function SupportLoginContent() {
       const verifyRes = await fetch('/api/support/2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', email, code: twoFactorCode }),
+        body: JSON.stringify({ action: 'verify', email, code: twoFactorCode, challenge }),
       })
 
       const verifyData = await verifyRes.json()
 
       if (!verifyRes.ok || !verifyData.verified) {
-        setError(verifyData.error || 'Code incorrect.')
+        // 401 = the proof of the password step expired (10 min), not a bad code.
+        setError(verifyRes.status === 401
+          ? 'Session expirée. Reconnectez-vous pour recevoir un nouveau code.'
+          : verifyData.error || 'Code incorrect.')
         return
       }
 
@@ -138,6 +146,8 @@ function SupportLoginContent() {
         body: JSON.stringify({ action: 'send', email, challenge }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (data?.challenge) setChallenge(data.challenge)
         setError('')
       } else {
         // 401 = the challenge expired (10 min): the password must be re-entered.

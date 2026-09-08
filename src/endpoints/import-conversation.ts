@@ -1,6 +1,6 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { clientIpRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { readSupportSettings } from '../utils/readSettings'
 import { dbFind, dbCreate } from '../utils/db'
 import { verifySecret } from '../utils/webhookSecurity'
@@ -154,7 +154,7 @@ export function createImportConversationEndpoint(slugs: CollectionSlugs, store?:
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+        const ip = clientIpRateKey(req)
         if (await importLimiter.check(ip, req)) {
           return Response.json({ error: 'Rate limit exceeded. Maximum 10 imports per hour.' }, { status: 429 })
         }

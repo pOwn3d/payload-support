@@ -1,9 +1,12 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { clientIpRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbCreate } from '../utils/db'
 import { issueTwoFactorChallenge } from '../utils/twoFactorChallenge'
 
+
+/** Enough to identify a browser, short enough that a flood cannot fill the disk. */
+const MAX_LOGGED_USER_AGENT = 256
 
 /**
  * POST /api/support/login
@@ -18,7 +21,12 @@ export function createLoginEndpoint(slugs: CollectionSlugs, store?: RateLimitSto
       // NOTE: x-forwarded-for is spoofable unless this app sits strictly behind a
       // trusted proxy that rewrites it. This IP rate-limit is a SECONDARY defense;
       // the primary brute-force control is Payload's account lock (maxLoginAttempts).
-      const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown'
+      //
+      // `clientIpRateKey` is what keeps a spoofed header from being more than a
+      // bucket choice: the raw header used to become the limiter key AND the
+      // `ipAddress` column below, so rotating it minted unbounded map entries in
+      // memory and unbounded rows on disk.
+      const ip = clientIpRateKey(req)
 
       if (await loginLimiter.check(ip, req)) {
         return Response.json(
@@ -35,7 +43,9 @@ export function createLoginEndpoint(slugs: CollectionSlugs, store?: RateLimitSto
         return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
       }
       const { email, password } = body
-      const userAgent = req.headers.get('user-agent') || ''
+      // Persisted on every failed attempt, from an anonymous request: bounded so
+      // a flood cannot write tens of kilobytes per row into `auth-logs`.
+      const userAgent = (req.headers.get('user-agent') || '').slice(0, MAX_LOGGED_USER_AGENT)
 
       if (!email || !password) {
         return Response.json({ error: 'Email et mot de passe requis.' }, { status: 400 })

@@ -1,6 +1,7 @@
 import type { AdminViewServerProps } from 'payload'
 import { DefaultTemplate } from '@payloadcms/next/templates'
 import { redirect } from 'next/navigation'
+import { supportViewRedirectTarget } from '../shared/viewAccess.js'
 import React from 'react'
 import { AdminErrorBoundary } from '../shared/ErrorBoundary'
 import { TimeDashboardClient } from './client'
@@ -8,9 +9,8 @@ import { TimeDashboardClient } from './client'
 export const TimeDashboardView: React.FC<AdminViewServerProps> = ({ initPageResult }) => {
   const { req, visibleEntities } = initPageResult
 
-  if (!req.user) {
-    redirect('/admin/login')
-  }
+  const redirectTo = supportViewRedirectTarget(initPageResult)
+  if (redirectTo) redirect(redirectTo)
 
   return (
     <DefaultTemplate
@@ -20,7 +20,7 @@ export const TimeDashboardView: React.FC<AdminViewServerProps> = ({ initPageResu
       payload={req.payload}
       permissions={initPageResult.permissions}
       searchParams={{}}
-      user={req.user}
+      user={req.user ?? undefined}
       visibleEntities={visibleEntities}
     >
       <AdminErrorBoundary viewName="TimeDashboardView">

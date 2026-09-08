@@ -5,6 +5,18 @@ import { dbFind } from '../utils/db'
 /**
  * GET /api/support/statuses
  * Returns all ticket statuses sorted by sortOrder.
+ *
+ * The guard used to be `!!req.user`, which ANY authenticated principal
+ * satisfies — including a member of an unrelated auth collection of the host
+ * app (customers, members, subscribers created by public sign-up). Because the
+ * rows below are read with `overrideAccess: true`, that handed them the whole
+ * support workflow taxonomy — internal status names, private states, pipeline
+ * order — which `ticket-statuses.access.read` explicitly refuses them.
+ *
+ * The check below MIRRORS that ACL rather than replacing it: staff and
+ * support-clients, nobody else. `overrideAccess` stays, because the endpoint
+ * legitimately serves the full list to both, and the projection it returns is
+ * narrower than the documents themselves.
  */
 export function createStatusesEndpoint(slugs: CollectionSlugs): Endpoint {
   return {
@@ -16,6 +28,11 @@ export function createStatusesEndpoint(slugs: CollectionSlugs): Endpoint {
 
         if (!req.user) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const collection = (req.user as { collection?: string }).collection
+        if (collection !== slugs.users && collection !== slugs.supportClients) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         const { docs } = await dbFind(payload, slugs.ticketStatuses, {

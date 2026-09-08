@@ -4,6 +4,214 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [5.0.0] - 2026-09-08
+
+Follow-up to 4.0.0, published hours earlier. A per-actor audit pass found six
+more holes, every one of them open since the version that introduced the code —
+4.0.0 included. Two are reachable with no account at all (a 2FA lockout, a memory
+exhaustion), two by any authenticated principal of *any* auth collection, one by
+a staff account, and the sixth is the declared Payload range itself, which let a
+fresh install resolve a Payload with a pre-authentication account takeover.
+
+### Security
+
+- **All thirteen admin views admitted an account from any auth collection.**
+  Payload does not authorise custom admin views: `RootPage` skips its own
+  `canAccessAdmin` redirect as soon as `isCustomAdminView()` matches, and that
+  helper compares the request path against the registered `view.path` and
+  nothing else — it reads no visibility flag, despite what its docblock says.
+  Authorising the view is therefore the view's job, and every view here sits at
+  a custom path (`/support/inbox`, `/support/ticket`, `/support/crm`,
+  `/support/billing`, …). All thirteen tested `!req.user` alone, which is true
+  for an ordinary front-office signup: a single `payload-token` cookie serves
+  every auth collection of the host app and is presented on `/admin` routes too.
+  Such a caller reached `DefaultTemplate` and received the admin chrome plus the
+  client config Payload builds for any authenticated request — the field schema
+  of every collection and global, `admin.hidden` ones included, and an
+  unfiltered `visibleEntities`.
+
+  What did **not** travel is the support data itself: the views render client
+  components that fetch through `/api/support/*`, which `requireAdmin` has
+  guarded all along, so an unauthorised visitor saw an empty shell. The leak is
+  the shape of your CMS, not its contents. Open since the views were introduced,
+  4.0.0 included. The gate now lives in one place
+  (`views/shared/viewAccess.ts`), compares the caller's collection against the
+  staff slug the plugin publishes on `config.custom` — not `config.admin.user`,
+  which Payload defaults to the app's *first* auth collection — honours a host
+  `access.admin` denial, and fails closed when it cannot resolve a slug to
+  compare against. **To audit:** whether your app declares an auth collection
+  besides staff and `support-clients`, and your access logs for hits on
+  `<adminRoute>/support/*` from accounts that are not agents.
+
+- **`GET /support/statuses` served the whole support workflow taxonomy to any
+  authenticated account, on any auth collection.** The guard was `!!req.user`,
+  and the rows are then read with `overrideAccess: true` — so a front-office
+  member, a subscriber or a customer of the host app, on a collection fed by
+  public sign-up, got the internal status names, the private states and the
+  pipeline order that `ticket-statuses.access.read` explicitly refuses them. This
+  is the same `!!req.user` shape 4.0.0 closed on `/support/email-stats` and
+  `/support/typing`; `/support/statuses` is the one that pass missed, and it has
+  been open since 1.0.0. The endpoint now mirrors the collection ACL instead of
+  replacing it — the staff collection (`collectionSlugs.users`) and
+  `support-clients`, everyone else `403`, checked *before* the read. **To
+  audit:** whether your app has an auth collection other than those two. If it
+  does, any of its members could read that taxonomy; nothing else was reachable
+  through this endpoint, and nothing was writable.
+- **An anonymous caller could still lock a 2FA client out of their account,
+  through the other half of the same door.** 4.0.0 put the short-lived
+  `challenge` proof on `POST /support/2fa {action:'send'}` and left
+  `{action:'verify'}` as it was: no proof of the password step, and a limiter
+  keyed on the *victim's* email address (5 per 15 minutes). Five anonymous posts
+  carrying any code exhausted that budget, and the victim — holding the right
+  password *and* the right code — then got `429` on the only route that clears
+  the 2FA gate, renewably, every 15 minutes. `verify` now requires the same
+  challenge, checked before the limiter, so a caller with no proof consumes no
+  budget and the account is never even looked up. Two related defects in the same
+  handler: both limiters were keyed on the raw address while the challenge is
+  signed over the normalized one, so a single challenge bought a fresh budget per
+  casing variant of the address it was minted for; and a `send` late in the
+  10-minute window minted a valid code whose proof had already expired. **To
+  audit:** nothing is left behind — this denies service, it does not grant
+  access. If clients reported being stuck at `429`, or at "code incorrect" on a
+  code they had just received, this is why.
+- **An anonymous request loop could exhaust the Node process's memory, and grow
+  `auth-logs` rows without bound.** `MemoryRateLimitStore` — the default whenever
+  `rateLimitStore` is not configured — held its keys in a `Map` with no ceiling,
+  no expiry sweep and no eviction: only `reset()` ever removed anything, and the
+  login path never calls it. The key was the raw first hop of `X-Forwarded-For`,
+  a caller-supplied value that can be most of Node's 16 KB header budget, so
+  rotating that header minted one permanent entry per value — and because every
+  fresh key opened a fresh window, the limiter did not even slow down the flood
+  that was exhausting it. It is the shape 4.0.0 fixed inside `/support/typing`'s
+  own module-level map, on the store that backs every other endpoint. The same
+  header was also written verbatim into the `ipAddress` column of an `auth-logs`
+  row on each failed anonymous login, beside an unbounded `user-agent`. Keys are
+  now shape-validated and length-capped (`clientIpRateKey`), the store is capped
+  at 10 000 keys with expiry sweeping first and soonest-closing-window eviction
+  second, and the persisted user-agent is truncated to 256 characters. **To
+  audit:** an install on the default in-memory store whose RSS climbs and never
+  comes back; `auth-logs` rows whose `ipAddress` is not an IP address.
+- **A staff account could aim the server's outbound push requests at any internal
+  service.** `push-subscriptions.endpoint` is a plain `text` field with no
+  `validate` and no hook, `POST /support/push/subscribe` only proved that the
+  caller belongs to the staff collection — the very actor `utils/urlSafety`
+  already models as hostile for webhook URLs — and `web-push` hands that string's
+  hostname and port straight to `https.request`, with no allowlist of its own and
+  outside anything `safeFetch` can wrap. Same hole, same actor, on the second
+  field that steers an outbound request, with a 1-bit oracle on top: a 404/410
+  prunes the row, and staff can read `push-subscriptions` back. Two layers now
+  apply. At write time, `validatePushEndpoint`: `https:` only — with no
+  `SUPPORT_ALLOW_INSECURE_WEBHOOKS` escape hatch, because `web-push` calls
+  `https.request` whatever the scheme says — literal private, loopback and
+  link-local hosts refused, and a 2048-character cap on a value that arrives in
+  an HTTP body and is persisted verbatim. At send time, the same check plus a
+  re-resolution of the name, which is what covers rows written before this
+  release and a DNS record flipped to a private address after the row was
+  accepted. A refused row is *skipped, never deleted*: the resolver check fails
+  closed, and a hiccup must not purge a legitimate agent's subscription. **To
+  audit:** any `push-subscriptions.endpoint` that is not on your push service's
+  own domain.
+- **The declared peer range allowed a Payload with a pre-authentication account
+  takeover.** `peerDependencies.payload` and `@payloadcms/next` said `^3.37.0` —
+  a range chosen for an API surface (`jwtSign`, `getFieldsToSign`) and never
+  actually built or tested — so a fresh install could legitimately resolve below
+  3.79.1, which is vulnerable to GHSA-hp5w-3hxx-vmwf and to a SQL injection. Both
+  floors are now `^3.79.1`, above the advisory, and a test asserts the range never
+  drops back below it. **To audit:** the resolved version in your own app
+  (`pnpm why payload`, `npm ls payload`). A peer range is a floor, not an
+  upgrade — an existing lockfile keeps whatever it already pinned, and this
+  release does not move it for you.
+
+### Breaking
+
+- **Every `/admin/support/*` view now refuses an account outside the staff
+  collection**, and refuses a staff member whose host `access.admin` denies
+  them. If your agents sign in on a collection you renamed through
+  `collectionSlugs.users`, that is the slug the gate compares against — the
+  plugin publishes it on `config.custom`, so a host app that replaces `custom`
+  wholesale after the plugin runs strips it and locks everyone out. Merge into
+  `custom`, do not overwrite it.
+- **`peerDependencies.payload` and `@payloadcms/next`: `^3.37.0` → `^3.79.1`.**
+  Below that floor the install warns, and fails outright under a strict peer
+  resolver or `engine-strict`. Upgrade Payload rather than force the install: the
+  versions the old range allowed carry the two advisories above. CI builds and
+  tests against the 3.88 line; 3.79.1 through 3.87 are admitted because every
+  symbol this package imports was verified present in 3.79.1, not because a test
+  run covers them.
+- **`@payloadcms/richtext-lexical` is now declared as an optional peer.** The
+  portal FAQ page ships in the package and imports it, while the manifest listed
+  it as a devDependency only — so a consumer copying the portal template hit a
+  module-not-found unless they happened to have it installed.
+- **`GET /support/statuses` answers `403`** to any principal that is neither
+  staff nor a support client. A dashboard, a front-office page or an integration
+  reading the taxonomy with a session from another auth collection stops working
+  and must authenticate as one of the two.
+- **`POST /support/2fa {action:'verify'}` requires `challenge`**; without it, the
+  answer is `401` and no attempt is recorded. A custom portal must keep the value
+  returned by `POST /support/login` (and by the Google callback) next to
+  `requires2FA` and forward it to `verify` alongside the code. Every accepted
+  `send` now returns a *refreshed* `challenge` — keep the latest one, not the
+  first. The bundled portal login page was updated.
+- **`POST /support/push/subscribe` answers `400`** for a non-`https` endpoint, a
+  literal private / loopback / link-local host, or a value over 2048 characters;
+  and `sendPushToUser` silently skips rows already in the database that fail the
+  same check or whose host resolves to a private address. Agents who subscribed
+  through a local tunnel, a proxy on a private address or an `http://` origin
+  must re-subscribe.
+- **Rate-limit keys derived from `X-Forwarded-For` / `X-Real-IP` are normalized
+  IP literals**; anything that is not one — including a spoofed or malformed
+  header — collapses into the shared `unknown` bucket, which is the fail-closed
+  direction. Rows already in the rate-limits collection that were keyed on raw
+  header values no longer match, so those counters restart once on upgrade.
+
+### Fixed
+
+- `POST /support/2fa {action:'verify'}` returned `500` on a verification that had
+  in fact succeeded, on any install configured with `rateLimitStore: 'payload'`.
+  The success path called `verifyLimiter.reset(email)` with no context and
+  without awaiting it: `PayloadRateLimitStore` throws when it is handed no
+  request, and the throw landed *after* the verification marker was written — so
+  the code was consumed, the session was not returned, and the client never got
+  past the login screen. The reset is now awaited and passed `req`.
+- A resend late in the 10-minute window produced a valid code whose challenge had
+  already expired, and `verify` answered `401` on it. Every accepted `send` now
+  refreshes the proof so it lives exactly as long as the code it just minted —
+  and it does so on the throttled and unknown-address replies too, so the
+  response shape still never tells the caller whether the account exists.
+- The bundled portal login page stores the refreshed challenge from every `send`,
+  forwards it to `verify`, and distinguishes an expired proof (`401` → "Session
+  expirée, reconnectez-vous") from a wrong code.
+
+### Changed
+
+- `POST /support/2fa {action:'send'}` includes `challenge` in its JSON reply.
+- Failed anonymous logins record the normalized IP key in `auth-logs.ipAddress`
+  (`unknown` when the header is not an IP literal, where a forged string used to
+  be stored verbatim) and at most 256 characters of `userAgent`. The same 256
+  cap applies to `push-subscriptions.userAgent`.
+- `/support/login`, `/support/chatbot`, `/support/import-conversation` and the
+  inbound-email endpoint all take their IP key from `clientIpRateKey` instead of
+  reading `x-forwarded-for` inline, so the bound applies everywhere at once.
+- README: the access column of `/support/statuses`, the SSRF rules on
+  `/support/push/subscribe`, the `/support/2fa` contract for both actions, and
+  the peer-dependency and compatibility tables.
+
+### Added
+
+- `clientIpRateKey(req)`, `normalizeIpKey(value)` and
+  `MAX_MEMORY_RATE_LIMIT_KEYS` in `utils/rateLimiter`; `MemoryRateLimitStore`
+  takes an optional `maxKeys` and exposes `size`.
+- `validatePushEndpoint(raw)` in `utils/urlSafety`, and `normalizeEmail` is now
+  exported from `utils/twoFactorChallenge`. Internal modules, not re-exported
+  from the package barrel.
+- `@payloadcms/richtext-lexical` is declared as an **optional** peer dependency
+  (`^3.79.1`). It was documented as a requirement for the portal FAQ page but
+  never declared, so a strict resolver could not see it.
+- 22 tests (`securityHardeningPass3`), covering all five items above — the
+  anonymous verify lockout and its casing variants, the store ceiling and the
+  forged-header key, the statuses ACL, and the push guard at write and at send
+  time. The suite goes from 258 to 280 passing tests.
+
 ## [4.0.0] - 2026-09-08
 
 Security release: every hole below is present in 3.0.0 and closed here. Upgrade

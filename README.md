@@ -4,7 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@consilioweb/payload-support.svg)](https://www.npmjs.com/package/@consilioweb/payload-support)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![payload](https://img.shields.io/badge/payload-%5E3.37-blue.svg)](https://payloadcms.com)
+[![payload](https://img.shields.io/badge/payload-%5E3.79.1-blue.svg)](https://payloadcms.com)
 
 ## About
 
@@ -81,12 +81,18 @@ pnpm add @consilioweb/payload-support
 **Peer dependencies** — all six are required, none is optional:
 
 ```bash
-pnpm add payload@^3.37.0 @payloadcms/next@^3.37.0 next@^15.2.9 react@^19 react-dom@^19 lucide-react@">=0.300.0"
+pnpm add payload@^3.79.1 @payloadcms/next@^3.79.1 next@^15.2.9 react@^19 react-dom@^19 lucide-react@">=0.300.0"
 ```
 
-- `payload@^3.37.0` — the Google OAuth endpoint imports `jwtSign` from the `payload` barrel, which
-  only exists from 3.37.0 on. Below that, the missing named export fails the whole
-  `payload.config.ts`, not just that endpoint.
+- `payload@^3.79.1` — the floor is a security floor, and it is stated as such rather than
+  dressed up as an API constraint. Below 3.79.1 Payload is vulnerable to a pre-authentication
+  account takeover (GHSA-hp5w-3hxx-vmwf) and to a SQL injection, so a range that admitted those
+  versions — the previous `^3.37.0` did — let an install satisfy this plugin's requirements while
+  remaining exploitable. The API surface allows lower: the Google OAuth endpoint imports `jwtSign`
+  and `getFieldsToSign` from the `payload` barrel, and a missing named export fails the whole
+  `payload.config.ts` rather than just that endpoint, but both have been exported since 3.37 and
+  every symbol this package imports was verified present in 3.79.1. CI builds and tests against
+  the 3.88 line; 3.79.1 to 3.87 are permitted on that verification, not on a test run.
 - `@payloadcms/next` and `next` — the 13 admin views are registered unless you pass
   `skipViews: true`, and each imports `DefaultTemplate` from `@payloadcms/next/templates` plus
   `next/navigation` / `next/link` statically. Both are already present in any Payload 3 admin app.
@@ -407,7 +413,7 @@ to stay enabled for the endpoint to be registered.
 |---|---|---|---|---|
 | `GET` | `/support/search` | staff | — | Global search over tickets, messages, clients and the knowledge base. |
 | `GET` | `/support/kb/search` | public | — | Knowledge-base search (used by the portal and the chatbot). |
-| `GET` | `/support/statuses` | authenticated | `customStatuses` | Ticket statuses, sorted. |
+| `GET` | `/support/statuses` | staff or support-client | `customStatuses` | Ticket statuses, sorted. Mirrors `ticket-statuses.access.read`: a principal from any other auth collection of your app gets 403, not the taxonomy. |
 | `POST` | `/support/bulk-action` | staff | `bulkActions` | Apply one action to many tickets. |
 | `POST` | `/support/merge-tickets` | staff | `merge` | Merge a source ticket into a target. |
 | `POST` | `/support/split-ticket` | staff | `splitTicket` | Extract a message into a new ticket. |
@@ -430,7 +436,7 @@ to stay enabled for the endpoint to be registered.
 | Method | Path | Access | Purpose |
 |---|---|---|---|
 | `POST` | `/support/login` | public, rate-limited | Portal password login. Sets an `HttpOnly` cookie; the JWT is never returned in JSON. |
-| `POST` | `/support/2fa` | public, rate-limited | Email second factor. `action: 'send'` requires the short-lived `challenge` returned by `/support/login` (or by the Google callback) alongside `requires2FA` — without it an anonymous caller could burn a victim's send quota and lock them out. `action: 'verify'` takes the code. |
+| `POST` | `/support/2fa` | public, rate-limited | Email second factor. **Both** `action: 'send'` and `action: 'verify'` require the short-lived `challenge` returned by `/support/login` (or by the Google callback) alongside `requires2FA`; without it, an anonymous caller who merely knew an address could burn the victim's send quota *or* their 5 verification attempts and lock them out of the only route that clears the 2FA gate. Every accepted `send` returns a refreshed `challenge` — keep the latest one and pass it to `verify` along with the code. |
 | `POST` | `/support/oauth/google` | public | Google sign-in, optionally restricted by `allowedEmailDomains`. |
 | `GET` | `/support/email-stats` | **staff**, rate-limited | Email pipeline aggregate. Was reachable by any authenticated session before 3.0.1. |
 | `GET` | `/support/export-data` | client | GDPR data export. |
@@ -495,7 +501,7 @@ await fetch('/api/support/ai-agent', {
 | `GET`/`POST` | `/support/settings` | staff | — | Read and write the support settings, including the runtime feature flags. |
 | `GET`/`POST` | `/support/round-robin-config` | staff | `roundRobin` | Read and toggle round-robin assignment. |
 | `GET` | `/support/push/vapid-public-key` | public | — | VAPID public key for the browser subscription. |
-| `POST` | `/support/push/subscribe` | staff | — | Register an agent's push subscription. |
+| `POST` | `/support/push/subscribe` | staff | — | Register an agent's push subscription. The `endpoint` must be an `https://` URL on a public host — private, loopback and link-local targets are refused with 400 (SSRF), at write time and again at send time. |
 | `GET` | `/support/auto-close` | `x-cron-secret` | `autoClose` | Remind, then close, inactive tickets. |
 | `POST` | `/support/process-snooze` | `x-cron-secret` | `snooze` | Wake snoozed tickets. |
 | `POST` | `/support/process-scheduled` | `x-cron-secret` | `scheduledReplies` | Release scheduled replies. |
@@ -614,16 +620,18 @@ import type { SupportPluginConfig, SupportFeatures } from '@consilioweb/payload-
 | Requirement | Range | Source |
 |---|---|---|
 | Node.js | `>=20.9.0` | `engines.node` |
-| Payload | `^3.37.0` | `peerDependencies.payload` |
-| `@payloadcms/next` | `^3.37.0` | `peerDependencies` |
+| Payload | `^3.79.1` | `peerDependencies.payload` |
+| `@payloadcms/next` | `^3.79.1` | `peerDependencies` |
 | Next.js | `^15.2.9 \|\| ^16.0.0` | `peerDependencies` |
 | React / React DOM | `^19.0.0` | `peerDependencies` |
 | `lucide-react` | `>=0.300.0` | `peerDependencies` |
 | `@anthropic-ai/sdk` | any recent version | Runtime-only, install it yourself if you use the AI features |
 | `@payloadcms/richtext-lexical` | any 3.x | Only if you mount the portal FAQ page |
 
-Installing on Node 18, React 18, Next 14 or Payload < 3.37 warns, and fails outright under
-`engine-strict` or a strict peer resolver.
+Installing on Node 18, React 18, Next 14 or Payload < 3.79.1 warns, and fails outright under
+`engine-strict` or a strict peer resolver. Payload below 3.79.1 is additionally vulnerable to a
+pre-authentication account takeover (GHSA-hp5w-3hxx-vmwf) and to a SQL injection: upgrade rather
+than force the install.
 
 ## Security
 
@@ -657,7 +665,9 @@ Installing on Node 18, React 18, Next 14 or Payload < 3.37 warns, and fails outr
 - **Bounded inbound email** payloads and attachments.
 - **Bounded outbound mail** — ticket transfers and collaborator invitations are capped per user over
   a long window, not only per ticket (a client can create tickets at will).
-- **SSRF-guarded outbound webhooks** — scheme, literal host, resolved address and every redirect hop.
+- **SSRF-guarded outbound requests** — scheme, literal host, resolved address and every redirect hop
+  for webhooks; scheme, literal host and resolved address for Web Push subscription endpoints, which
+  `web-push` would otherwise hand host and port straight to `https.request`.
 - **2FA also enforced on the Google OAuth path**, which mints its session outside `payload.login`
   and therefore outside the `beforeLogin` hook.
 
@@ -741,7 +751,7 @@ auto-migrated: generate and push it before deploying. See [Troubleshooting](#tro
    recomputing it — so a stale total keeps over-billing until something touches a time entry on that
    ticket.
 5. **Import `./views` and `./components/TicketConversation` with ESM** — their CJS builds are gone.
-6. Check your platform: Node 20.9+, React 19, Next 15.2.9+, Payload 3.37+, and install
+6. Check your platform: Node 20.9+, React 19, Next 15.2.9+, Payload 3.79.1+, and install
    `lucide-react` explicitly if you were relying on it being optional.
 
 ### 1.x → 2.0

@@ -9,11 +9,57 @@ export interface RateLimitStore {
 }
 
 /**
+ * Hard ceiling on the number of distinct keys held at once, all endpoints
+ * combined. Sized for a busy install (thousands of client IPs inside one
+ * 15-minute window) while capping the map at a few hundred kilobytes.
+ */
+export const MAX_MEMORY_RATE_LIMIT_KEYS = 10_000
+
+/**
  * Process-local fallback store. Applications running more than one process
  * should provide a persistent RateLimitStore through the plugin options.
+ *
+ * BOUNDED, because the keys come from anonymous HTTP traffic: `/support/login`
+ * and `/support/chatbot` key their limiter on the client IP, and the IP is read
+ * from `x-forwarded-for`. A caller rotating that header wrote one PERMANENT
+ * entry per value into a map that had no ceiling, no expiry sweep and no
+ * eviction — only `reset()` ever removed anything, and the login path never
+ * calls it. Worse, every fresh key opened a fresh window, so the limiter did
+ * not even slow down the flood that was exhausting it.
+ *
+ * Two independent bounds, the same pair `endpoints/typing.ts` already applies
+ * to its own module-level map: `clientIpRateKey` caps the SIZE of a key, the
+ * ceiling below caps their NUMBER.
  */
 export class MemoryRateLimitStore implements RateLimitStore {
   private readonly entries = new Map<string, RateLimitEntry>()
+
+  constructor(private readonly maxKeys: number = MAX_MEMORY_RATE_LIMIT_KEYS) {}
+
+  /** Distinct keys currently held. Exposed so the ceiling can be asserted. */
+  get size(): number {
+    return this.entries.size
+  }
+
+  /** Reclaims every window that has already closed. */
+  private sweepExpired(now: number): void {
+    for (const [key, entry] of this.entries) {
+      if (now > entry.resetAt) this.entries.delete(key)
+    }
+  }
+
+  /** Soonest-closing window first, so the ceiling drops the least useful entry. */
+  private evictOldest(): void {
+    let oldestKey: string | null = null
+    let oldestResetAt = Infinity
+    for (const [key, entry] of this.entries) {
+      if (entry.resetAt < oldestResetAt) {
+        oldestResetAt = entry.resetAt
+        oldestKey = key
+      }
+    }
+    if (oldestKey !== null) this.entries.delete(oldestKey)
+  }
 
   async increment(key: string, windowMs: number): Promise<RateLimitEntry> {
     const now = Date.now()
@@ -21,6 +67,12 @@ export class MemoryRateLimitStore implements RateLimitStore {
     const next = !current || now > current.resetAt
       ? { count: 1, resetAt: now + windowMs }
       : { ...current, count: current.count + 1 }
+
+    // Only a key that is not already held can grow the map.
+    if (!current && this.entries.size >= this.maxKeys) {
+      this.sweepExpired(now)
+      if (this.entries.size >= this.maxKeys) this.evictOldest()
+    }
 
     this.entries.set(key, next)
     return next
@@ -132,6 +184,52 @@ export function principalRateKey(
   if (!user || user.id === undefined || user.id === null) return 'anonymous'
   const collection = typeof user.collection === 'string' && user.collection ? user.collection : 'unknown'
   return `${collection}:${String(user.id)}`
+}
+
+/**
+ * Longest textual IPv6 address, `xxxx:` * 7 + an embedded IPv4 literal.
+ * Nothing legitimate is longer; the cap is what makes the key bounded.
+ */
+const MAX_IP_KEY_LENGTH = 45
+/** Dotted-quad, or the hex/`::`/zone alphabet of an IPv6 literal. Shape only. */
+const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}$/
+const IPV6_PATTERN = /^[0-9a-fA-F:.%]+$/
+
+/**
+ * Identity part of a rate-limit key for an ANONYMOUS caller.
+ *
+ * `x-forwarded-for` is attacker-controlled — the note in `endpoints/login.ts`
+ * has always said so, and Payload's account lock is what actually stops a
+ * brute-force. But the header was also used RAW as the limiter key, and that is
+ * a second, distinct problem: a key is a stored object. A caller rotating the
+ * header minted one unbounded, never-reclaimed entry per value; a value can be
+ * most of Node's 16 KB header budget. This validates the SHAPE and caps the
+ * LENGTH, so a forged header can still pick a bucket but can no longer invent
+ * an unbounded number of them, nor make any single one large.
+ *
+ * Anything that is not an IP literal falls back to the shared `unknown` bucket.
+ * That is the fail-closed direction: an install with no proxy already puts
+ * every caller there, and one behind a proxy never lands there legitimately.
+ */
+export function clientIpRateKey(req: { headers: { get(name: string): string | null } }): string {
+  const candidate = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('x-real-ip')?.trim()
+    || ''
+  return normalizeIpKey(candidate)
+}
+
+/** Exposed separately so a caller holding an already-extracted address can reuse it. */
+export function normalizeIpKey(candidate: string): string {
+  if (!candidate || candidate.length > MAX_IP_KEY_LENGTH) return 'unknown'
+  const host = candidate.startsWith('[') && candidate.endsWith(']')
+    ? candidate.slice(1, -1)
+    : candidate
+  if (!host) return 'unknown'
+  if (IPV4_PATTERN.test(host)) {
+    return host.split('.').every((octet) => Number(octet) <= 255) ? host : 'unknown'
+  }
+  if (host.includes(':') && IPV6_PATTERN.test(host)) return host.toLowerCase()
+  return 'unknown'
 }
 
 export class RateLimiter {

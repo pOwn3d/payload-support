@@ -3,6 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { dbFind, dbCreate, dbUpdate } from '../utils/db'
 import { getVapidPublicKey } from '../utils/push'
+import { validatePushEndpoint, WEBHOOK_URL_MESSAGES } from '../utils/urlSafety'
 
 /** GET /api/support/push/vapid-public-key — public key the browser uses to subscribe. */
 export function createVapidKeyEndpoint(): Endpoint {
@@ -30,7 +31,19 @@ export function createPushSubscribeEndpoint(slugs: CollectionSlugs): Endpoint {
         if (!endpoint || !p256dh || !auth) {
           return Response.json({ error: 'subscription invalide (endpoint + keys requis).' }, { status: 400 })
         }
-        const data = { user: req.user!.id, endpoint, p256dh, auth, userAgent: req.headers.get('user-agent') || '' }
+        // WRITE-time SSRF guard. `requireAdmin` above only proves the caller
+        // belongs to the staff collection — the very actor `utils/urlSafety`
+        // already models as hostile for webhook URLs — and `web-push` hands this
+        // string's host and port straight to `https.request`. Same guard, same
+        // reason, on the second field that steers an outbound request.
+        const endpointCheck = validatePushEndpoint(endpoint)
+        if (!endpointCheck.ok) {
+          return Response.json(
+            { error: WEBHOOK_URL_MESSAGES[endpointCheck.reason || 'invalid_url'] },
+            { status: 400 },
+          )
+        }
+        const data = { user: req.user!.id, endpoint, p256dh, auth, userAgent: (req.headers.get('user-agent') || '').slice(0, 256) }
         const existing = await dbFind(req.payload, slugs.pushSubscriptions, { where: { endpoint: { equals: endpoint } }, limit: 1, depth: 0, overrideAccess: true })
         if (existing.docs.length > 0) {
           await dbUpdate(req.payload, slugs.pushSubscriptions, { id: (existing.docs[0] as { id: number | string }).id, data, overrideAccess: true })

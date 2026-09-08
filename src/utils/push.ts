@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { dbFind, dbDelete } from './db'
 import webpush from 'web-push'
+import { assertPublicHost, validatePushEndpoint } from './urlSafety'
 
 let configured = false
 function ensureVapid(): boolean {
@@ -43,6 +44,27 @@ export async function sendPushToUser(
     for (const s of subs.docs) {
       const row = s as { id: number | string; endpoint?: string; p256dh?: string; auth?: string }
       if (!row.endpoint || !row.p256dh || !row.auth) continue
+
+      // SEND-time SSRF guard, the second of the two layers `utils/urlSafety`
+      // describes. It is not redundant with the write-time check: it also covers
+      // rows persisted BEFORE that check existed, and a name whose DNS record is
+      // flipped to a private address after the row was accepted. `web-push`
+      // builds its own `https.request`, so `safeFetch` cannot wrap it — this is
+      // the layer that stands in for it.
+      //
+      // A blocked row is SKIPPED, never deleted: `assertPublicHost` fails closed
+      // on a resolver timeout, and a hiccup must not purge a legitimate agent's
+      // subscription. Only a real 404/410 from the push service prunes below.
+      const check = validatePushEndpoint(row.endpoint)
+      if (!check.ok || !check.url) {
+        console.warn('[support] Push endpoint refused (unsafe URL):', check.reason)
+        continue
+      }
+      if (!(await assertPublicHost(check.url.hostname))) {
+        console.warn('[support] Push endpoint refused (host resolves to a private address)')
+        continue
+      }
+
       try {
         await webpush.sendNotification(
           { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
