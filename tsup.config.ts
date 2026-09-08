@@ -21,7 +21,6 @@ const serverExternals = [
   '@consilioweb/payload-support/views',
   '@anthropic-ai/sdk',
   'openai',
-  'lucide-react',
 ]
 
 const clientExternals = [
@@ -37,7 +36,6 @@ const clientExternals = [
   'next',
   'next/navigation',
   'next/link',
-  'lucide-react',
   '@consilioweb/payload-support',
   '@consilioweb/payload-support/client',
 ]

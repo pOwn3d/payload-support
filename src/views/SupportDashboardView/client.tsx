@@ -511,15 +511,21 @@ export const SupportDashboardClient: React.FC = () => {
               </thead>
               <tbody>
                 {tickets.map((tk) => (
-                  <tr
-                    key={tk.id}
-                    onClick={() => { window.location.href = `/admin/support/ticket?id=${tk.id}` }}
-                  >
+                  /*
+                   * The row is not the control: a `<tr onClick>` is invisible to
+                   * the keyboard, and turning it into role="button" would cost
+                   * the table semantics. The link lives in the subject cell.
+                   */
+                  <tr key={tk.id}>
                     <td>
                       <span className={`${styles.statusDot} ${getStatusDotClass(tk.status)}`} />
                     </td>
                     <td className={styles.ticketNum}>#{tk.ticketNumber}</td>
-                    <td className={styles.ticketSubject}>{tk.subject}</td>
+                    <td className={styles.ticketSubject}>
+                      <a className={styles.ticketLink} href={`/admin/support/ticket?id=${tk.id}`}>
+                        {tk.subject}
+                      </a>
+                    </td>
                     <td className={styles.ticketClient}>{getClientName(tk)}</td>
                     <td className={styles.ticketTime}>{timeAgo(tk.updatedAt)}</td>
                     <td className={styles.ticketArrow}>&rarr;</td>

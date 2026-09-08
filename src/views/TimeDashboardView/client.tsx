@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useId } from 'react'
 import { SkeletonDashboard } from '../shared/Skeleton'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import styles from '../../styles/TimeDashboard.module.scss'
@@ -44,6 +44,9 @@ const MONTHS_FR = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep'
 
 export const TimeDashboardClient: React.FC = () => {
   const { t } = useTranslation()
+  const fromId = useId()
+  const toId = useId()
+  const groupById = useId()
   const [entries, setEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [from, setFrom] = useState(() => getMonthRange(0).from)
@@ -149,16 +152,16 @@ export const TimeDashboardClient: React.FC = () => {
         </div>
         <div className={styles.filterRow}>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('timeDashboard.filters.from')}</label>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
+            <label className={styles.label} htmlFor={fromId}>{t('timeDashboard.filters.from')}</label>
+            <input id={fromId} type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('timeDashboard.filters.to')}</label>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
+            <label className={styles.label} htmlFor={toId}>{t('timeDashboard.filters.to')}</label>
+            <input id={toId} type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('timeDashboard.filters.groupBy')}</label>
-            <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} className={styles.select}>
+            <label className={styles.label} htmlFor={groupById}>{t('timeDashboard.filters.groupBy')}</label>
+            <select id={groupById} value={groupBy} onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'project')} className={styles.select}>
               <option value="day">{t('timeDashboard.filters.day')}</option>
               <option value="week">{t('timeDashboard.filters.week')}</option>
               <option value="project">{t('timeDashboard.filters.project')}</option>

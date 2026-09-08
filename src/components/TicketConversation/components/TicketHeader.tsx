@@ -71,6 +71,7 @@ export function TicketHeader({
       )}
       <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
         <button
+          type="button"
           onClick={() => onCopyLink('admin')}
           title="Copier le lien admin"
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', opacity: copiedLink === 'admin' ? 1 : 0.5, padding: '2px 4px' }}
@@ -78,6 +79,7 @@ export function TicketHeader({
           {copiedLink === 'admin' ? '\u2705' : '\uD83D\uDCCB'}
         </button>
         <button
+          type="button"
           onClick={() => onCopyLink('client')}
           title="Copier le lien client"
           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', opacity: copiedLink === 'client' ? 1 : 0.5, padding: '2px 4px' }}

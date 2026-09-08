@@ -42,7 +42,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin-bottom: 6px;
 }
 
@@ -55,7 +55,7 @@
 .statUnit {
   font-size: 14px;
   font-weight: 500;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin-left: 2px;
 }
 
@@ -78,7 +78,7 @@
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -104,7 +104,7 @@
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   cursor: pointer;
   transition: all 80ms;
   &:hover { background: var(--theme-elevation-100); }
@@ -141,7 +141,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   border-bottom: 1px solid var(--theme-elevation-200);
 }
 
@@ -217,7 +217,7 @@
   background: none;
   font-size: 12px;
   font-weight: 600;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   cursor: pointer;
   &:hover { background: var(--theme-elevation-100); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }

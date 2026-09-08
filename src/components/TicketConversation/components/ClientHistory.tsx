@@ -96,6 +96,7 @@ export function ClientHistory({
           {/* Notes */}
           <h5 style={{ fontSize: '12px', fontWeight: 600, color: C.textSecondary, marginBottom: '8px' }}>Notes internes</h5>
           <textarea
+            aria-label="Notes internes sur le client"
             value={clientNotes}
             onChange={(e) => onNotesChange(e.target.value)}
             rows={3}

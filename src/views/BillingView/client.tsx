@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useId } from 'react'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import { DATE_LOCALE } from '../shared/dateLocale'
 import styles from '../../styles/BillingView.module.scss'
@@ -86,6 +86,12 @@ function getQuarterRange(offset: number): { from: string; to: string } {
 
 export const BillingClient: React.FC = () => {
   const { t } = useTranslation()
+  // The `<label>`s in the filter row already carry the translated text; they
+  // just were not associated with their control.
+  const fromId = useId()
+  const toId = useId()
+  const projectFilterId = useId()
+  const rateId = useId()
   const [from, setFrom] = useState(() => getMonthRange(0).from)
   const [to, setTo] = useState(() => getMonthRange(0).to)
   const [projectId, setProjectId] = useState('')
@@ -287,16 +293,16 @@ export const BillingClient: React.FC = () => {
 
         <div className={styles.filterRow}>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('billing.filters.from')}</label>
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
+            <label className={styles.label} htmlFor={fromId}>{t('billing.filters.from')}</label>
+            <input id={fromId} type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={styles.input} />
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('billing.filters.to')}</label>
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
+            <label className={styles.label} htmlFor={toId}>{t('billing.filters.to')}</label>
+            <input id={toId} type="date" value={to} onChange={(e) => setTo(e.target.value)} className={styles.input} />
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('billing.filters.project')}</label>
-            <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className={styles.select}>
+            <label className={styles.label} htmlFor={projectFilterId}>{t('billing.filters.project')}</label>
+            <select id={projectFilterId} value={projectId} onChange={(e) => setProjectId(e.target.value)} className={styles.select}>
               <option value="">{t('ticket.allProjects')}</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -304,9 +310,10 @@ export const BillingClient: React.FC = () => {
             </select>
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>{t('billing.filters.hourlyRate')}</label>
+            <label className={styles.label} htmlFor={rateId}>{t('billing.filters.hourlyRate')}</label>
             <div className={styles.rateRow}>
               <input
+                id={rateId}
                 type="number"
                 value={rate}
                 onChange={(e) => setRate(Number(e.target.value))}
@@ -370,6 +377,7 @@ export const BillingClient: React.FC = () => {
                         <th className={styles.thCheckbox}>
                           <input
                             type="checkbox"
+                            aria-label={t('billing.tableCheckboxTitle')}
                             checked={group.tickets.every((t) => billedTickets.has(t.id))}
                             onChange={() => {
                               const ids = group.tickets.map((t) => t.id)
@@ -405,6 +413,7 @@ export const BillingClient: React.FC = () => {
                             <td className={styles.td} rowSpan={rowSpan} style={{ verticalAlign: 'middle' }}>
                               <input
                                 type="checkbox"
+                                aria-label={isBilled ? t('billing.markUnbilledTitle') : t('billing.markBilledTitle')}
                                 checked={isBilled}
                                 onChange={() => toggleBilled(ticket.id)}
                                 className={styles.checkbox}

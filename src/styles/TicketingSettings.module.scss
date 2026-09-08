@@ -15,7 +15,7 @@ $green: #16a34a;
 
 .intro {
   font-size: 13px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin: 0 0 24px;
   line-height: 1.6;
 }
@@ -59,7 +59,7 @@ $green: #16a34a;
 
 .sectionChevron {
   font-size: 16px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   transition: transform 150ms;
 
   &.open {
@@ -73,7 +73,7 @@ $green: #16a34a;
 
 .sectionDescription {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin: 0 0 16px;
   line-height: 1.5;
 }
@@ -97,7 +97,7 @@ $green: #16a34a;
 
 .fieldDescription {
   font-size: 11px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   font-weight: 400;
   margin-top: 2px;
 }
@@ -131,7 +131,7 @@ $green: #16a34a;
   border-radius: 6px;
   border: 1px solid var(--theme-elevation-300);
   font-size: 13px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   background-color: var(--theme-elevation-100);
   width: 100%;
   max-width: 400px;
@@ -179,7 +179,7 @@ $green: #16a34a;
 
 .inlineDesc {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
 }
 
 // ─── BADGE ───
@@ -251,7 +251,7 @@ $green: #16a34a;
 
 .featureDesc {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   line-height: 1.4;
 }
 
@@ -271,7 +271,7 @@ $green: #16a34a;
 
 .aiToggleDesc {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin-left: 8px;
 }
 
@@ -290,7 +290,7 @@ $green: #16a34a;
   background-color: transparent;
   cursor: pointer;
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   white-space: nowrap;
 }
 
@@ -303,7 +303,7 @@ $green: #16a34a;
 
 .slaHint {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
 }
 
 // ─── AI SUB FEATURES LABEL ───

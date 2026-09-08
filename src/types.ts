@@ -1,4 +1,5 @@
 import type { RateLimitStore } from './utils/rateLimiter'
+import type { RetentionConfig } from './utils/retention'
 import type { InboundEmailInput } from './utils/webhookSecurity'
 import type { Payload, PayloadRequest } from 'payload'
 
@@ -150,6 +151,25 @@ export interface SupportPluginConfig {
 
   /** Shared rate-limit storage. Defaults to process-local memory. */
   rateLimitStore?: RateLimitStore | 'payload'
+
+  /**
+   * Automatic retention of the two journals the plugin writes.
+   *
+   * The plugin registers a daily Payload Jobs task that deletes rows older
+   * than the configured number of days. Set a value to 0 to keep that journal
+   * forever (the manual `DELETE /api/support/purge-logs` endpoint stays
+   * available either way).
+   *
+   * Defaults: auth-logs 180 days, email-logs 365 days, cron `0 30 3 * * *`.
+   *
+   * `false` registers no task at all. That is the ONLY value that changes the
+   * schema footprint: registering a task turns Payload's job queue on, which
+   * adds the `payload-jobs` collection and the `payload-jobs-stats` global to
+   * an app that had no jobs — two tables you would have to migrate. Pass
+   * `false` if you would rather purge from your own cron, calling
+   * `DELETE /api/support/purge-logs`.
+   */
+  retention?: RetentionConfig | false
 
   /** Sequential ticket number formatting. */
   ticketNumber?: { prefix?: string; padding?: number }

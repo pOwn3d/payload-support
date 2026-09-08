@@ -26,12 +26,13 @@ export function MergePanel({
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
         <input
           type="text"
+          aria-label="Numero du ticket cible"
           value={mergeTarget}
           onChange={(e) => { setMergeTarget(e.target.value); setMergeTargetInfo(null); setMergeError('') }}
           placeholder="TK-0001"
           style={{ ...s.input, width: '130px' }}
         />
-        <button onClick={handleMergeLookup} style={{ ...s.outlineBtn('#ec4899'), fontSize: '12px', padding: '6px 14px' }}>
+        <button type="button" onClick={handleMergeLookup} style={{ ...s.outlineBtn('#ec4899'), fontSize: '12px', padding: '6px 14px' }}>
           Rechercher
         </button>
         {mergeError && <span style={{ fontSize: '12px', color: '#be185d', fontWeight: 600 }}>{mergeError}</span>}
@@ -41,7 +42,7 @@ export function MergePanel({
           <span style={{ fontSize: '13px', fontWeight: 600 }}>
             {mergeTargetInfo.ticketNumber} — {mergeTargetInfo.subject}
           </span>
-          <button onClick={handleMerge} disabled={merging} style={{ ...s.btn('#ec4899', merging), color: '#fff', fontSize: '12px', padding: '6px 14px' }}>
+          <button type="button" onClick={handleMerge} disabled={merging} style={{ ...s.btn('#ec4899', merging), color: '#fff', fontSize: '12px', padding: '6px 14px' }}>
             {merging ? 'Fusion...' : 'Confirmer la fusion'}
           </button>
         </div>
@@ -76,6 +77,7 @@ export function ExtMessagePanel({
     <div style={{ padding: '14px 18px', borderRadius: '8px', backgroundColor: '#eef2ff', border: '1px solid #c7d2fe', marginBottom: '14px' }}>
       <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: '#312e81' }}>Ajouter un message reçu (email, SMS, WhatsApp...)</h4>
       <textarea
+        aria-label="Contenu du message recu"
         value={extMsgBody}
         onChange={(e) => setExtMsgBody(e.target.value)}
         placeholder="Coller le contenu du message reçu..."
@@ -83,17 +85,18 @@ export function ExtMessagePanel({
         style={{ ...s.input, width: '100%', resize: 'vertical', marginBottom: '10px' }}
       />
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
-        <select value={extMsgAuthor} onChange={(e) => setExtMsgAuthor(e.target.value as 'client' | 'admin')} style={{ ...s.input, fontSize: '12px' }}>
+        <select aria-label="Auteur du message recu" value={extMsgAuthor} onChange={(e) => setExtMsgAuthor(e.target.value as 'client' | 'admin')} style={{ ...s.input, fontSize: '12px' }}>
           <option value="client">Envoyé par le client</option>
           <option value="admin">Envoyé par le support</option>
         </select>
         <input
           type="datetime-local"
+          aria-label="Date du message recu"
           value={extMsgDate}
           onChange={(e) => setExtMsgDate(e.target.value)}
           style={{ ...s.input, fontSize: '12px' }}
         />
-        <input ref={extFileInputRef} type="file" multiple onChange={handleExtFileChange} style={{ display: 'none' }} accept="image/*,.pdf,.doc,.docx,.txt,.zip" />
+        <input ref={extFileInputRef} type="file" multiple aria-label="Joindre des fichiers au message recu" onChange={handleExtFileChange} style={{ display: 'none' }} accept="image/*,.pdf,.doc,.docx,.txt,.zip" />
         <button type="button" onClick={() => extFileInputRef.current?.click()} style={{ ...s.ghostBtn('#6b7280'), fontSize: '12px', padding: '6px 12px' }}>
           + PJ
         </button>
@@ -108,7 +111,7 @@ export function ExtMessagePanel({
           ))}
         </div>
       )}
-      <button onClick={handleSendExtMsg} disabled={sendingExtMsg || !extMsgBody.trim()} style={s.btn('#1d2b4d', sendingExtMsg || !extMsgBody.trim())}>
+      <button type="button" onClick={handleSendExtMsg} disabled={sendingExtMsg || !extMsgBody.trim()} style={s.btn('#1d2b4d', sendingExtMsg || !extMsgBody.trim())}>
         {sendingExtMsg ? 'Ajout...' : 'Ajouter (sans notification)'}
       </button>
     </div>
@@ -186,6 +189,7 @@ export function ReminderPanel({
       )}
 
       <button
+        type="button"
         onClick={handleSendReminder}
         disabled={reminderSending || !clientEmail}
         style={{ ...s.btn(C.orange, reminderSending || !clientEmail), color: '#fff', fontSize: '13px', padding: '8px 18px' }}
@@ -207,11 +211,12 @@ export function SnoozePanel({ snoozeSaving, handleSnooze }: SnoozePanelProps) {
     <div style={{ padding: '14px 18px', borderRadius: '8px', backgroundColor: '#eef8f7', border: '1px solid #b8dcda', marginBottom: '14px' }}>
       <h4 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px', color: '#5b21b6' }}>Snooze — masquer temporairement</h4>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button onClick={() => handleSnooze(1)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 jour</button>
-        <button onClick={() => handleSnooze(3)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>3 jours</button>
-        <button onClick={() => handleSnooze(7)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 semaine</button>
+        <button type="button" onClick={() => handleSnooze(1)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 jour</button>
+        <button type="button" onClick={() => handleSnooze(3)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>3 jours</button>
+        <button type="button" onClick={() => handleSnooze(7)} disabled={snoozeSaving} style={{ ...s.outlineBtn('#17807c', snoozeSaving), fontSize: '12px' }}>1 semaine</button>
         <input
           type="datetime-local"
+          aria-label="Snoozer jusqu'a une date precise"
           onChange={(e) => { if (e.target.value) handleSnooze(null, e.target.value) }}
           style={{ ...s.input, fontSize: '12px' }}
         />

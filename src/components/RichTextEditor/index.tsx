@@ -287,7 +287,6 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
             fontSize: '14px',
             lineHeight: 1.6,
             color: '#1f2937',
-            outline: 'none',
             overflowY: 'auto',
           }}
         />
@@ -300,6 +299,7 @@ export const RichTextEditor = forwardRef<RichTextEditorHandle, Props>(function R
           type="file"
           accept="image/*"
           multiple
+          aria-label="Inserer une image"
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />

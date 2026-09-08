@@ -59,6 +59,21 @@ export const DEFAULT_SLUGS: CollectionSlugs = {
 }
 
 /**
+ * Collections the plugin registers under a FIXED slug.
+ *
+ * Unlike everything in `CollectionSlugs`, these three hardcode their `slug`
+ * (ClientSummaries.ts, TicketCollaborators.ts, TicketFeedback.ts), so any code
+ * that reads or deletes their rows must use these literals rather than a
+ * configurable slug — otherwise an app that overrides `collectionSlugs` would
+ * address a collection that does not exist.
+ */
+export const FIXED_SLUGS = {
+  clientSummaries: 'client-summaries',
+  ticketCollaborators: 'ticket-collaborators',
+  ticketFeedback: 'ticket-feedback',
+} as const
+
+/**
  * Resolve collection slugs merging user overrides with defaults.
  */
 export function resolveSlugs(

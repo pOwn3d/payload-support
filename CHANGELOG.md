@@ -4,6 +4,280 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.0] - 2026-09-08
+
+**Not a security release.** Nothing below closes a vulnerability, and an install
+sitting on 5.0.0 is not left exposed by skipping this one — take it when it suits
+you. It is for integrators with an accessibility audit to answer (EAA / RGAA), a
+record of processing activities to fill in or a licence review to pass, and it
+closes the two failure modes the 5.0.0 audit pass never looked at: a render error
+that blanks a whole admin screen, and an erasure request that only half-erases.
+
+### Accessibility
+
+- **73 form controls across the admin UI had no accessible name.** A screen
+  reader announced them as "edit text, blank", and voice control had nothing to
+  address them by. Every one is named now. Where a `<label>` already carried the
+  right, already-translated text but was a floating `<div>`/`<span>` associated
+  with nothing — the billing filters, the whole new-ticket form, the
+  ticket-detail billing panel, the manual time entry, every row of the settings
+  form — it became a real `<label htmlFor>` bound to a generated id. `useId()`,
+  21 call sites, never a literal: several of these views can be mounted more than
+  once in one document, and the settings form generates one id per row from a
+  single shared `FieldRow`. Where no label existed at all, the control carries an
+  `aria-label`. The FR and EN catalogues gained 12 keys each (three of them the
+  error-boundary strings below) for the strings that had none to reuse.
+  `src/__tests__/adminA11yGuards.test.ts` now fails the build on any control under
+  `src/components` or `src/views` that has neither a label,
+  an `aria-label`/`aria-labelledby` nor an `id` — a placeholder does not count,
+  it is usually an example (`TK-0001`, `support@example.com`) rather than a name.
+- **52 buttons carried no `type`, and 40 of them sit inside the Payload document
+  form.** Everything under `src/components` is mounted by Payload as a field of
+  the Tickets edit view, and that view is a real `<form>` (`@payloadcms/ui`'s
+  `Form` renders `el || 'form'`). A `<button>` with no `type` defaults to
+  `type="submit"`, so "Fusionner", "Snooze", "+ Temps", "Ticket suivant" or the
+  message-edit "Enregistrer" — none of which call `preventDefault` — submitted
+  the document alongside their own action, and Enter pressed in a text field
+  fired whichever of them came first in the DOM. All 52 declare `type="button"`,
+  and the guard test refuses a new one that does not.
+- **Two `<tr onClick>` rows were the only way to reach what they pointed at.** A
+  table row is not focusable and never enters the tab order, so the dashboard's
+  recent-ticket list and the email-tracking error rows were mouse-only; putting
+  `role="button"` on the row would have destroyed the association between cells
+  and column headers instead of fixing it. The control moved into a cell: the
+  dashboard renders the subject as an `<a>` (underlined on `:hover` and
+  `:focus-visible`), and email tracking now hangs the toggle on the expand button
+  it already had, with `aria-expanded`, `aria-controls` and a label.
+- **Three inline `outline: 'none'` declarations removed** — the reply textarea,
+  the rich-text editing surface and the code-language filter. An inline style
+  cannot be paired with a `:focus-visible` rule, so those three removed the focus
+  ring outright with nothing put back. A test flags any inline `outline: 'none'`
+  in a file that does not restore an indicator through an `onFocus` handler.
+- **`--theme-elevation-500` was used as a foreground colour in 122 places**, over
+  15 stylesheet modules — the shared `_tokens.scss` `$text-secondary` and the
+  `textSecondary` entry of the views' token file included — and 5 components.
+  Payload's dark theme redefines `elevation-450` then `elevation-550` and skips
+  the 500 step, so that variable stays `rgb(128, 128, 128)` in both themes:
+  3.62:1 on the light background and 4.03:1 on the dark one, below WCAG AA either
+  way. All 122 now read `--theme-elevation-650` (6.63:1 / 9.03:1). A test fails
+  on any reintroduction of `--theme-elevation-500` as a `color:`.
+- **Four palette entries were too light for the white text printed on them.**
+  `V.amber` `#d97706` → `#b45309`, `V.orange` `#ea580c` → `#c2410c`, `V.green`
+  `#16a34a` → `#15803d`, and the legacy `yellow` alias follows `amber`. `blue`
+  and `red` already passed. `btnStyle` takes an optional `fg` so that a
+  theme-variable background can supply its own foreground: the settings "Reset"
+  button was white on `--theme-elevation-400`, which no single foreground can
+  make readable in both themes, and it now uses the new `V.neutralBg` /
+  `V.neutralFg` pair. `adminTokensContrast.test.ts` recomputes the WCAG ratio of
+  every fixed hex in the palette on each run and fails below 4.5:1.
+- **The inbox tab strip declared `role="tablist"` and none of the rest of the
+  pattern.** The list now has an accessible name, each tab an `id`, an
+  `aria-controls` and a roving `tabIndex`, and the ticket list below is the
+  `role="tabpanel"` those tabs point at, labelled by the active one.
+- **Attachment thumbnails in the ticket detail view rendered with `alt=""`**,
+  which hides an image from assistive technology entirely. They carry the
+  filename now.
+
+### Reliability
+
+- **A render error anywhere in the ticket conversation blanked the whole ticket
+  screen.** The thirteen admin views have wrapped their client subtree in
+  `AdminErrorBoundary` since before this release, but `TicketConversation` is not
+  mounted by any of them: Payload instantiates it straight from the import map as
+  the `ui` field of the Tickets edit view, so the plugin never renders an ancestor
+  for it and no boundary of ours could wrap it from the outside. That is the
+  radius that mattered — the component sits on the screen an agent spends the day
+  on, and any of its ten sub-components took the entire edit view down with it,
+  Payload's own fields included.
+
+  The boundary now lives inside the module: the default export is the wrapper,
+  the component itself became `TicketConversationInner`, and the document id is
+  passed as a reset key so that navigating from a ticket that broke to another
+  one clears the error on its own.
+
+  The **server** half of each admin view — the access check and `DefaultTemplate`
+  — is still outside any boundary, and this release does not wrap it in a
+  try/catch either. A client boundary cannot enclose a server component that
+  Payload instantiates itself from the import map; guarding those is a separate
+  change.
+- **The boundary's own "Retry" did not recover.** It cleared `hasError` and
+  nothing else, so React resumed the very component instance that had just thrown,
+  with the same state, and it threw again on the next render. The reset now bumps
+  a counter used as the `key` of the children, which remounts the subtree. A new
+  `resetKeys` prop clears the error when the input identifying the subtree changes
+  (a missing array never auto-resets, so existing mount points behave as before).
+- **The fallback screen leaked the thrown message and was unreadable in dark
+  mode.** It printed `error.message` verbatim — which can carry a stack fragment,
+  an internal path or a raw API payload — and painted itself with three hardcoded
+  hexes calibrated for a white page (`#dc2626`, `#6b7280`, `#2563eb`). The message
+  goes to the console only; the colours are Payload theme tokens; and its three
+  strings moved into the FR/EN catalogues instead of being hardcoded French.
+
+### Privacy, retention and uninstall
+
+- **`POST /support/delete-account` erased roughly half of what the plugin holds
+  about a client, and did it without a transaction.** It deleted the tickets,
+  their messages, activity log, time entries and satisfaction surveys, the chat
+  messages and the account — and left behind `ticket-feedback`,
+  `ticket-collaborators`, `notification-queue`, `pending-emails` (raw inbound
+  emails with the sender's address), `client-summaries` (an AI profile of the
+  person), the `auth-logs` and `email-logs` rows keyed on their address, and every
+  file they had ever attached to a ticket. The handler now walks all of them, in
+  an order that puts the rows whose `ticket` relationship is required before the
+  tickets themselves — Payload's delete-many collects per-document errors instead
+  of throwing, so that ordering mistake would have failed silently and left the
+  account standing. Collaborator invitations are also matched on the bare email
+  address, because an invitation can predate the account it points at. The whole
+  sequence runs inside a single Payload transaction (`initTransaction` /
+  `commitTransaction` / `killTransaction`, a no-op on an adapter that exposes no
+  `beginTransaction`): a half-deleted account is worse than an undeleted one,
+  since the person is told their data is gone while some of it is still readable.
+  Every collection that only exists behind a feature flag is checked for
+  registration first: addressing an unregistered one throws, and inside a
+  transaction that would roll the entire erasure back. The old handler called
+  `chat-messages` unconditionally, so an install with `features.chat` off already
+  failed there before this release.
+- **`GET /support/export-data` returned four of the collections that hold the
+  caller's data.** It now also returns their chat transcripts, their ticket
+  feedback, the time entries booked against their tickets, and the AI client
+  summary — and it separates the two legal bases instead of mixing them:
+  `providedByYou` (art. 20, portability) and `derivedData` (art. 15, access —
+  portability does not cover data computed *about* someone, which is why the AI
+  summary sits on its own). Feature-flagged collections are skipped when absent
+  rather than throwing. The portal profile page describes the two halves.
+- **Automatic retention, opt-in.** `DELETE /api/support/purge-logs` existed and
+  nothing ever called it, so `auth-logs` and `email-logs` grew forever. A new
+  `retention` option registers a Payload Jobs task
+  (`support-purge-logs`) that deletes rows past their window — defaults 180 days
+  for `auth-logs`, 365 for `email-logs`, daily at 03:30 on the `default` queue.
+  A Jobs task rather than a `setInterval` because an interval does not survive a
+  serverless deploy and runs N times in parallel behind N instances.
+  **Nothing is registered unless you pass the option** (`{}` accepts the
+  defaults; `false` and "unset" both register nothing). That is deliberate:
+  declaring a task turns Payload's job queue on, which adds the `payload-jobs`
+  collection and the `payload-jobs-stats` global to an app that had none — a
+  schema change a support plugin has no business imposing on every install, and
+  one that would buy nothing anyway, since a scheduled task only fires when the
+  host also runs a job runner. Leave it unset and drive the endpoint from your own
+  cron instead. The scheduled path refuses a retention of `0` and skips a journal
+  whose collection is not registered; `days=0` keeps meaning "wipe it entirely" on
+  the manual endpoint, which is an explicit one-off admin action and never a
+  schedule.
+- **`npx support-uninstall`.** Removing the plugin from `payload.config.ts` stops
+  the collections from being registered but leaves every row in the database, with
+  no way to reach them. The new bin is a dry run by default, prints the row count
+  of every one of the 25 collections it knows about that this config actually
+  registers, names the ones it skipped, and only writes with `--confirm`
+  (`--keep-data` removes just the three `payload-preferences` keys the plugin
+  writes; `--force-db` overrides the detection gate). It deletes children before
+  the tickets they point at, portal accounts last, and goes through the Payload
+  local API rather than raw SQL — the plugin runs on SQLite, PostgreSQL and MongoDB
+  and accepts renamed slugs, and hardcoded table names would work on one of the
+  three and silently do nothing on the other two. It never rewrites your source
+  (the `supportPlugin(...)` call holds your configuration) and never touches your
+  `media` collection.
+
+### Breaking
+
+- **`GET /support/export-data` moved `profile`, `tickets`, `messages` and
+  `surveys` under a `providedByYou` key**, alongside a new `derivedData`. Anything
+  parsing that JSON — a custom portal, a DSR tooling script — reads them one level
+  down now. `exportDate` and `exportType` stay at the top level, and the bundled
+  portal only links to the download, so it is unaffected.
+- **`POST /support/delete-account` now deletes rows in your own `media`
+  collection.** It collects the `attachments[].file` ids referenced by the
+  client's ticket messages and pending emails, and deletes those uploads. Files a
+  client attached to a ticket used to survive their erasure request; they no
+  longer do. This is the correct reading of article 17 for a support desk, but it
+  destroys host-owned rows that earlier versions left alone — check that nothing
+  else in your app references those uploads. Seven further collections are erased
+  that were not before (see *Privacy* above).
+
+### Fixed
+
+- **The ticket cascade delete ran outside the caller's transaction.** The
+  `beforeDelete` hook on `tickets` called `payload.delete` for the messages, the
+  activity log, the time entries and the surveys without forwarding `req`, so the
+  cascade opened its own connection instead of joining the ambient transaction —
+  which, on SQLite, contends with the very transaction deleting the parent. Since
+  Payload's delete-many collects per-document errors rather than throwing, the
+  failure is silent and the children outlive the ticket. `req` is forwarded now,
+  and the cascade skips a collection that is not registered.
+- **The ticket time rollup had the same problem.** `recalculateTicketTime` read
+  the entries and wrote `tickets.totalTimeMinutes` outside the transaction that
+  triggered it, so it summed a stale set and contended with its own caller. Both
+  operations take `req`.
+
+### Changed
+
+- **`lucide-react` is no longer a peer dependency.** It was required — three
+  shipped components imported it statically, so a host without it failed at build
+  time — for 19 distinct icons. Those are inlined as SVG instead:
+  15 in `src/views/shared/icons.tsx` for the admin views, 5 in
+  `src/portal/icons.tsx` for the live-chat widget (`X` is in both), under Lucide's
+  own ISC licence, reproduced in each file's header. Nothing to install; an app
+  that uses `lucide-react` for its own UI is unaffected. The ambient
+  `src/types/lucide-react.d.ts` stub and the two `tsup` external entries are gone
+  with it. Icons are `aria-hidden` by default — every icon-only control carries
+  its own label — and a test asserts that the inlined set covers exactly what the
+  sources import and that no `lucide-react` import survives anywhere in the
+  package.
+- **README: a "Database and updates" section.** The plugin adds collections to
+  your config; **it does not own your schema**, and Payload gives a plugin no way
+  to ship migrations — `payload migrate` reads exactly one directory,
+  `payload.db.migrationDir`, resolved from the *host application's* cwd, so a
+  migration file published inside a package is never discovered. The section
+  states the workflow on your side (`push` in development, `migrate:create` +
+  `migrate` or `prodMigrations` in production, never `push` in production), tables
+  the twelve options that decide which collections exist, and says that turning one
+  off does not drop its table — the rows simply become unreachable through Payload
+  while still occupying the database. The Troubleshooting and FAQ answers that
+  told you to "push the schema before deploying" were wrong and are rewritten.
+- **README: a "Personal data, retention and uninstall" section** — what each of
+  the 25 collections holds, that attachments live in *your* `media` collection and
+  which three `payload-preferences` keys the plugin writes, the retention table,
+  the data-subject-request endpoints, and the fact that `features.emailTracking`
+  is **on by default** and inserts a 1×1 open-tracking pixel, which article 82 of
+  the French *Loi Informatique et Libertés* treats as a tracker: your call to make,
+  and `features: { emailTracking: false }` turns it off.
+- **README: the runtime dependency licences are disclosed.** The package has
+  exactly three — `pdfkit` (MIT), `sanitize-html` (MIT) and `web-push`
+  (**MPL-2.0**). MPL-2.0's copyleft is per file and §3.3 allows a Larger Work under
+  other terms; the plugin neither modifies nor bundles `web-push`, it imports it as
+  an external, so the plugin stays MIT. CI enforces the list: a new runtime
+  dependency fails the security workflow with a message telling you to review its
+  licence and update both the allowlist and the README in the same commit. The
+  guard is a three-name allowlist rather than a licence scanner because
+  `pnpm licenses --prod` reports the auto-installed peers (payload, `@payloadcms/*`,
+  react) as if they were ours.
+- **README: an "Upgrading — 4.x → 5.0" section** covering what 5.0.0 asked of
+  integrators (audit the admin-route access logs, re-subscribe agents whose push
+  endpoint is not public HTTPS, expect one rate-limit counter reset, forward
+  `challenge` from a custom portal).
+- `vitest.config.ts` now includes `src/**/*.test.tsx`; the `.tsx` suites added
+  here would otherwise never have run.
+
+### Added
+
+- `retention?: RetentionConfig | false` on `SupportPluginConfig`, and
+  `DEFAULT_RETENTION`, `PURGE_LOGS_TASK_SLUG`, `purgeOlderThan`,
+  `purgeableCollections`, `runScheduledPurge` plus the `RetentionConfig` and
+  `ScheduledPurgeResult` types on the package barrel.
+- `AdminErrorFallback` and `haveResetKeysChanged` are exported from
+  `views/shared/ErrorBoundary` so the fallback can be rendered and asserted on in
+  isolation; `AdminErrorBoundary` takes `resetKeys`.
+- `FIXED_SLUGS` in `utils/slugs` — the three collections that hardcode their slug
+  (`client-summaries`, `ticket-collaborators`, `ticket-feedback`) and must
+  therefore be addressed by literal, not through `collectionSlugs`. Internal.
+- `support-uninstall` is declared as a `bin`, and `scripts/uninstall.mjs` /
+  `scripts/uninstall-data.mjs` ship in the tarball.
+- 103 tests over 9 new files: the accessibility guards, the palette contrast
+  arithmetic, the error boundary and its reset semantics, the conversation
+  boundary, the inlined icon set, the retention purge and its opt-in wiring, the
+  full-erasure integration test, the two-section export, and the uninstall script's
+  slug list (which fails if it drifts from `utils/slugs`). The suite goes from 288
+  to **391 passing tests** across 51 files.
+
 ## [5.0.0] - 2026-09-08
 
 Follow-up to 4.0.0, published hours earlier. A per-actor audit pass found six

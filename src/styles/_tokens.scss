@@ -1,6 +1,8 @@
 // Design tokens — based on Payload CMS CSS variables
 $text: var(--theme-text);
-$text-secondary: var(--theme-elevation-500);
+// elevation-650, not 500: Payload's dark theme skips the 500 step, leaving it
+// at rgb(128,128,128) — 3.62:1 light / 4.03:1 dark, below WCAG AA in both.
+$text-secondary: var(--theme-elevation-650);
 $text-muted: var(--theme-elevation-400);
 $bg: var(--theme-elevation-50);
 $bg-card: var(--theme-elevation-100);

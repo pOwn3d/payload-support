@@ -1,4 +1,9 @@
 {
+  "errorBoundary": {
+    "title": "Une erreur est survenue",
+    "description": "Cette section n'a pas pu s'afficher. Le detail technique est consigne dans la console du navigateur.",
+    "retry": "Reessayer"
+  },
   "common": {
     "loading": "Chargement...",
     "cancel": "Annuler",
@@ -144,6 +149,7 @@
     "title": "CRM Clients",
     "subtitle": "Gestion des clients et historique",
     "searchPlaceholder": "Rechercher un client...",
+    "searchLabel": "Rechercher un client",
     "noClientFound": "Aucun client trouvé",
     "selectClient": "Sélectionnez un client pour voir ses détails",
     "editButton": "Modifier",
@@ -316,6 +322,8 @@
       "resolved": "Résolus",
       "slaBreach": "SLA dépassé"
     },
+    "searchLabel": "Rechercher un ticket",
+    "sortLabel": "Trier les tickets",
     "sort": {
       "newest": "Plus récent",
       "oldest": "Plus ancien",
@@ -324,6 +332,7 @@
     },
     "selected": "{{count}} sélectionné",
     "selectedPlural": "{{count}} sélectionnés",
+    "tabsLabel": "Filtres de la boite de reception",
     "closeAction": "Fermer",
     "reopenAction": "Rouvrir",
     "moreActions": "Plus d'actions...",
@@ -344,6 +353,7 @@
   "emailTracking": {
     "title": "Suivi des emails",
     "searchPlaceholder": "Rechercher par destinataire ou sujet...",
+    "searchLabel": "Rechercher un email",
     "noLogs": "Aucun log trouvé pour cette période",
     "tabs": {
       "all": "Tous",
@@ -366,7 +376,8 @@
       "action": "Action",
       "time": "Temps"
     },
-    "errorLabel": "Erreur"
+    "errorLabel": "Erreur",
+    "toggleError": "Afficher le detail de l'erreur"
   },
   "logs": {
     "title": "Logs Email",
@@ -530,8 +541,11 @@
     "messageDeletedToast": "Message supprimé",
     "split": {
       "subjectPlaceholder": "Sujet du nouveau ticket...",
+      "subjectLabel": "Sujet du nouveau ticket",
       "createBtn": "Créer le ticket"
     },
+    "sendAs": "Envoyer en tant que",
+    "manualMinutes": "Minutes a ajouter",
     "editMessage": "Éditer",
     "editMessageLabel": "Éditer le message",
     "uploadItem": "PJ {{name}}",

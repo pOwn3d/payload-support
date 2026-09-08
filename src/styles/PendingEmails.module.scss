@@ -56,7 +56,7 @@ $radius-pill: 20px;
 }
 
 .subtitle {
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin: 0;
   font-size: 14px;
 }
@@ -86,7 +86,7 @@ $radius-pill: 20px;
   font-size: 13px;
   font-weight: 600;
   border-bottom: 2px solid transparent;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   background: transparent;
   transition: color 100ms, border-color 100ms;
 
@@ -156,7 +156,7 @@ $radius-pill: 20px;
 
 .senderEmail {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
 }
 
 .cardSubject {
@@ -171,7 +171,7 @@ $radius-pill: 20px;
   align-items: center;
   gap: 10px;
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
 }
 
 .attachment {
@@ -226,7 +226,7 @@ $radius-pill: 20px;
 
 .suggestionLow {
   background-color: var(--theme-elevation-100);
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
 }
 
 // ── Body preview ─────────────────────────────────────────────
@@ -236,7 +236,7 @@ $radius-pill: 20px;
 
 .bodyText {
   font-size: 13px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   line-height: 1.5;
 }
 
@@ -353,7 +353,7 @@ $radius-pill: 20px;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   padding: 4px;
   border-radius: 4px;
   display: flex;
@@ -368,7 +368,7 @@ $radius-pill: 20px;
 .sectionLabel {
   font-size: 12px;
   font-weight: 700;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -433,7 +433,7 @@ $radius-pill: 20px;
 }
 
 .scoreLow {
-  background-color: var(--theme-elevation-500);
+  background-color: var(--theme-elevation-650);
 }
 
 // ── Detected client row ──────────────────────────────────────
@@ -456,7 +456,7 @@ $radius-pill: 20px;
 
 .detectedEmail {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin-left: 8px;
 }
 
@@ -481,7 +481,7 @@ $radius-pill: 20px;
 
 .clientResultEmail {
   font-size: 12px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   margin-left: 8px;
 }
 
@@ -523,13 +523,13 @@ $radius-pill: 20px;
 
 .searchingHint {
   font-size: 13px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   padding: 8px;
 }
 
 .noResults {
   font-size: 13px;
-  color: var(--theme-elevation-500);
+  color: var(--theme-elevation-650);
   padding: 8px;
 }
 

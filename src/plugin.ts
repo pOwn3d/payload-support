@@ -1,4 +1,4 @@
-import type { Config, Plugin, AdminViewConfig } from 'payload'
+import type { Config, Plugin, AdminViewConfig, PayloadRequest } from 'payload'
 import type { SupportPluginConfig, SupportFeatures } from './types'
 import { DEFAULT_FEATURES } from './types'
 import { resolveSlugs } from './utils/slugs'
@@ -31,6 +31,7 @@ import {
   createSupportCountersCollection,
 } from './collections'
 import { PayloadRateLimitStore } from './utils/rateLimiter'
+import { DEFAULT_RETENTION, PURGE_LOGS_TASK_SLUG, runScheduledPurge } from './utils/retention'
 import { SUPPORT_STAFF_SLUG_CONFIG_KEY } from './utils/readSettings'
 
 function viewConfig(component: string, path: string): AdminViewConfig {
@@ -168,8 +169,57 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
       capabilities: config?.capabilities,
     })
 
+    // ─── Retention job ───────────────────────────────────
+    //
+    // `DELETE /api/support/purge-logs` existed but nothing ever called it, so
+    // the two journals grew forever — a retention policy nobody applies is not
+    // a retention policy. This registers a daily Payload Jobs task instead of
+    // a setInterval: an interval does not survive a serverless deploy and runs
+    // N times in parallel behind N instances.
+    // The task is OPT-IN: nothing is registered unless `retention` is set.
+    //
+    // Registering it by default was tempting — a retention policy nobody opts
+    // into is how the manual purge endpoint ended up never being called. But
+    // declaring a task turns Payload's job queue on, which adds `payload-jobs`
+    // and `payload-jobs-stats` to an app that had none: two tables, i.e. a
+    // schema change imposed on every consumer of a *support* plugin, by a minor
+    // release. And it would buy them nothing, because a scheduled task only
+    // fires when the host also runs a job runner (`payload jobs:run`, a cron,
+    // or `jobs.autoRun`). Defaulting it on therefore costs two tables and
+    // delivers no purge until the integrator does the other half of the work
+    // anyway — at which point they can just as well pass `retention`.
+    //
+    // The README states the trade-off where the option is documented, so the
+    // choice is visible rather than silent. `admin-ui-pro` made the same call
+    // for the same reason.
+    const retention = config?.retention === false ? undefined : config?.retention
+    const retentionEnabled = Boolean(retention)
+    const purgeTask = {
+      slug: PURGE_LOGS_TASK_SLUG,
+      label: 'Support — purge des journaux',
+      schedule: [
+        {
+          cron: retention?.cron ?? DEFAULT_RETENTION.cron,
+          queue: retention?.queue ?? DEFAULT_RETENTION.queue,
+        },
+      ],
+      handler: async ({ req }: { req: PayloadRequest }) => {
+        const result = await runScheduledPurge(req.payload, slugs, retention, req)
+        return { output: result }
+      },
+    }
+
+    const existingJobs = incomingConfig.jobs
+    const jobs = retentionEnabled
+      ? ({
+        ...existingJobs,
+        tasks: [...(existingJobs?.tasks ?? []), purgeTask],
+      } as Config['jobs'])
+      : existingJobs
+
     return {
       ...incomingConfig,
+      jobs,
       // Publish the resolved staff collection so the server-side readers share
       // ONE source of truth with the writers. `requireAdmin` compares against
       // `slugs.users`; the `payload-preferences` reads used to scope themselves

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from 'lucide-react'
+import React, { useState, useEffect, useId } from 'react'
+import { Settings, Mail, Bot, Clock, Timer, Globe, FileSignature } from '../shared/icons'
 import { V, btnStyle } from '../shared/adminTokens'
 import { AdminViewHeader } from '../shared/AdminViewHeader'
 import { DEFAULT_FEATURES, type TicketingFeatures } from '../../components/TicketConversation/config'
@@ -280,19 +280,33 @@ const CollapsibleSection: React.FC<{
   )
 }
 
+/**
+ * Row of the settings form.
+ *
+ * It owns the id of the control it labels: `children` is called with a
+ * generated id that the control must carry, which turns the row title into a
+ * real `<label>` instead of a floating `<div>`. The id is generated with
+ * `useId` because several settings views can be mounted at once.
+ */
 const FieldRow: React.FC<{
   label: string
   description?: string
-  children: React.ReactNode
-}> = ({ label, description, children }) => (
-  <div className={ts.fieldRow}>
-    <div className={ts.fieldLabel}>
-      {label}
-      {description && <div className={ts.fieldDescription}>{description}</div>}
+  children: React.ReactNode | ((id: string) => React.ReactNode)
+}> = ({ label, description, children }) => {
+  const id = useId()
+
+  return (
+    <div className={ts.fieldRow}>
+      <div className={ts.fieldLabel}>
+        <label htmlFor={id}>{label}</label>
+        {description && <div className={ts.fieldDescription}>{description}</div>}
+      </div>
+      <div className={ts.fieldContent}>
+        {typeof children === 'function' ? children(id) : children}
+      </div>
     </div>
-    <div className={ts.fieldContent}>{children}</div>
-  </div>
-)
+  )
+}
 
 /* ============================================
  * Main Component
@@ -393,7 +407,7 @@ export const TicketingSettingsClient: React.FC = () => {
         subtitle={t('settings.subtitle', { enabled: String(enabledCount), total: String(totalCount) })}
         actions={
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={handleReset} style={btnStyle('var(--theme-elevation-400)', { small: true })}>
+            <button type="button" onClick={handleReset} style={btnStyle(V.neutralBg, { small: true, fg: V.neutralFg })}>
               {t('settingsView.reset')}
             </button>
             <button
@@ -477,54 +491,69 @@ export const TicketingSettingsClient: React.FC = () => {
         </p>
 
         <FieldRow label={t('settingsView.senderAddress')} description={t('settingsView.senderAddressDesc')}>
-          <input
-            type="email"
-            value={settings.email.fromAddress}
-            onChange={(e) => updateEmail('fromAddress', e.target.value)}
-            placeholder="support@example.com"
-            className={ts.input}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="email"
+              value={settings.email.fromAddress}
+              onChange={(e) => updateEmail('fromAddress', e.target.value)}
+              placeholder="support@example.com"
+              className={ts.input}
+            />
+          )}
         </FieldRow>
 
         <FieldRow label={t('settingsView.senderName')} description={t('settingsView.senderNameDesc')}>
-          <input
-            type="text"
-            value={settings.email.fromName}
-            onChange={(e) => updateEmail('fromName', e.target.value)}
-            placeholder="Support ConsilioWEB"
-            className={ts.input}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="text"
+              value={settings.email.fromName}
+              onChange={(e) => updateEmail('fromName', e.target.value)}
+              placeholder="Support ConsilioWEB"
+              className={ts.input}
+            />
+          )}
         </FieldRow>
 
         <FieldRow label={t('settingsView.replyTo')} description={t('settingsView.replyToDesc')}>
-          <input
-            type="email"
-            value={settings.email.replyToAddress}
-            onChange={(e) => updateEmail('replyToAddress', e.target.value)}
-            placeholder="(identique a l'expediteur)"
-            className={ts.input}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="email"
+              value={settings.email.replyToAddress}
+              onChange={(e) => updateEmail('replyToAddress', e.target.value)}
+              placeholder="(identique a l'expediteur)"
+              className={ts.input}
+            />
+          )}
         </FieldRow>
 
         <div className={ts.separator} />
 
         <FieldRow label={t('settingsView.smtpServer')} description={t('settingsView.smtpServerDesc')}>
-          <input
-            type="text"
-            value={smtpHost}
-            readOnly
-            className={ts.inputReadonly}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="text"
+              value={smtpHost}
+              readOnly
+              className={ts.inputReadonly}
+            />
+          )}
         </FieldRow>
 
         <FieldRow label={t('settingsView.smtpPort')}>
-          <input
-            type="text"
-            value={smtpPort}
-            readOnly
-            className={ts.inputReadonly}
-            style={{ maxWidth: 100 }}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="text"
+              value={smtpPort}
+              readOnly
+              className={ts.inputReadonly}
+              style={{ maxWidth: 100 }}
+            />
+          )}
         </FieldRow>
       </CollapsibleSection>
 
@@ -547,47 +576,56 @@ export const TicketingSettingsClient: React.FC = () => {
         </p>
 
         <FieldRow label={t('settingsView.aiProvider')} description={t('settingsView.aiProviderDesc')}>
-          <select
-            value={settings.ai.provider}
-            onChange={(e) => updateAI('provider', e.target.value as AISettings['provider'])}
-            className={ts.select}
-          >
-            <option value="ollama">Ollama (local / tunnel)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="openai">OpenAI (GPT)</option>
-            <option value="gemini">Google (Gemini)</option>
-          </select>
+          {(id) => (
+            <select
+              id={id}
+              value={settings.ai.provider}
+              onChange={(e) => updateAI('provider', e.target.value as AISettings['provider'])}
+              className={ts.select}
+            >
+              <option value="ollama">Ollama (local / tunnel)</option>
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="openai">OpenAI (GPT)</option>
+              <option value="gemini">Google (Gemini)</option>
+            </select>
+          )}
         </FieldRow>
 
         {settings.ai.provider !== 'ollama' && (
           <FieldRow label={t('settingsView.aiApiKey')} description={t('settingsView.aiApiKeyDesc')}>
-            <div className={ts.apiKeyRow}>
-              <input
-                type={showApiKey ? 'text' : 'password'}
-                value={settings.ai.apiKey}
-                onChange={(e) => updateAI('apiKey', e.target.value)}
-                placeholder="sk-..."
-                className={ts.input}
-                style={{ flex: 1 }}
-              />
-              <button
-                onClick={() => setShowApiKey(!showApiKey)}
-                className={ts.apiKeyToggle}
-              >
-                {showApiKey ? t('settingsView.hideKey') : t('settingsView.showKey')}
-              </button>
-            </div>
+            {(id) => (
+              <div className={ts.apiKeyRow}>
+                <input
+                  id={id}
+                  type={showApiKey ? 'text' : 'password'}
+                  value={settings.ai.apiKey}
+                  onChange={(e) => updateAI('apiKey', e.target.value)}
+                  placeholder="sk-..."
+                  className={ts.input}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className={ts.apiKeyToggle}
+                >
+                  {showApiKey ? t('settingsView.hideKey') : t('settingsView.showKey')}
+                </button>
+              </div>
+            )}
           </FieldRow>
         )}
 
         <FieldRow label={t('settingsView.aiModel')} description={t('settingsView.aiModelDesc')}>
-          <input
-            type="text"
-            value={settings.ai.model}
-            onChange={(e) => updateAI('model', e.target.value)}
-            placeholder="qwen2.5:32b"
-            className={ts.input}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="text"
+              value={settings.ai.model}
+              onChange={(e) => updateAI('model', e.target.value)}
+              placeholder="qwen2.5:32b"
+              className={ts.input}
+            />
+          )}
         </FieldRow>
 
         <div className={ts.separator} />
@@ -631,33 +669,39 @@ export const TicketingSettingsClient: React.FC = () => {
         </p>
 
         <FieldRow label={t('settingsView.slaFirstResponse')} description={t('settingsView.slaFirstResponseDesc')}>
-          <div className={ts.slaInline}>
-            <input
-              type="number"
-              min={1}
-              value={settings.sla.firstResponseMinutes}
-              onChange={(e) => updateSLA('firstResponseMinutes', parseInt(e.target.value) || 0)}
-              className={ts.numberInput}
-            />
-            <span className={ts.slaHint}>
-              {t('settingsView.minutes')} ({Math.floor(settings.sla.firstResponseMinutes / 60)}h{String(settings.sla.firstResponseMinutes % 60).padStart(2, '0')})
-            </span>
-          </div>
+          {(id) => (
+            <div className={ts.slaInline}>
+              <input
+                id={id}
+                type="number"
+                min={1}
+                value={settings.sla.firstResponseMinutes}
+                onChange={(e) => updateSLA('firstResponseMinutes', parseInt(e.target.value) || 0)}
+                className={ts.numberInput}
+              />
+              <span className={ts.slaHint}>
+                {t('settingsView.minutes')} ({Math.floor(settings.sla.firstResponseMinutes / 60)}h{String(settings.sla.firstResponseMinutes % 60).padStart(2, '0')})
+              </span>
+            </div>
+          )}
         </FieldRow>
 
         <FieldRow label={t('settingsView.slaResolution')} description={t('settingsView.slaResolutionDesc')}>
-          <div className={ts.slaInline}>
-            <input
-              type="number"
-              min={1}
-              value={settings.sla.resolutionMinutes}
-              onChange={(e) => updateSLA('resolutionMinutes', parseInt(e.target.value) || 0)}
-              className={ts.numberInput}
-            />
-            <span className={ts.slaHint}>
-              {t('settingsView.minutes')} ({Math.floor(settings.sla.resolutionMinutes / 60)}h{String(settings.sla.resolutionMinutes % 60).padStart(2, '0')})
-            </span>
-          </div>
+          {(id) => (
+            <div className={ts.slaInline}>
+              <input
+                id={id}
+                type="number"
+                min={1}
+                value={settings.sla.resolutionMinutes}
+                onChange={(e) => updateSLA('resolutionMinutes', parseInt(e.target.value) || 0)}
+                className={ts.numberInput}
+              />
+              <span className={ts.slaHint}>
+                {t('settingsView.minutes')} ({Math.floor(settings.sla.resolutionMinutes / 60)}h{String(settings.sla.resolutionMinutes % 60).padStart(2, '0')})
+              </span>
+            </div>
+          )}
         </FieldRow>
 
         <div className={ts.toggleRow}>
@@ -678,13 +722,16 @@ export const TicketingSettingsClient: React.FC = () => {
         <div className={ts.separator} />
 
         <FieldRow label={t('settingsView.escalationEmail')} description={t('settingsView.escalationEmailDesc')}>
-          <input
-            type="email"
-            value={settings.sla.escalationEmail}
-            onChange={(e) => updateSLA('escalationEmail', e.target.value)}
-            placeholder="admin@example.com"
-            className={ts.input}
-          />
+          {(id) => (
+            <input
+              id={id}
+              type="email"
+              value={settings.sla.escalationEmail}
+              onChange={(e) => updateSLA('escalationEmail', e.target.value)}
+              placeholder="admin@example.com"
+              className={ts.input}
+            />
+          )}
         </FieldRow>
       </CollapsibleSection>
 
@@ -720,33 +767,39 @@ export const TicketingSettingsClient: React.FC = () => {
         {settings.autoClose.enabled && (
           <>
             <FieldRow label={t('settingsView.autoCloseDelay')} description={t('settingsView.autoCloseDelayDesc')}>
-              <div className={ts.slaInline}>
-                <input
-                  type="number"
-                  min={1}
-                  max={90}
-                  value={settings.autoClose.daysBeforeClose}
-                  onChange={(e) => updateAutoClose('daysBeforeClose', parseInt(e.target.value) || 7)}
-                  className={ts.numberInput}
-                />
-                <span className={ts.slaHint}>{t('settingsView.days')}</span>
-              </div>
+              {(id) => (
+                <div className={ts.slaInline}>
+                  <input
+                    id={id}
+                    type="number"
+                    min={1}
+                    max={90}
+                    value={settings.autoClose.daysBeforeClose}
+                    onChange={(e) => updateAutoClose('daysBeforeClose', parseInt(e.target.value) || 7)}
+                    className={ts.numberInput}
+                  />
+                  <span className={ts.slaHint}>{t('settingsView.days')}</span>
+                </div>
+              )}
             </FieldRow>
 
             <FieldRow label={t('settingsView.autoCloseReminder')} description={t('settingsView.autoCloseReminderDesc')}>
-              <div className={ts.slaInline}>
-                <input
-                  type="number"
-                  min={1}
-                  max={settings.autoClose.daysBeforeClose - 1}
-                  value={settings.autoClose.reminderDaysBefore}
-                  onChange={(e) => updateAutoClose('reminderDaysBefore', parseInt(e.target.value) || 2)}
-                  className={ts.numberInput}
-                />
-                <span className={ts.slaHint}>
-                  {t('settingsView.autoCloseDaysBeforeReminder', { count: String(settings.autoClose.reminderDaysBefore) })}
-                </span>
-              </div>
+              {(id) => (
+                <div className={ts.slaInline}>
+                  <input
+                    id={id}
+                    type="number"
+                    min={1}
+                    max={settings.autoClose.daysBeforeClose - 1}
+                    value={settings.autoClose.reminderDaysBefore}
+                    onChange={(e) => updateAutoClose('reminderDaysBefore', parseInt(e.target.value) || 2)}
+                    className={ts.numberInput}
+                  />
+                  <span className={ts.slaHint}>
+                    {t('settingsView.autoCloseDaysBeforeReminder', { count: String(settings.autoClose.reminderDaysBefore) })}
+                  </span>
+                </div>
+              )}
             </FieldRow>
           </>
         )}
@@ -783,14 +836,17 @@ export const TicketingSettingsClient: React.FC = () => {
         </p>
 
         <FieldRow label={t('settingsView.language')} description={t('settingsView.languageDesc')}>
-          <select
-            value={settings.locale.language}
-            onChange={(e) => updateLocale('language', e.target.value as 'fr' | 'en')}
-            className={ts.select}
-          >
-            <option value="fr">{t('settingsView.french')}</option>
-            <option value="en">{t('settingsView.english')}</option>
-          </select>
+          {(id) => (
+            <select
+              id={id}
+              value={settings.locale.language}
+              onChange={(e) => updateLocale('language', e.target.value as 'fr' | 'en')}
+              className={ts.select}
+            >
+              <option value="fr">{t('settingsView.french')}</option>
+              <option value="en">{t('settingsView.english')}</option>
+            </select>
+          )}
         </FieldRow>
       </CollapsibleSection>
 
@@ -808,6 +864,7 @@ export const TicketingSettingsClient: React.FC = () => {
         </p>
 
         <textarea
+          aria-label={t('settingsView.signatureTitle')}
           value={signature}
           onChange={(e) => { setSignature(e.target.value); setSaved(false) }}
           placeholder={t('settingsView.signaturePlaceholder')}
@@ -843,7 +900,7 @@ export const TicketingSettingsClient: React.FC = () => {
                         if (res.ok) { const d = await res.json(); alert(`${d.purged} ${t('settingsView.purgeDone')}`) }
                       } catch { alert(t('import.errorTitle')) }
                     }}
-                    style={{ ...btnStyle(opt.days === 0 ? '#ef4444' : 'var(--theme-elevation-500)', { small: true }), fontSize: 11 }}
+                    style={{ ...btnStyle(opt.days === 0 ? V.red : V.neutralBg, { small: true, fg: opt.days === 0 ? undefined : V.neutralFg }), fontSize: 11 }}
                   >
                     {opt.label}
                   </button>
@@ -856,7 +913,7 @@ export const TicketingSettingsClient: React.FC = () => {
 
       {/* Bottom save bar */}
       <div className={ts.bottomBar}>
-        <button onClick={handleReset} style={btnStyle('var(--theme-elevation-400)', { small: true })}>
+        <button type="button" onClick={handleReset} style={btnStyle(V.neutralBg, { small: true, fg: V.neutralFg })}>
           {t('settingsView.resetAll')}
         </button>
         <button

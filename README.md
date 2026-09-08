@@ -26,6 +26,7 @@ ships as a template you copy into your own `app/` directory — see
 - [Quick Start](#quick-start)
 - [Mounting the client portal](#mounting-the-client-portal)
 - [Configuration](#configuration)
+- [Database and updates](#database-and-updates)
 - [Deployment adapters](#deployment-adapters)
 - [API Endpoints](#api-endpoints)
 - [Webhooks](#webhooks)
@@ -34,6 +35,7 @@ ships as a template you copy into your own `app/` directory — see
 - [Requirements](#requirements)
 - [Security](#security)
 - [Performance](#performance)
+- [Personal data, retention and uninstall](#personal-data-retention-and-uninstall)
 - [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
 - [Upgrading](#upgrading)
@@ -78,10 +80,10 @@ pnpm add @consilioweb/payload-support
 # or: yarn add @consilioweb/payload-support
 ```
 
-**Peer dependencies** — all six are required, none is optional:
+**Peer dependencies** — all five are required, none is optional:
 
 ```bash
-pnpm add payload@^3.79.1 @payloadcms/next@^3.79.1 next@^15.2.9 react@^19 react-dom@^19 lucide-react@">=0.300.0"
+pnpm add payload@^3.79.1 @payloadcms/next@^3.79.1 next@^15.2.9 react@^19 react-dom@^19
 ```
 
 - `payload@^3.79.1` — the floor is a security floor, and it is stated as such rather than
@@ -96,9 +98,10 @@ pnpm add payload@^3.79.1 @payloadcms/next@^3.79.1 next@^15.2.9 react@^19 react-d
 - `@payloadcms/next` and `next` — the 13 admin views are registered unless you pass
   `skipViews: true`, and each imports `DefaultTemplate` from `@payloadcms/next/templates` plus
   `next/navigation` / `next/link` statically. Both are already present in any Payload 3 admin app.
-- `lucide-react` — imported statically by `PendingEmailsView` and `TicketingSettingsView`. (The
-  third importer, `src/portal/LiveChat.tsx`, is a leftover: nothing in the shipped portal mounts
-  it.)
+`lucide-react` is **no longer a peer dependency**. The 19 icons the admin views and the portal
+widget used are inlined as SVG in `src/views/shared/icons.tsx` and `src/portal/icons.tsx`, under
+Lucide's ISC licence. Nothing to install; if your app already uses `lucide-react` for its own UI,
+it is unaffected.
 
 **AI runtime dependency** — the AI features load `@anthropic-ai/sdk` through a runtime
 `require`/dynamic `import` and it is marked `external` at build time. It is intentionally not a
@@ -149,12 +152,13 @@ provider, the sender addresses, the SLA targets and the runtime feature flags.
 ## Mounting the client portal
 
 The portal ships as a **template you copy**, not as an importable subpath — and that is a
-constraint, not an oversight: `src/portal/auth/layout.tsx` and three of its pages import
+constraint, not an oversight: `src/portal/auth/layout.tsx` and four of its pages import
 `@payload-config`, an alias that only exists inside your application, and `src/portal/layout.tsx`
-renders its own `<html>`/`<body>` as a Next.js **root layout**. Neither can be resolved from
-`node_modules`, so there is no `./portal` export and `plugin.ts` registers no Next route.
+renders its own `<html>`/`<body>` (lines 13 and 24) as a Next.js **root layout**. Neither can be
+resolved from `node_modules`, so there is no `./portal` export and `plugin.ts` registers no Next
+route — adding one would break at import time in every host app.
 
-The sources are published in the tarball (`files` includes `src`), so copy them out of
+The sources are published in the tarball (`files` includes `src`, 36 files), so copy them out of
 `node_modules` into a route group of your own `app/` directory. Two directories have to be
 renamed on the way in — the shipped names are plain folders, not Next.js route syntax — and
 `layout.tsx` has to sit at the **group** level, because it renders its own `<html>`/`<body>`
@@ -196,14 +200,13 @@ What your app must provide for those pages to work:
 | Requirement | Why |
 |---|---|
 | The `@payload-config` alias | The authenticated pages call `getPayload({ config })` directly. Standard in a `create-payload-app` project. |
-| **Tailwind CSS** | 28 of the 35 portal files are styled with Tailwind utility classes only. Without Tailwind the portal renders unstyled. |
+| **Tailwind CSS** | 29 of the 32 portal components are styled with Tailwind utility classes only. Without Tailwind the portal renders unstyled. |
 | `@payloadcms/richtext-lexical` | `auth/faq/page.tsx` renders knowledge-base entries with `RichText` from `@payloadcms/richtext-lexical/react`. It is **not** a peer dependency of this plugin — add it yourself if you mount the FAQ page. |
 | `NEXT_PUBLIC_SERVER_URL` | Email and portal links are built from it. |
 | `NEXT_PUBLIC_SUPPORT_PHONE` | The ticket detail page prints a support phone number; without this variable it prints the placeholder `01 23 45 67 89` to your clients. |
 
-`lucide-react` is **not** needed by the pages above: the only portal file importing it is
-`src/portal/LiveChat.tsx`, which the shipped `(auth)` layout never mounts. It stays a required peer
-for the admin views.
+No icon library is needed: `src/portal/icons.tsx` ships the five SVG icons `LiveChat.tsx` uses, and
+it is copied along with the rest of the portal.
 
 The `(auth)` layout mounts two widgets. `ChatbotWidget` is always rendered; `ChatWidget` — the
 floating live-chat FAB — returns `null` unless the host app sets
@@ -221,6 +224,7 @@ plugin upgrades do not update it. Diff it against
 |---|---|---|---|
 | `features` | `SupportFeatures` | see below | Build-time feature flags — decide which collections, endpoints and views exist. |
 | `rateLimitStore` | `RateLimitStore \| 'payload'` | in-memory | Shared storage for the endpoint rate limits. `'payload'` adds the `support-rate-limits` collection. |
+| `retention` | `{ authLogsDays?, emailLogsDays?, cron?, queue? } \| false` | **not set — no task is registered** | Opt-in automatic purge of the two journals, run as a Payload Jobs task. Pass `{}` to accept the defaults (`180` / `365` days, `0 30 3 * * *`, queue `default`). `0` on either value disables that journal's purge. Left unset, or `false`, registers nothing. See [Personal data, retention and uninstall](#personal-data-retention-and-uninstall). |
 | `ticketNumber` | `{ prefix?, padding? }` | `{ prefix: 'TK-', padding: 4 }` | Sequential ticket-number formatting, backed by an atomic counter. |
 | `capabilities` | `SupportCapabilities` | — | Host adapters for SMS, inbound email, digests, AI titles/summaries, detailed billing, volunteering, thread cleanup and project suggestions. See [Deployment adapters](#deployment-adapters). |
 | `basePath` | `string` | `'/support'` | Prefix of the admin view routes (`/admin<basePath>/inbox`, …). The conversation-import view is the exception: it is registered at the fixed `/admin/import-conversation`. |
@@ -360,6 +364,46 @@ curl -X POST https://your-app/api/support/process-digests -H "x-cron-secret: $CR
 of conditions (field, `equals` / `not_equals` / `contains`, value) and a list of actions
 (`set_status`, `set_priority`, `set_category`, `assign`, `add_tag`). For example: trigger
 `ticket_created`, condition `category equals bug`, action `set_priority = urgent`.
+
+## Database and updates
+
+- This plugin **adds collections to your Payload config; it does not own your schema**. Your app
+  does, and it is your app that generates and runs the migrations.
+- Payload gives a plugin no way to ship them. `payload migrate` reads exactly one directory —
+  `payload.db.migrationDir`, resolved from the **host application's** cwd
+  (`payload/dist/database/migrations/readMigrationFiles.js` and `findMigrationDir.js`). A migration
+  file published inside a package is never discovered; it is dead code.
+- **In development**, `push` synchronises the schema on its own. Nothing else to do.
+- **In production**, run `payload migrate:create` then `payload migrate` — or set `prodMigrations`
+  on the adapter. Never `push`: the adapter skips it as soon as `NODE_ENV=production`, and mixing a
+  dev-pushed database with migrations makes `@payloadcms/drizzle` warn about **data loss**.
+- Every release of this plugin states in its [Upgrading](#upgrading) section whether it changes the
+  schema. Between 2.0.1 and 5.0.0, none did. The automatic log purge introduced after 5.0.0 does —
+  see the table below.
+
+### Options that change the schema
+
+Two families of options decide which tables exist. Flipping one on a deployed application is a
+schema change like any other: generate a migration and run it, in the same deploy.
+
+| Option | Collection it adds or removes |
+|---|---|
+| `retention` (when you pass it) | Payload's own `payload-jobs` collection and `payload-jobs-stats` global — **only if your app had no jobs at all**. Declaring a task is what turns Payload's queue on, and that is why the option is opt-in: a support plugin has no business adding two tables to every install. Leave it unset and purge from your own cron against the admin endpoint instead. |
+| `rateLimitStore: 'payload'` | `support-rate-limits` |
+| `features.authLogs` | `auth-logs` |
+| `features.timeTracking` | `time-entries` |
+| `features.emailTracking` | `email-logs` |
+| `features.webhooks` | `webhook-endpoints` |
+| `features.sla` | `sla-policies` |
+| `features.macros` | `macros` |
+| `features.customStatuses` | `ticket-statuses` |
+| `features.chat` | `chat-messages` |
+| `features.pendingEmails` | `pending-emails` |
+| `features.ai` | `client-summaries` |
+
+Turning a flag **off** does not drop the table; the collection simply stops being registered, and
+its rows become unreachable through Payload while still occupying the database. Drop it explicitly
+if that is what you want — see [Uninstall](#uninstall).
 
 ## Deployment adapters
 
@@ -624,7 +668,6 @@ import type { SupportPluginConfig, SupportFeatures } from '@consilioweb/payload-
 | `@payloadcms/next` | `^3.79.1` | `peerDependencies` |
 | Next.js | `^15.2.9 \|\| ^16.0.0` | `peerDependencies` |
 | React / React DOM | `^19.0.0` | `peerDependencies` |
-| `lucide-react` | `>=0.300.0` | `peerDependencies` |
 | `@anthropic-ai/sdk` | any recent version | Runtime-only, install it yourself if you use the AI features |
 | `@payloadcms/richtext-lexical` | any 3.x | Only if you mount the portal FAQ page |
 
@@ -697,6 +740,106 @@ does:
 | Client time totals | The CRM sums the per-ticket `totalTimeMinutes` rollup instead of scanning `time-entries`. |
 | AI synthesis | Persisted on the ticket (`aiSummary`, `aiSummaryGeneratedAt`) and reused until forced. |
 
+## Personal data, retention and uninstall
+
+This plugin is a support desk: most of what it stores is personal data, and you are the controller
+of it. This section is what you need to fill in your record of processing activities.
+
+### What the plugin stores
+
+It registers **up to 25 collections** (14 always, 11 behind a feature flag — see
+[Options that change the schema](#options-that-change-the-schema)). The ones holding personal data:
+
+| Collection | Personal data it holds |
+|---|---|
+| `support-clients` | Identity, email, phone, company, hashed password, Google id, 2FA state, notification preferences |
+| `tickets` | Subject and description written by the client, assignment, billing amounts |
+| `ticket-messages` | Full conversation, internal notes, attachments, sender addresses |
+| `ticket-collaborators` | Email of every invited person, whether or not they have an account |
+| `ticket-activity-log` | Who did what and when, on every ticket |
+| `satisfaction-surveys`, `ticket-feedback` | Rating and free-text comment, attributed |
+| `chat-messages` | Live-chat transcripts |
+| `pending-emails` | Raw inbound emails, sender address, attachments |
+| `auth-logs` | Login attempts: email, normalized IP, user agent |
+| `email-logs` | Sender and recipient addresses, subjects, delivery and open events |
+| `client-summaries` | **Derived** data: an AI profile of the client, computed from their history |
+| `push-subscriptions` | Agent browser endpoints and user agent |
+| `time-entries` | Which agent spent how long on what |
+| `notification-queue` | Pending notifications addressed to a client |
+
+Two things live **outside** those collections:
+
+- **Attachments are stored in your own `media` collection**, because that is the `relationTo` of the
+  attachment fields on `ticket-messages` and `pending-emails`. They are not the plugin's to manage,
+  but `POST /support/delete-account` does delete the files attached to a deleted client's tickets.
+- **Three `payload-preferences` keys** are written by the plugin: `support-settings` (instance
+  settings), `support-user-prefs-<userId>` (one row per agent) and `support-round-robin` (assignment
+  cursor). None of them holds client data, but the per-agent key carries a staff account id.
+
+### Retention
+
+Only the two journals are purged automatically. Everything else lives as long as the ticket it
+belongs to, and is deleted when the client account is.
+
+| Data | Default | How to change it |
+|---|---|---|
+| `auth-logs` | **180 days** | `retention.authLogsDays`. CNIL guidance accepts six months for connection logs; do not shorten it "to be safe" — these are the records you investigate an intrusion with. |
+| `email-logs` | **365 days** | `retention.emailLogsDays` |
+| Everything else | Until the ticket or the account is deleted | `POST /support/delete-account` |
+
+**The purge is opt-in: nothing is registered until you pass `retention`.** Pass `retention: {}` to
+accept the defaults, or override any of the four keys. Once enabled it runs as a Payload Jobs task
+(`support-purge-logs`), by default daily at 03:30, so it survives a serverless deploy and does not
+run N times in parallel behind N instances. It refuses a retention of `0` — that value disables the
+journal's purge. The manual, admin-only
+`DELETE /api/support/purge-logs?collection=auth-logs&days=0` still wipes a journal entirely; that
+one is a deliberate one-off action, never a schedule.
+
+Why opt-in, when a retention policy nobody enables is exactly how the manual purge endpoint ended
+up never being called: declaring the task **enables Payload's job queue**, which adds the
+`payload-jobs` collection and the `payload-jobs-stats` global — two tables your app may not have
+had. A support plugin should not impose a schema change on every install, and defaulting it on
+would buy nothing anyway, since the task only fires when you also run a job runner. If you enable
+it, generate a migration for those two. If you would rather not, leave `retention` unset and call
+the purge endpoint from your own cron — the retention periods below still describe what you should
+be deleting.
+
+Payload's job runner has to be running for the task to fire — `jobs.autoRun` in your config, or a
+cron hitting `/api/payload-jobs/run`. If you do not run it, nothing is purged and the endpoint is
+your only lever.
+
+### Cookies and trackers
+
+`features.emailTracking` is **on by default** and inserts a 1×1 open-tracking pixel in outgoing
+notification emails (`GET /support/track-open`). Under article 82 of the French *Loi Informatique
+et Libertés* that is a tracker and needs consent unless it falls in an exemption; it is your call,
+not the plugin's. It writes no IP address and requires a valid HMAC, but it does record that a
+given recipient opened a given email, at a given time. Set `features: { emailTracking: false }` to
+turn the pixel — and the `email-logs` collection — off entirely.
+
+### Data subject requests
+
+| Right | Endpoint |
+|---|---|
+| Access (art. 15) and portability (art. 20) | `GET /support/export-data`. The JSON is split in two: `providedByYou` (art. 20) and `derivedData` (art. 15 — the AI client summary, which portability does not cover). |
+| Erasure (art. 17) | `POST /support/delete-account`. Deletes the account and every row above that names it, plus the attachments on its tickets, in a single transaction. |
+
+### Uninstall
+
+Removing the plugin from `payload.config.ts` stops the collections from being registered; it does
+**not** drop their tables, and the rows stay in the database.
+
+```bash
+npx support-uninstall            # dry run: lists what would be deleted
+npx support-uninstall --confirm  # deletes the rows through the Payload local API
+npx support-uninstall --confirm --keep-data   # only removes the payload-preferences keys
+```
+
+The script deletes rows, not tables: run `payload migrate:create` after it and apply the migration
+to drop the now-unused tables. It never touches your `media` collection — attachments uploaded
+through the support desk are indistinguishable from your other uploads once the messages are gone,
+so it lists them as a manual decision instead of guessing.
+
 ## Troubleshooting
 
 **`useServerFunctions must be used within ServerFunctionsProvider`** — align every `@payloadcms/*`
@@ -708,10 +851,12 @@ inserts) and add `busyTimeout: 10000` to the SQLite adapter.
 **Admin views do not load** — regenerate the import map (`pnpm payload generate:importmap`). In a
 headless context, pass `skipViews: true`.
 
-**New fields or collections missing in production** — standalone builds do not run migrations. Push
-the schema before deploying, including `googleId`, `twoFactorVerifiedAt`, `slaPausedAt`, `nps`,
-`mentions`, and the `notification-queue`, `automation-rules`, `ticket-collaborators`,
-`support-counters` collections.
+**New fields or collections missing in production** — a production build never synchronises the
+schema: the adapter skips `push` as soon as `NODE_ENV=production`. Generate a migration in
+development (`payload migrate:create`) and run `payload migrate` on the target, or set
+`prodMigrations` on the adapter. Do **not** try to `push` in production, and do not migrate a
+database that was previously dev-pushed without reading the data-loss warning
+`@payloadcms/drizzle` prints. See [Database and updates](#database-and-updates).
 
 **`Cannot find module '@anthropic-ai/sdk'`** — install it in your app; the plugin does not bundle or
 declare it.
@@ -733,10 +878,83 @@ type but not implemented: at runtime everything that is not `ollama` goes to Ant
 (`SupportPluginConfig`, `SupportFeatures`, `TicketData`, …). All four export subpaths ship
 declarations.
 
-**How do I migrate the schema in production?** — in standalone mode the schema is not
-auto-migrated: generate and push it before deploying. See [Troubleshooting](#troubleshooting).
+**How do I migrate the schema in production?** — `payload migrate:create` in development, commit
+the generated file, then `payload migrate` on the target (or `prodMigrations` on the adapter).
+`push` is a development mechanism and is skipped in production. This plugin ships no migrations of
+its own and cannot: `payload migrate` only ever reads your application's migration directory. See
+[Database and updates](#database-and-updates).
 
 ## Upgrading
+
+### 5.x → 6.0
+
+Two changes need an action; everything else in 6.0 is additive.
+
+**`GET /support/export-data` changed shape.** `profile`, `tickets`, `messages` and `surveys` now
+sit under `providedByYou`, and a `derivedData` section carries what the service inferred rather
+than what the person supplied — the distinction GDPR article 20 (portability, provided data) and
+article 15 (access, all data) actually make. If anything of yours parses that response, read the
+new keys. The endpoint is the only one whose shape moved.
+
+**`lucide-react` is no longer a peer dependency.** The twenty icons are inlined, so the package no
+longer requires you to install an icon library. Nothing breaks if you keep it — it is simply not
+requested any more. Remove it from your own dependencies only if nothing else of yours uses it.
+
+Two smaller notes. The exported `V` colour tokens changed value: `amber`, `orange`, `green` (and
+the `yellow` alias) are darker, and `textSecondary` moved off `--theme-elevation-500`, which failed
+WCAG AA as a foreground. If you render your own UI with `V`, expect a visual shift, not a break.
+And the log retention purge is **opt-in**: it registers nothing unless you pass `retention`. See
+[Personal data, retention and uninstall](#personal-data-retention-and-uninstall) for why, and for
+what to run instead if you would rather purge from your own cron.
+
+### 4.x → 5.0
+
+**No schema change: this release only touches access rules and hooks. Do not generate a
+migration.** The field set of 5.0.0 is identical to 4.0.0's.
+
+Data actions to take:
+
+1. **Audit your access logs for `<adminRoute>/support/*` hits from accounts that are neither agents
+   nor `support-clients`.** Until 5.0.0 the thirteen admin views only tested `!req.user`, so any
+   authenticated account of any auth collection reached the admin chrome and the client config
+   Payload builds for an authenticated request. The support data itself never travelled — the views
+   fetch through `/api/support/*`, which was guarded — but the shape of your CMS did.
+2. **Re-subscribe any agent whose Web Push endpoint is not `https://` on a public host.**
+   `POST /support/push/subscribe` now answers `400` for those, and `sendPushToUser` skips rows
+   already stored that fail the same check. Agents who subscribed through a local tunnel or an
+   `http://` origin stop receiving notifications until they subscribe again.
+3. **Expect the rate-limit counters to restart once.** Keys are now normalized IP literals, so rows
+   already in `support-rate-limits` no longer match. This is a one-off reset, not a data loss.
+4. **A custom portal must forward `challenge`** from every `POST /support/2fa {action:'send'}`
+   reply to the following `verify`; the bundled portal already does.
+
+### 3.x → 4.0
+
+**No schema change: this release only touches access rules and hooks. Do not generate a
+migration.** The field set of 4.0.0 is identical to 3.0.0's.
+
+Data actions to take:
+
+1. **Audit every `webhook-endpoints` row and re-point the ones that are not `https://` on a public
+   host.** 4.0.0 validates the URL at save time only, so a row saved earlier stays editable and
+   still shows in the admin — it simply stops firing, and the dispatcher records `lastStatus: 0` on
+   it. Nothing tells you which rows are in that state, so list them:
+   `payload.find({ collection: 'webhook-endpoints' })` and look for `http://`, a private, loopback
+   or link-local host. `SUPPORT_ALLOW_INSECURE_WEBHOOKS=1` re-allows `http://` for local
+   development only.
+2. **Review the collaborator rows created before 4.0.0.** A row with no explicit `role` now defaults
+   to `viewer`, which is read-only: an invitee who used to post messages stops being able to. Set
+   their row to `collaborator` to restore it.
+3. **Expect the rate-limit counters to restart once.** `RateLimiter` now namespaces every key and
+   keys authenticated callers as `<collection>:<id>`, so rows already in `support-rate-limits` no
+   longer match. One-off reset.
+4. **Drop `cookieState` from a hand-written Google OAuth button.** `{ action: 'login' }` now sets an
+   `HttpOnly` `support-oauth-state` cookie; the callback must let the browser carry it
+   (`credentials: 'include'` cross-origin).
+5. **A dashboard calling `GET /support/email-stats` with a portal client session now gets `403`** —
+   it is staff-only.
+6. **If your app replaces `config.custom` wholesale after the plugin runs**, it strips
+   `custom.supportStaffCollection` and the settings reads lose the staff slug they compare against.
 
 ### 2.x → 3.0
 
@@ -752,7 +970,8 @@ auto-migrated: generate and push it before deploying. See [Troubleshooting](#tro
    ticket.
 5. **Import `./views` and `./components/TicketConversation` with ESM** — their CJS builds are gone.
 6. Check your platform: Node 20.9+, React 19, Next 15.2.9+, Payload 3.79.1+, and install
-   `lucide-react` explicitly if you were relying on it being optional.
+   `lucide-react` explicitly if you were relying on it being optional. (It has since stopped being
+   a peer dependency altogether — the icons are inlined.)
 
 ### 1.x → 2.0
 
@@ -773,7 +992,7 @@ auto-migrated: generate and push it before deploying. See [Troubleshooting](#tro
 3. Commit your changes (`git commit -m 'feat: add AmazingFeature'`).
 4. Push the branch and open a Pull Request.
 
-Run the checks before submitting — the suite is 179 vitest tests:
+Run the checks before submitting — the suite is 391 vitest tests:
 
 ```bash
 pnpm typecheck && pnpm test && pnpm build
@@ -790,6 +1009,14 @@ If this plugin saves you time, consider [buying me a coffee](https://buymeacoffe
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+**Runtime dependencies.** The package has exactly three, declared in `package.json`: `pdfkit`
+(^0.19.1, MIT), `sanitize-html` (^2.17.7, MIT) and `web-push` (^3.6.7, **MPL-2.0**). MPL-2.0 is the
+only reciprocal licence in that set, and its copyleft is per **file**, not per work: §3.3 lets a
+Larger Work be distributed under other terms. `payload-support` neither modifies nor bundles
+`web-push` — it imports it as an external dependency, which you can check in `dist/index.js:5` and
+`dist/index.cjs:7` — so the obligation is already met by npm shipping `web-push` with its own
+licence. The licence of this plugin is unaffected: it stays MIT.
 
 Built and maintained by [ConsilioWEB](https://consilioweb.fr) ·
 [Issues](https://github.com/pOwn3d/payload-support/issues) ·

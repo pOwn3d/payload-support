@@ -90,6 +90,7 @@ function SingleCodeBlock({ lang, code }: { lang: string; code: string }) {
           </span>
         </div>
         <button
+          type="button"
           onClick={handleCopy}
           style={{
             background: 'none',

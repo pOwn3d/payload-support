@@ -1,7 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 import { requireAdmin, handleAuthError } from '../utils/auth'
-import { dbDelete } from '../utils/db'
+import { purgeOlderThan, purgeableCollections } from '../utils/retention'
 
 /**
  * DELETE /api/support/purge-logs?collection=email-logs&days=30
@@ -22,25 +22,16 @@ export function createPurgeLogsEndpoint(slugs: CollectionSlugs): Endpoint {
         const days = Number(url.searchParams.get('days') || '0')
 
         // Map collection param to slug
-        const allowedCollections: Record<string, string> = {
-          'email-logs': slugs.emailLogs,
-          'auth-logs': slugs.authLogs,
-        }
+        const allowedCollections = purgeableCollections(slugs)
 
         if (!collection || !allowedCollections[collection]) {
           return Response.json({ error: 'Invalid collection. Use email-logs or auth-logs.' }, { status: 400 })
         }
 
-        const cutoff = days > 0 ? new Date(Date.now() - days * 86400000).toISOString() : null
-
-        const result = await dbDelete(payload, allowedCollections[collection], {
-          where: cutoff
-            ? { createdAt: { less_than: cutoff } }
-            : { id: { exists: true } },
-          overrideAccess: true,
-        })
-
-        const count = Array.isArray(result.docs) ? result.docs.length : 0
+        // `days=0` wipes the journal entirely. It stays available here — an
+        // explicit, admin-only, one-off action — and is refused by the
+        // scheduled task, which must never be able to do it by accident.
+        const count = await purgeOlderThan(payload, allowedCollections[collection], days, req)
 
         return Response.json({
           purged: count,

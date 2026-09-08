@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useId } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
@@ -27,6 +27,14 @@ const PRIORITY_KEYS = [
 
 export const NewTicketClient: React.FC = () => {
   const { t } = useTranslation()
+  // Each `<label>` below already carries the right, already-translated text;
+  // it just was not associated with anything. useId, never a literal.
+  const clientSearchId = useId()
+  const subjectId = useId()
+  const categoryId = useId()
+  const priorityId = useId()
+  const projectId_ = useId()
+  const descriptionId = useId()
   const router = useRouter()
   const [subject, setSubject] = useState('')
   const [description, setDescription] = useState('')
@@ -130,18 +138,19 @@ export const NewTicketClient: React.FC = () => {
       <form className={s.form} onSubmit={handleSubmit}>
         {/* Client search */}
         <div className={s.fieldGroup}>
-          <label className={s.label}>{t('newTicket.clientLabel')} <span className={s.required}>*</span></label>
+          <label className={s.label} htmlFor={clientSearchId}>{t('newTicket.clientLabel')} <span className={s.required}>*</span></label>
           {selectedClient ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--theme-elevation-200)', background: 'var(--theme-elevation-50)' }}>
               <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--theme-text)' }}>
                 {selectedClient.firstName} {selectedClient.lastName} — {selectedClient.company}
               </span>
-              <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{selectedClient.email}</span>
+              <span style={{ fontSize: 12, color: 'var(--theme-elevation-650)' }}>{selectedClient.email}</span>
               <button type="button" onClick={() => { setSelectedClient(null); setClientId(null); setClientSearch('') }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme-elevation-400)', fontSize: 16 }}>&times;</button>
             </div>
           ) : (
             <div className={s.searchWrap}>
               <input
+                id={clientSearchId}
                 type="text"
                 className={s.input}
                 placeholder={t('newTicket.clientSearchPlaceholder')}
@@ -169,27 +178,27 @@ export const NewTicketClient: React.FC = () => {
 
         {/* Subject */}
         <div className={s.fieldGroup}>
-          <label className={s.label}>{t('newTicket.subjectLabel')} <span className={s.required}>*</span></label>
-          <input type="text" className={s.input} placeholder={t('newTicket.subjectPlaceholder')} value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <label className={s.label} htmlFor={subjectId}>{t('newTicket.subjectLabel')} <span className={s.required}>*</span></label>
+          <input id={subjectId} type="text" className={s.input} placeholder={t('newTicket.subjectPlaceholder')} value={subject} onChange={(e) => setSubject(e.target.value)} />
         </div>
 
         {/* Category + Priority + Project */}
         <div className={s.row3}>
           <div className={s.fieldGroup}>
-            <label className={s.label}>{t('newTicket.categoryLabel')}</label>
-            <select className={s.select} value={category} onChange={(e) => setCategory(e.target.value)}>
+            <label className={s.label} htmlFor={categoryId}>{t('newTicket.categoryLabel')}</label>
+            <select id={categoryId} className={s.select} value={category} onChange={(e) => setCategory(e.target.value)}>
               {CATEGORY_KEYS.map((c) => <option key={c.value} value={c.value}>{t(c.key)}</option>)}
             </select>
           </div>
           <div className={s.fieldGroup}>
-            <label className={s.label}>{t('newTicket.priorityLabel')}</label>
-            <select className={s.select} value={priority} onChange={(e) => setPriority(e.target.value)}>
+            <label className={s.label} htmlFor={priorityId}>{t('newTicket.priorityLabel')}</label>
+            <select id={priorityId} className={s.select} value={priority} onChange={(e) => setPriority(e.target.value)}>
               {PRIORITY_KEYS.map((p) => <option key={p.value} value={p.value}>{t(p.key)}</option>)}
             </select>
           </div>
           <div className={s.fieldGroup}>
-            <label className={s.label}>{t('newTicket.projectLabel')}</label>
-            <select className={s.select} value={projectId || ''} onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}>
+            <label className={s.label} htmlFor={projectId_}>{t('newTicket.projectLabel')}</label>
+            <select id={projectId_} className={s.select} value={projectId || ''} onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}>
               <option value="">{t('newTicket.noProject')}</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
@@ -198,8 +207,8 @@ export const NewTicketClient: React.FC = () => {
 
         {/* Description */}
         <div className={s.fieldGroup}>
-          <label className={s.label}>{t('newTicket.descriptionLabel')}</label>
-          <textarea className={s.textarea} placeholder={t('newTicket.descriptionPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label className={s.label} htmlFor={descriptionId}>{t('newTicket.descriptionLabel')}</label>
+          <textarea id={descriptionId} className={s.textarea} placeholder={t('newTicket.descriptionPlaceholder')} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
 
         <button type="submit" className={s.submitBtn} disabled={submitting}>

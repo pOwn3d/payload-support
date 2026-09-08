@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { MessageCircle, Send, X, Minimize2, ArrowLeft } from 'lucide-react'
+import { MessageCircle, Send, X, Minimize2, ArrowLeft } from './icons'
 import type { ChatMessage, LiveChatSession, Screen } from './types'
 import { loadSession, saveSession, clearSession } from './helpers'
 

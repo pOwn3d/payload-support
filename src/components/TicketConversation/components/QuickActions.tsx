@@ -48,6 +48,7 @@ export function QuickActions({
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}>
         {statusTransitions.map((a) => (
           <button
+            type="button"
             key={a.status}
             onClick={() => onStatusChange(a.status)}
             disabled={statusUpdating}
@@ -57,22 +58,22 @@ export function QuickActions({
           </button>
         ))}
         {snoozeUntil && new Date(snoozeUntil) > new Date() && (
-          <button onClick={onCancelSnooze} disabled={snoozeSaving} style={{ ...s.ghostBtn('#17807c', snoozeSaving), fontSize: '12px', padding: '5px 10px' }}>
+          <button type="button" onClick={onCancelSnooze} disabled={snoozeSaving} style={{ ...s.ghostBtn('#17807c', snoozeSaving), fontSize: '12px', padding: '5px 10px' }}>
             Annuler snooze
           </button>
         )}
         <span style={{ borderLeft: `1px solid ${C.border}`, height: '20px', margin: '0 4px' }} />
-        <button onClick={onToggleMerge} style={s.ghostBtn('#be185d')}>Fusionner</button>
-        <button onClick={onToggleExtMsg} style={s.ghostBtn('#4f46e5')}>+ Message reçu</button>
-        <button onClick={onToggleSnooze} style={s.ghostBtn('#17807c')}>Snooze</button>
+        <button type="button" onClick={onToggleMerge} style={s.ghostBtn('#be185d')}>Fusionner</button>
+        <button type="button" onClick={onToggleExtMsg} style={s.ghostBtn('#4f46e5')}>+ Message reçu</button>
+        <button type="button" onClick={onToggleSnooze} style={s.ghostBtn('#17807c')}>Snooze</button>
         {showReminderButton && (
-          <button onClick={onToggleReminder} style={s.ghostBtn('#ea580c')}>{'⏰'} Relancer</button>
+          <button type="button" onClick={onToggleReminder} style={s.ghostBtn('#ea580c')}>{'⏰'} Relancer</button>
         )}
-        <button onClick={onNextTicket} style={s.ghostBtn('#16a34a')}>Ticket suivant</button>
+        <button type="button" onClick={onNextTicket} style={s.ghostBtn('#16a34a')}>Ticket suivant</button>
         {scheduledClose && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '5px 10px', borderRadius: '6px', backgroundColor: '#fff7ed', border: '1px solid #fed7aa', fontSize: '12px', color: '#9a3412', fontWeight: 600 }}>
             {'⏰'} Fermeture auto le {scheduledClose}
-            <button onClick={onCancelScheduledClose} disabled={cancelingClose} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: cancelingClose ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '12px', textDecoration: 'underline', padding: 0, opacity: cancelingClose ? 0.5 : 1 }}>
+            <button type="button" onClick={onCancelScheduledClose} disabled={cancelingClose} style={{ border: 'none', background: 'none', color: '#b91c1c', cursor: cancelingClose ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: '12px', textDecoration: 'underline', padding: 0, opacity: cancelingClose ? 0.5 : 1 }}>
               {cancelingClose ? '...' : 'Annuler'}
             </button>
           </span>
@@ -90,6 +91,7 @@ export function QuickActions({
                 Ticket suivant : <strong>{nextTicketInfo}</strong>
               </span>
               <button
+                type="button"
                 onClick={() => { window.location.href = `/admin/support/ticket?id=${nextTicketId}` }}
                 style={{ ...s.btn(C.statusResolved), color: C.white, fontSize: '12px', padding: '5px 14px' }}
               >
@@ -99,7 +101,7 @@ export function QuickActions({
           ) : (
             <span style={{ fontSize: '13px', color: '#166534', fontWeight: 700 }}>{nextTicketInfo}</span>
           )}
-          <button onClick={onCloseNextTicket} style={{ border: 'none', background: 'none', color: C.textMuted, cursor: 'pointer', fontSize: '16px', fontWeight: 700, marginLeft: '8px' }}>&times;</button>
+          <button type="button" onClick={onCloseNextTicket} style={{ border: 'none', background: 'none', color: C.textMuted, cursor: 'pointer', fontSize: '16px', fontWeight: 700, marginLeft: '8px' }}>&times;</button>
         </div>
       )}
     </>

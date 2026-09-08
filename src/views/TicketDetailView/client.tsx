@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useId, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { RichTextEditor, type RichTextEditorHandle } from '../../components/RichTextEditor/index'
@@ -26,6 +26,13 @@ export const TicketDetailClient: React.FC = () => {
   const threadEndRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Generated ids so every control below carries the name of the text next to
+  // it. useId, never a literal: this view can be mounted more than once.
+  const manualTimeId = useId()
+  const billingTypeId = useId()
+  const flatAmountId = useId()
+  const billedAmountId = useId()
+  const paymentStatusId = useId()
 
   const [ticket, setTicket] = useState<Record<string, unknown> | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -721,7 +728,7 @@ const [clientTyping, setClientTyping] = useState(false)
                             const file = typeof att.file === 'object' ? att.file : null
                             if (!file) return null
                             return (file.mimeType || '').startsWith('image/')
-                              ? <a key={i} href={file.url || '#'} target="_blank" rel="noopener noreferrer"><img src={file.url || ''} alt="" className={s.attachmentImg} /></a>
+                              ? <a key={i} href={file.url || '#'} target="_blank" rel="noopener noreferrer"><img src={file.url || ''} alt={file.filename || t('detail.file')} className={s.attachmentImg} /></a>
                               : <a key={i} href={file.url || '#'} target="_blank" rel="noopener noreferrer" className={s.attachmentFile}>PJ {file.filename || 'Fichier'}</a>
                           })}
                         </div>
@@ -810,7 +817,7 @@ const [clientTyping, setClientTyping] = useState(false)
               />
               {/* #5 — File upload button */}
               <button className={s.toolbarBtn} data-tooltip={t('detail.file')} aria-label={t('detail.file')} onClick={() => fileInputRef.current?.click()} style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', width: 'auto' }}>📎 {t('detail.file')}</button>
-              <input ref={fileInputRef} type="file" multiple className={s.hiddenFileInput} onChange={(e) => handleFileSelect(e.target.files)} />
+              <input ref={fileInputRef} type="file" multiple aria-label={t('detail.file')} className={s.hiddenFileInput} onChange={(e) => handleFileSelect(e.target.files)} />
               {macros.length > 0 && (
                 <select
                   className={s.cannedSelect}
@@ -871,6 +878,7 @@ const [clientTyping, setClientTyping] = useState(false)
             <div className={s.composerFooter}>
               <div className={s.composerOptions}>
                 <select
+                  aria-label={t('detail.sendAs')}
                   value={sendAsClient ? 'client' : 'admin'}
                   onChange={(e) => {
                     const asClient = e.target.value === 'client'
@@ -1089,9 +1097,9 @@ const [clientTyping, setClientTyping] = useState(false)
               </div>
               {/* Manual time entry */}
               <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center' }}>
-                <input type="number" min="1" placeholder="min" style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} id="manual-time-input" />
+                <input type="number" min="1" placeholder="min" aria-label={t('detail.manualMinutes')} style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--theme-elevation-200)', fontSize: 12, color: 'var(--theme-text)', background: 'var(--theme-elevation-0)' }} id={manualTimeId} />
                 <button className={`${s.timerBtn} ${s.timerBtnGhost}`} onClick={async () => {
-                  const input = document.getElementById('manual-time-input') as HTMLInputElement
+                  const input = document.getElementById(manualTimeId) as HTMLInputElement
                   const mins = Number(input?.value)
                   if (!mins || mins < 1 || !ticketId) return
                   try {
@@ -1102,7 +1110,7 @@ const [clientTyping, setClientTyping] = useState(false)
                 }} style={{ fontSize: 11 }}>{t('detail.addTime')}</button>
               </div>
               {/* Billing info */}
-              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--theme-elevation-500)' }}>
+              <div style={{ marginTop: 8, fontSize: 11, color: 'var(--theme-elevation-650)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', alignItems: 'center' }}>
                   <span>{t('detail.billing.billable')}</span>
                   <button
@@ -1126,7 +1134,7 @@ const [clientTyping, setClientTyping] = useState(false)
               {timeEntries.length > 0 && (
                 <div style={{ marginTop: 8, fontSize: 11 }}>
                   {timeEntries.slice(0, 6).map((e) => (
-                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: 'var(--theme-elevation-500)' }}>
+                    <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', color: 'var(--theme-elevation-650)' }}>
                       <span>{new Date(e.date).toLocaleDateString(DATE_LOCALE, { day: 'numeric', month: 'short' })}</span>
                       <span title={e.description} style={{ fontWeight: 600, cursor: e.description ? 'help' : 'default' }}>{e.duration}min</span>
                     </div>
@@ -1149,6 +1157,7 @@ const [clientTyping, setClientTyping] = useState(false)
               {addingTag ? (
                 <input
                   className={s.tagInput}
+                  aria-label={t('detail.addTag')}
                   value={newTagValue}
                   onChange={(e) => setNewTagValue(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddTag(); if (e.key === 'Escape') { setAddingTag(false); setNewTagValue('') } }}
@@ -1167,8 +1176,9 @@ const [clientTyping, setClientTyping] = useState(false)
             <div className={s.sideSectionTitle}>{t('detail.billing.title')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12 }}>{t('detail.billing.type')}</span>
+                <label style={{ fontSize: 12 }} htmlFor={billingTypeId}>{t('detail.billing.type')}</label>
                 <select
+                  id={billingTypeId}
                   value={(ticket as any)?.billingType || 'hourly'}
                   onChange={async (e) => {
                     try {
@@ -1188,9 +1198,10 @@ const [clientTyping, setClientTyping] = useState(false)
               </div>
               {(ticket as any)?.billingType === 'flat' && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12 }}>{t('detail.billing.flatAmount')}</span>
+                  <label style={{ fontSize: 12 }} htmlFor={flatAmountId}>{t('detail.billing.flatAmount')}</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <input
+                      id={flatAmountId}
                       type="number"
                       defaultValue={(ticket as any)?.flatRateAmount ?? ''}
                       placeholder="0"
@@ -1212,9 +1223,10 @@ const [clientTyping, setClientTyping] = useState(false)
                 </div>
               )}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12 }}>{t('detail.billing.billedAmount')}</span>
+                <label style={{ fontSize: 12 }} htmlFor={billedAmountId}>{t('detail.billing.billedAmount')}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <input
+                    id={billedAmountId}
                     type="number"
                     defaultValue={(ticket as any)?.billedAmount ?? ''}
                     placeholder="0"
@@ -1235,8 +1247,9 @@ const [clientTyping, setClientTyping] = useState(false)
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12 }}>{t('detail.billing.payment')}</span>
+                <label style={{ fontSize: 12 }} htmlFor={paymentStatusId}>{t('detail.billing.payment')}</label>
                 <select
+                  id={paymentStatusId}
                   value={(ticket as any)?.paymentStatus || 'unpaid'}
                   onChange={async (e) => {
                     try {
@@ -1358,6 +1371,7 @@ const [clientTyping, setClientTyping] = useState(false)
             <div className={s.splitPreview}>{splitModal.preview}</div>
             <input
               className={s.splitInput}
+              aria-label={t('detail.split.subjectLabel')}
               value={splitSubject}
               onChange={(e) => setSplitSubject(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSplitConfirm() }}

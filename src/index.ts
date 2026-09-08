@@ -28,6 +28,8 @@ export type { SupportSettings, SupportSettingsState, UserPrefs } from './utils/r
 export { DEFAULT_TICKETING_FEATURES, normalizeFeatures, projectAutoClose, stripProjectedFeatures } from './utils/features'
 export type { TicketingFeatures } from './utils/features'
 export { MemoryRateLimitStore, PayloadRateLimitStore, RateLimiter } from './utils/rateLimiter'
+export { DEFAULT_RETENTION, PURGE_LOGS_TASK_SLUG, purgeOlderThan, purgeableCollections, runScheduledPurge } from './utils/retention'
+export type { RetentionConfig, ScheduledPurgeResult } from './utils/retention'
 export type { RateLimitEntry, RateLimitStore } from './utils/rateLimiter'
 export { DEFAULT_INBOUND_EMAIL_LIMITS, validateInboundEmailPayload, verifySecret } from './utils/webhookSecurity'
 export type { InboundEmailInput, InboundEmailLimits, InboundEmailValidationError } from './utils/webhookSecurity'

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
+import { V } from '../shared/adminTokens'
 import { DATE_LOCALE } from '../shared/dateLocale'
 import s from '../../styles/EmailTracking.module.scss'
 
@@ -111,7 +112,7 @@ export const EmailTrackingClient: React.FC = () => {
             <button key={v} className={`${s.dateRangeBtn} ${dateRange === v ? s.dateRangeActive : ''}`} onClick={() => setDateRange(v)}>{v}j</button>
           ))}
         </div>
-        <input type="text" className={s.searchInput} placeholder={t('emailTracking.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input type="text" className={s.searchInput} aria-label={t('emailTracking.searchLabel')} placeholder={t('emailTracking.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       {/* Table */}
@@ -125,7 +126,7 @@ export const EmailTrackingClient: React.FC = () => {
           <tbody>
             {logs.map((log) => (
               <React.Fragment key={log.id}>
-                <tr onClick={() => log.status === 'error' && log.errorMessage ? setExpandedRow(expandedRow === log.id ? null : log.id) : null} style={{ cursor: log.status === 'error' && log.errorMessage ? 'pointer' : 'default' }}>
+                <tr>
                   <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(log.createdAt)}</td>
                   <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.recipientEmail}>{log.recipientEmail || '—'}</td>
                   <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.subject}>{log.subject || '—'}</td>
@@ -137,14 +138,24 @@ export const EmailTrackingClient: React.FC = () => {
                       <span className={`${s.processingTime} ${log.processingTimeMs > 2000 ? s.timeSlow : log.processingTimeMs > 500 ? s.timeMedium : s.timeFast}`}>{log.processingTimeMs}ms</span>
                     ) : '—'}
                     {log.status === 'error' && log.errorMessage && (
-                      <button className={s.expandBtn} onClick={(e) => { e.stopPropagation(); setExpandedRow(expandedRow === log.id ? null : log.id) }}>
+                      /* The row itself carries no handler: a `<tr onClick>` is
+                       * unreachable by keyboard and role="button" on a row would
+                       * destroy the table semantics. This button is the control. */
+                      <button
+                        type="button"
+                        className={s.expandBtn}
+                        aria-expanded={expandedRow === log.id}
+                        aria-controls={`email-error-${log.id}`}
+                        aria-label={t('emailTracking.toggleError')}
+                        onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+                      >
                         {expandedRow === log.id ? '▴' : '▾'}
                       </button>
                     )}
                   </td>
                 </tr>
                 {expandedRow === log.id && log.errorMessage && (
-                  <tr><td colSpan={7}><div className={s.errorDetail}>Erreur{log.httpStatus ? ` (HTTP ${log.httpStatus})` : ''}: {log.errorMessage}</div></td></tr>
+                  <tr><td colSpan={7}><div className={s.errorDetail} id={`email-error-${log.id}`}>{t('emailTracking.errorLabel')}{log.httpStatus ? ` (HTTP ${log.httpStatus})` : ''}: {log.errorMessage}</div></td></tr>
                 )}
               </React.Fragment>
             ))}
@@ -155,9 +166,9 @@ export const EmailTrackingClient: React.FC = () => {
       {/* Pagination */}
       {totalDocs > 0 && (
         <div className={s.pagination}>
-          <button className={s.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>{t('common.previous')}</button>
-          <span style={{ fontSize: 12, color: 'var(--theme-elevation-500)', alignSelf: 'center' }}>{t('common.page')} {page} — {totalDocs} {t('common.results')}</span>
-          <button className={s.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>{t('common.next')}</button>
+          <button type="button" className={s.pageBtn} onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>{t('common.previous')}</button>
+          <span style={{ fontSize: 12, color: V.textSecondary, alignSelf: 'center' }}>{t('common.page')} {page} — {totalDocs} {t('common.results')}</span>
+          <button type="button" className={s.pageBtn} onClick={() => setPage((p) => p + 1)} disabled={!hasMore}>{t('common.next')}</button>
         </div>
       )}
     </div>

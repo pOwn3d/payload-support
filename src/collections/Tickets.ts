@@ -525,9 +525,16 @@ function createCascadeDelete(slugs: CollectionSlugs): CollectionBeforeDeleteHook
   return async ({ id, req }) => {
     const collections = [slugs.ticketMessages, slugs.ticketActivityLog, slugs.timeEntries, slugs.satisfactionSurveys]
     for (const slug of collections) {
+      // `req` must be forwarded: it carries the ambient transaction. Without
+      // it these cascades open their own connection and, on SQLite, deadlock
+      // against the transaction that is deleting the ticket — the delete then
+      // fails silently (Payload collects per-document errors instead of
+      // throwing) and the children survive the parent.
+      if (!req.payload.collections?.[slug as never]) continue
       await dbDelete(req.payload, slug, {
         where: { ticket: { equals: id } },
         overrideAccess: true,
+        req,
       })
     }
   }

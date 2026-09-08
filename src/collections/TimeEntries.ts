@@ -1,13 +1,19 @@
-import type { CollectionConfig, CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
+import type { CollectionConfig, CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
 import type { Payload } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
 
 // ─── Hooks ───────────────────────────────────────────────
 
+/**
+ * `req` is forwarded to every operation so the rollup joins the caller's
+ * transaction. Reading or writing outside it would see a stale total and, on
+ * SQLite, contend with the very transaction that triggered the hook.
+ */
 async function recalculateTicketTime(
   payload: Payload,
   slugs: CollectionSlugs,
   ticketId: number | string,
+  req?: PayloadRequest,
 ): Promise<void> {
   // Sum all time entries for this ticket, paginating to avoid loading all at once
   let totalMinutes = 0
@@ -23,6 +29,7 @@ async function recalculateTicketTime(
       depth: 0,
       overrideAccess: true,
       select: { duration: true },
+      req,
     })
 
     for (const entry of entries.docs) {
@@ -38,6 +45,7 @@ async function recalculateTicketTime(
     id: ticketId,
     data: { totalTimeMinutes: totalMinutes },
     overrideAccess: true,
+    req,
   })
 }
 
@@ -45,7 +53,7 @@ function createRecalculateTicketTime(slugs: CollectionSlugs): CollectionAfterCha
   return async ({ doc, req }) => {
     if (!doc.ticket) return
     const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
-    await recalculateTicketTime(req.payload, slugs, ticketId)
+    await recalculateTicketTime(req.payload, slugs, ticketId, req)
   }
 }
 
@@ -59,7 +67,7 @@ function createRecalculateTicketTimeOnDelete(slugs: CollectionSlugs): Collection
     if (!doc?.ticket) return
     const ticketId = typeof doc.ticket === 'object' ? doc.ticket.id : doc.ticket
     try {
-      await recalculateTicketTime(req.payload, slugs, ticketId)
+      await recalculateTicketTime(req.payload, slugs, ticketId, req)
     } catch (err) {
       // The entry is already gone; never fail the delete on the rollup refresh.
       console.error('[support] Failed to recalculate ticket time after delete:', err)

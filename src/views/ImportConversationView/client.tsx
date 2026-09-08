@@ -192,6 +192,7 @@ export function ImportConversationClient() {
             ref={fileRef}
             type="file"
             accept=".md,.txt"
+            aria-label={t('import.acceptedFormats')}
             onChange={onFileChange}
             style={{ display: 'none' }}
           />

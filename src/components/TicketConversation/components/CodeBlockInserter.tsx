@@ -109,6 +109,7 @@ export function CodeBlockInserter({ onInsert, className, style }: CodeBlockInser
             <input
               ref={inputRef}
               type="text"
+              aria-label="Rechercher un langage"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               onKeyDown={(e) => {
@@ -124,7 +125,6 @@ export function CodeBlockInserter({ onInsert, className, style }: CodeBlockInser
                 border: '1px solid #334155',
                 borderRadius: 6,
                 color: '#e2e8f0',
-                outline: 'none',
                 boxSizing: 'border-box',
               }}
             />

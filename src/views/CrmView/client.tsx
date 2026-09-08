@@ -275,6 +275,7 @@ export const CrmClient: React.FC = () => {
           <div className={styles.sidebarSearch}>
             <input
               type="text"
+              aria-label={t('crm.searchLabel')}
               placeholder={t('crm.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -379,6 +380,7 @@ export const CrmClient: React.FC = () => {
                   </p>
                   <input
                     type="text"
+                    aria-label={t('crm.mergeTitle')}
                     value={mergeSearch}
                     onChange={(e) => setMergeSearch(e.target.value)}
                     placeholder={t('crm.mergeSearchPlaceholder')}

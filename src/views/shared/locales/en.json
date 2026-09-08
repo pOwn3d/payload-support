@@ -1,4 +1,9 @@
 {
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "This section could not be displayed. The technical details were logged to the browser console.",
+    "retry": "Retry"
+  },
   "common": {
     "loading": "Loading...",
     "cancel": "Cancel",
@@ -144,6 +149,7 @@
     "title": "CRM Clients",
     "subtitle": "Client management and history",
     "searchPlaceholder": "Search a client...",
+    "searchLabel": "Search a client",
     "noClientFound": "No client found",
     "selectClient": "Select a client to see their details",
     "editButton": "Edit",
@@ -316,6 +322,8 @@
       "resolved": "Resolved",
       "slaBreach": "SLA breached"
     },
+    "searchLabel": "Search a ticket",
+    "sortLabel": "Sort the tickets",
     "sort": {
       "newest": "Most recent",
       "oldest": "Oldest first",
@@ -324,6 +332,7 @@
     },
     "selected": "{{count}} selected",
     "selectedPlural": "{{count}} selected",
+    "tabsLabel": "Inbox filters",
     "closeAction": "Close",
     "reopenAction": "Reopen",
     "moreActions": "More actions...",
@@ -344,6 +353,7 @@
   "emailTracking": {
     "title": "Email tracking",
     "searchPlaceholder": "Search by recipient or subject...",
+    "searchLabel": "Search an email",
     "noLogs": "No logs found for this period",
     "tabs": {
       "all": "All",
@@ -366,7 +376,8 @@
       "action": "Action",
       "time": "Time"
     },
-    "errorLabel": "Error"
+    "errorLabel": "Error",
+    "toggleError": "Show the error detail"
   },
   "logs": {
     "title": "Email Logs",
@@ -530,8 +541,11 @@
     "messageDeletedToast": "Message deleted",
     "split": {
       "subjectPlaceholder": "New ticket subject...",
+      "subjectLabel": "Subject of the new ticket",
       "createBtn": "Create ticket"
     },
+    "sendAs": "Send as",
+    "manualMinutes": "Minutes to add",
     "editMessage": "Edit",
     "editMessageLabel": "Edit message",
     "uploadItem": "Attachment {{name}}",

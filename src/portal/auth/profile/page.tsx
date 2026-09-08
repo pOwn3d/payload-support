@@ -561,8 +561,9 @@ export default function ProfilePage() {
 
           <div className="p-6 sm:p-8">
             <p className="mb-4 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Conformement au RGPD, vous pouvez télécharger l&apos;ensemble de vos données personnelles
-              (profil, tickets, messages, enquetes de satisfaction).
+              Conformement au RGPD, vous pouvez télécharger l&apos;ensemble de vos données personnelles :
+              celles que vous avez fournies (profil, tickets, messages, temps passe, enquetes de
+              satisfaction, chat) et celles que nous avons deduites de votre historique (synthese IA).
             </p>
             <a
               href="/api/support/export-data"

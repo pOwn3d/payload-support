@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Inbox, Plus, Link2, X, Search, ChevronDown, ChevronUp, Paperclip } from 'lucide-react'
+import { Inbox, Plus, Link2, X, Search, ChevronDown, ChevronUp, Paperclip } from '../shared/icons'
 import { SkeletonDashboard } from '../shared/Skeleton'
 import { useTranslation } from '../../components/TicketConversation/hooks/useTranslation'
 import styles from '../../styles/PendingEmails.module.scss'
@@ -86,7 +86,7 @@ function TicketSearchModal({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>Rattacher a un ticket</h3>
-          <button onClick={onClose} className={styles.modalClose}>
+          <button type="button" aria-label="Fermer" onClick={onClose} className={styles.modalClose}>
             <X size={20} />
           </button>
         </div>
@@ -112,6 +112,7 @@ function TicketSearchModal({
           <Search size={16} className={styles.searchIcon} />
           <input
             type="text"
+            aria-label="Rechercher un ticket"
             placeholder="Rechercher un ticket (TK-0042, sujet...)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -225,7 +226,7 @@ function ClientPickerModal({
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h3 className={styles.modalTitle}>Choisir un client</h3>
-          <button onClick={onClose} className={styles.modalClose}>
+          <button type="button" aria-label="Fermer" onClick={onClose} className={styles.modalClose}>
             <X size={20} />
           </button>
         </div>
@@ -251,6 +252,7 @@ function ClientPickerModal({
           <Search size={16} className={styles.searchIcon} />
           <input
             type="text"
+            aria-label="Rechercher un client"
             placeholder="Rechercher un client (nom, email, entreprise)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -287,6 +289,7 @@ function ClientPickerModal({
             <div className={styles.createFormRow}>
               <input
                 type="text"
+                aria-label="Prenom"
                 placeholder="Prenom *"
                 value={newClient.firstName}
                 onChange={(e) => setNewClient((p) => ({ ...p, firstName: e.target.value }))}
@@ -294,6 +297,7 @@ function ClientPickerModal({
               />
               <input
                 type="text"
+                aria-label="Nom"
                 placeholder="Nom"
                 value={newClient.lastName}
                 onChange={(e) => setNewClient((p) => ({ ...p, lastName: e.target.value }))}
@@ -302,6 +306,7 @@ function ClientPickerModal({
             </div>
             <input
               type="email"
+              aria-label="Email"
               placeholder="Email *"
               value={newClient.email}
               onChange={(e) => setNewClient((p) => ({ ...p, email: e.target.value }))}
@@ -309,6 +314,7 @@ function ClientPickerModal({
             />
             <input
               type="text"
+              aria-label="Entreprise"
               placeholder="Entreprise *"
               value={newClient.company}
               onChange={(e) => setNewClient((p) => ({ ...p, company: e.target.value }))}

@@ -31,6 +31,9 @@ interface Ticket {
 
 type Tab = 'all' | 'open' | 'waiting_client' | 'resolved' | 'sla_breach'
 
+// Single id: this view is a full admin route, mounted once.
+const INBOX_TABPANEL_ID = 'inbox-tabpanel'
+
 const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'var(--theme-error-500)',
   high: 'var(--theme-warning-500)',
@@ -239,6 +242,7 @@ export const TicketInboxClient: React.FC = () => {
             <input
               type="text"
               className={s.searchInput}
+              aria-label={t('inbox.searchLabel')}
               placeholder={t('inbox.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -250,14 +254,48 @@ export const TicketInboxClient: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className={s.tabs} role="tablist">
+      {/*
+        A tablist is ONE tab stop: the inactive tabs carry `tabIndex={-1}` and
+        the arrow keys move between them. That is the ARIA pattern, but the
+        roving tabIndex is only half of it — without this handler the four
+        inactive tabs are simply unreachable from the keyboard, which is worse
+        than the plain tab order it replaced.
+      */}
+      <div
+        className={s.tabs}
+        role="tablist"
+        aria-label={t('inbox.tabsLabel')}
+        onKeyDown={(e) => {
+          const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End']
+          if (!keys.includes(e.key)) return
+          e.preventDefault()
+          const i = tabs.findIndex((tk) => tk.key === tab)
+          const next =
+            e.key === 'Home' ? 0
+            : e.key === 'End' ? tabs.length - 1
+            : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length
+            : (i + 1) % tabs.length
+          const target = tabs[next]
+          if (!target) return
+          setTab(target.key)
+          setSelectedIdx(-1)
+          // Focus follows selection, as the pattern expects for an
+          // automatically-activated tablist.
+          document.getElementById(`inbox-tab-${target.key}`)?.focus()
+        }}
+      >
         {tabs.map((tk) => {
           const isAlert = tk.alert && tk.count > 0
           return (
             <button
               key={tk.key}
+              type="button"
               role="tab"
+              id={`inbox-tab-${tk.key}`}
               aria-selected={tab === tk.key}
+              aria-controls={INBOX_TABPANEL_ID}
+              // Roving tabindex: a tablist is one tab stop, arrows move inside.
+              tabIndex={tab === tk.key ? 0 : -1}
               className={`${s.tab} ${tab === tk.key ? s.tabActive : ''} ${isAlert ? s.tabAlert : ''}`}
               onClick={() => { setTab(tk.key); setSelectedIdx(-1) }}
             >
@@ -273,17 +311,17 @@ export const TicketInboxClient: React.FC = () => {
         {checkedIds.size > 0 ? (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flex: 1 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--theme-text)' }}>{checkedIds.size > 1 ? t('inbox.selectedPlural', { count: String(checkedIds.size) }) : t('inbox.selected', { count: String(checkedIds.size) })}</span>
-            <button className={s.sortSelect} onClick={() => handleBulkAction('close')} disabled={bulkProcessing}>{t('inbox.closeAction')}</button>
-            <button className={s.sortSelect} onClick={() => handleBulkAction('reopen')} disabled={bulkProcessing}>{t('inbox.reopenAction')}</button>
-            <select className={s.sortSelect} value={bulkAction} onChange={(e) => { if (e.target.value) handleBulkAction(e.target.value); setBulkAction('') }}>
+            <button type="button" className={s.sortSelect} onClick={() => handleBulkAction('close')} disabled={bulkProcessing}>{t('inbox.closeAction')}</button>
+            <button type="button" className={s.sortSelect} onClick={() => handleBulkAction('reopen')} disabled={bulkProcessing}>{t('inbox.reopenAction')}</button>
+            <select className={s.sortSelect} aria-label={t('inbox.moreActions')} value={bulkAction} onChange={(e) => { if (e.target.value) handleBulkAction(e.target.value); setBulkAction('') }}>
               <option value="">{t('inbox.moreActions')}</option>
               <option value="set_priority">{t('inbox.changePriority')}</option>
               <option value="delete">{t('inbox.deleteAction')}</option>
             </select>
-            <button className={s.sortSelect} onClick={() => setCheckedIds(new Set())} style={{ marginLeft: 'auto' }}>{t('inbox.deselect')}</button>
+            <button type="button" className={s.sortSelect} onClick={() => setCheckedIds(new Set())} style={{ marginLeft: 'auto' }}>{t('inbox.deselect')}</button>
           </div>
         ) : (
-          <select className={s.sortSelect} value={sort} onChange={(e) => setSort(e.target.value)}>
+          <select className={s.sortSelect} aria-label={t('inbox.sortLabel')} value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="-updatedAt">{t('inbox.sort.newest')}</option>
             <option value="updatedAt">{t('inbox.sort.oldest')}</option>
             <option value="-createdAt">{t('inbox.sort.created')}</option>
@@ -292,7 +330,8 @@ export const TicketInboxClient: React.FC = () => {
         )}
       </div>
 
-      {/* List */}
+      {/* List — the panel the tablist above controls */}
+      <div role="tabpanel" id={INBOX_TABPANEL_ID} aria-labelledby={`inbox-tab-${tab}`}>
       {loading ? (
         <div className={s.loading}>{t('common.loading')}</div>
       ) : tickets.length === 0 ? (
@@ -361,6 +400,7 @@ export const TicketInboxClient: React.FC = () => {
           })}
         </div>
       )}
+      </div>
 
       {/* Keyboard hints */}
       <div className={s.keyboardHints}>

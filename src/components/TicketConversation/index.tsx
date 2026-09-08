@@ -24,9 +24,10 @@ import { useDocumentIdFromUrl } from './hooks/useDocumentIdFromUrl'
 import { useFeatures } from './hooks/useFeatures'
 import { SkeletonText } from './SkeletonText'
 import { RewriteDropdown } from './RewriteDropdown'
+import { AdminErrorBoundary } from '../../views/shared/ErrorBoundary'
 import '../../styles/theme.css'
 
-const TicketConversation: React.FC = () => {
+const TicketConversationInner: React.FC = () => {
   const { id } = useDocumentIdFromUrl()
   const { features } = useFeatures()
   const [messages, setMessages] = useState<Message[]>([])
@@ -416,6 +417,7 @@ const TicketConversation: React.FC = () => {
         <div style={{ flex: 1 }}>
           <input
             type="text"
+            aria-label="Rechercher dans la conversation"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Rechercher..."
@@ -442,6 +444,7 @@ const TicketConversation: React.FC = () => {
               <>
                 {showCollapse && hiddenCount > 0 && (
                   <button
+                    type="button"
                     onClick={() => setMessagesCollapsed(false)}
                     style={{
                       background: 'none', border: `1px dashed ${C.border}`, borderRadius: '6px',
@@ -454,6 +457,7 @@ const TicketConversation: React.FC = () => {
                 )}
                 {!messagesCollapsed && filtered.length > 1 && !isSearching && (
                   <button
+                    type="button"
                     onClick={() => setMessagesCollapsed(true)}
                     style={{
                       background: 'none', border: `1px dashed ${C.border}`, borderRadius: '6px',
@@ -501,6 +505,7 @@ const TicketConversation: React.FC = () => {
                                 <span style={s.badge(C.emailBg, C.orange)}>Email</span>
                               ) : (
                                 <select
+                                  aria-label="Auteur du message"
                                   value={msg.authorType}
                                   onChange={(e) => handleToggleAuthor(msg.id, e.target.value === 'admin' ? 'client' : 'admin')}
                                   disabled={togglingAuthor === msg.id}
@@ -537,6 +542,7 @@ const TicketConversation: React.FC = () => {
                               {/* Split button */}
                               {!msg.isInternal && !(msg as unknown as { deletedAt?: string }).deletedAt && (
                                 <button
+                                  type="button"
                                   onClick={() => handleSplitMessage(msg.id, ticketSubject)}
                                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '10px', color: '#6b7280', padding: 0 }}
                                   title="Extraire en nouveau ticket"
@@ -579,16 +585,17 @@ const TicketConversation: React.FC = () => {
                           {editingMsg === msg.id ? (
                             <div style={{ marginTop: '6px' }}>
                               <textarea
+                                aria-label="Editer le message"
                                 value={editBody}
                                 onChange={(e) => { setEditBody(e.target.value); setEditHtml(e.target.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br />')) }}
                                 rows={4}
                                 style={{ ...s.input, width: '100%', resize: 'vertical', fontSize: '13px' }}
                               />
                               <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                                <button onClick={() => handleEditSave(msg.id)} disabled={savingEdit || (!editBody.trim() && !editHtml)} style={{ ...s.btn(C.blue, savingEdit), fontSize: '11px', padding: '5px 12px' }}>
+                                <button type="button" onClick={() => handleEditSave(msg.id)} disabled={savingEdit || (!editBody.trim() && !editHtml)} style={{ ...s.btn(C.blue, savingEdit), fontSize: '11px', padding: '5px 12px' }}>
                                   {savingEdit ? '...' : 'Enregistrer'}
                                 </button>
-                                <button onClick={handleEditCancel} style={{ ...s.ghostBtn('#6b7280'), fontSize: '11px', padding: '5px 12px' }}>
+                                <button type="button" onClick={handleEditCancel} style={{ ...s.ghostBtn('#6b7280'), fontSize: '11px', padding: '5px 12px' }}>
                                   Annuler
                                 </button>
                               </div>
@@ -775,6 +782,7 @@ const TicketConversation: React.FC = () => {
           ))}
           {features.ai && (
             <button
+              type="button"
               onClick={handleAiSuggestReply}
               disabled={aiReplying || messages.length === 0}
               style={{ ...s.outlineBtn('#17807c', aiReplying || messages.length === 0), fontSize: '11px', padding: '3px 10px', borderRadius: '14px' }}
@@ -800,7 +808,7 @@ const TicketConversation: React.FC = () => {
           />
 {features.canned && cannedResponses.length > 0 && (
             <>
-              <select onChange={handleCannedSelect} style={{ ...s.input, fontSize: '11px', padding: '3px 8px', fontWeight: 600 }}>
+              <select aria-label="Reponse rapide" onChange={handleCannedSelect} style={{ ...s.input, fontSize: '11px', padding: '3px 8px', fontWeight: 600 }}>
                 <option value="">Réponse rapide...</option>
                 {cannedResponses.map((cr) => (
                   <option key={cr.id} value={String(cr.id)}>{cr.title}</option>
@@ -818,6 +826,7 @@ const TicketConversation: React.FC = () => {
         {/* Reply textarea (replacing RichTextEditor) */}
         <div style={{ border: `1px solid ${C.border}`, borderRadius: '8px', overflow: 'hidden' }}>
           <textarea
+            aria-label="Reponse au client"
             value={replyBody}
             onChange={(e) => {
               const text = e.target.value
@@ -831,7 +840,6 @@ const TicketConversation: React.FC = () => {
               minHeight: '120px',
               padding: '12px',
               border: 'none',
-              outline: 'none',
               fontSize: '14px',
               lineHeight: 1.5,
               resize: 'vertical',
@@ -848,6 +856,7 @@ const TicketConversation: React.FC = () => {
             ref={fileInputRef}
             type="file"
             multiple
+            aria-label="Joindre des fichiers"
             onChange={handleReplyFileChange}
             style={{ display: 'none' }}
             accept="image/*,.pdf,.doc,.docx,.txt,.zip"
@@ -866,6 +875,7 @@ const TicketConversation: React.FC = () => {
                   {'\uD83D\uDCCE'} {file.name}
                   <button
                     type="button"
+                    aria-label={`Retirer la piece jointe ${file.name}`}
                     onClick={() => setReplyFiles((prev) => prev.filter((_, idx) => idx !== i))}
                     style={{ border: 'none', background: 'none', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}
                   >
@@ -879,6 +889,7 @@ const TicketConversation: React.FC = () => {
         {/* Send row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
           <select
+            aria-label="Envoyer en tant que"
             value={sendAsClient ? 'client' : 'admin'}
             onChange={(e) => setSendAsClient(e.target.value === 'client')}
             style={{ ...s.input, fontSize: '12px', padding: '6px 8px', fontWeight: 600 }}
@@ -896,11 +907,12 @@ const TicketConversation: React.FC = () => {
               Envoyer au client
             </label>
           )}
-          <button data-action="send-reply" onClick={handleSendReply} disabled={sending || (!replyBody.trim() && !replyHtml)} style={{ ...s.btn(isInternal ? C.amber : notifyClient ? '#16a34a' : C.blue, sending || (!replyBody.trim() && !replyHtml)), fontSize: '13px', padding: '8px 20px', marginLeft: 'auto' }}>
+          <button type="button" data-action="send-reply" onClick={handleSendReply} disabled={sending || (!replyBody.trim() && !replyHtml)} style={{ ...s.btn(isInternal ? C.amber : notifyClient ? '#16a34a' : C.blue, sending || (!replyBody.trim() && !replyHtml)), fontSize: '13px', padding: '8px 20px', marginLeft: 'auto' }}>
             {sending ? 'Envoi...' : isInternal ? 'Ajouter note' : notifyClient ? 'Envoyer + Notifier' : 'Sauvegarder'}
           </button>
           {!isInternal && (
             <button
+              type="button"
               onClick={() => setShowSchedule(!showSchedule)}
               disabled={!replyBody.trim() && !replyHtml}
               style={{ ...s.outlineBtn('#17807c', !replyBody.trim() && !replyHtml), fontSize: '12px', padding: '8px 12px' }}
@@ -915,19 +927,21 @@ const TicketConversation: React.FC = () => {
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#17807c' }}>Programmer pour :</span>
             <input
               type="datetime-local"
+              aria-label="Date et heure d'envoi programme"
               value={scheduleDate}
               onChange={(e) => setScheduleDate(e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
               style={{ ...s.input, fontSize: '12px', width: 'auto' }}
             />
             <button
+              type="button"
               onClick={handleScheduleReply}
               disabled={sending || !scheduleDate || (!replyBody.trim() && !replyHtml)}
               style={{ ...s.btn('#17807c', sending || !scheduleDate || (!replyBody.trim() && !replyHtml)), fontSize: '12px', padding: '6px 14px' }}
             >
               {sending ? '...' : '\u23F0 Programmer'}
             </button>
-            <button onClick={() => setShowSchedule(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}>{'\u2715'}</button>
+            <button type="button" aria-label="Annuler la programmation" onClick={() => setShowSchedule(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}>{'\u2715'}</button>
           </div>
         )}
         <div style={{ fontSize: '11px', color: C.textMuted, marginTop: '4px', textAlign: 'right' }}>
@@ -1087,5 +1101,25 @@ const TicketConversation: React.FC = () => {
 }
 
 
+
+/**
+ * Payload mounts this component straight from the import map as the `ui` field
+ * of the Tickets edit view, so the plugin never gets to render an ancestor for
+ * it: the boundary has to live inside the module itself. Without it a single
+ * render error in any of the twelve sub-components blanks the whole ticket
+ * screen.
+ *
+ * The document id is used as a reset key so that navigating from a ticket that
+ * broke to another one clears the error on its own.
+ */
+const TicketConversation: React.FC = () => {
+  const { id } = useDocumentIdFromUrl()
+
+  return (
+    <AdminErrorBoundary viewName="TicketConversation" resetKeys={[id]}>
+      <TicketConversationInner />
+    </AdminErrorBoundary>
+  )
+}
 
 export default TicketConversation

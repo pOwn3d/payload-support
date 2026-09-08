@@ -343,6 +343,7 @@ export const ChatViewClient: React.FC = () => {
               <form onSubmit={sendMessage} className={styles.composer}>
                 {cannedResponses.length > 0 && (
                   <select
+                    aria-label={t('chat.quickReply')}
                     onChange={(e) => {
                       const cr = cannedResponses.find((c) => String(c.id) === e.target.value)
                       if (cr) setInput(cr.body)
@@ -359,6 +360,7 @@ export const ChatViewClient: React.FC = () => {
                 <div className={styles.composerRow}>
                   <input
                     type="text"
+                    aria-label={t('chat.inputPlaceholder')}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={t('chat.inputPlaceholder')}

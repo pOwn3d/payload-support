@@ -39,6 +39,7 @@ export function AISummaryPanel({
   return (
     <div style={{ marginBottom: '14px' }}>
       <button
+        type="button"
         onClick={() => { setShowAiSummary(!showAiSummary); if (!showAiSummary && !aiSummary) handleAiGenerate() }}
         style={{
           ...s.ghostBtn('#17807c', false),
@@ -61,6 +62,7 @@ export function AISummaryPanel({
             </h4>
             <div style={{ display: 'flex', gap: '6px' }}>
               <button
+                type="button"
                 onClick={handleAiGenerate}
                 disabled={aiGenerating}
                 style={{ ...s.outlineBtn('#17807c', aiGenerating), fontSize: '11px', padding: '4px 10px' }}
@@ -69,6 +71,7 @@ export function AISummaryPanel({
               </button>
               {aiSummary && !aiGenerating && (
                 <button
+                  type="button"
                   onClick={handleAiSave}
                   disabled={aiSaving || aiSaved}
                   style={{ ...s.btn(aiSaved ? '#16a34a' : '#2563eb', aiSaving), fontSize: '11px', padding: '4px 10px' }}

@@ -131,7 +131,7 @@ export const LogsClient: React.FC = () => {
                 </td>
                 <td className={s.truncate} title={log.recipientEmail}>{log.recipientEmail || '—'}</td>
                 <td className={s.truncate} title={log.subject}>{log.subject || '—'}</td>
-                <td style={{ fontSize: 12, color: 'var(--theme-elevation-500)' }}>{log.action || '—'}</td>
+                <td style={{ fontSize: 12, color: 'var(--theme-elevation-650)' }}>{log.action || '—'}</td>
                 <td style={{ textAlign: 'right' }}>
                   {log.processingTimeMs != null ? (
                     <span className={s.mono} style={{ color: log.processingTimeMs > 2000 ? '#dc2626' : log.processingTimeMs > 500 ? '#d97706' : '#16a34a' }}>

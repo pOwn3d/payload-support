@@ -34,6 +34,11 @@ export function TimeTrackingPanel({
   duration, setDuration, timeDescription, setTimeDescription,
   handleAddTime, addingTime, timeSuccess,
 }: TimeTrackingPanelProps) {
+  // The two `<label>`s of the manual entry row exist but were not associated
+  // with anything. useId, never a literal: the panel is one per ticket screen
+  // but the pattern has to hold if it is ever mounted twice.
+  const minutesId = React.useId()
+  const workDescriptionId = React.useId()
   const totalH = Math.floor(totalMinutes / 60)
   const totalM = totalMinutes % 60
 
@@ -63,6 +68,7 @@ export function TimeTrackingPanel({
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {[-5, -1, 1, 5, 15, 30].map((m) => (
               <button
+                type="button"
                 key={m}
                 onClick={() => setTimerSeconds((p) => Math.max(0, p + m * 60))}
                 style={{ width: Math.abs(m) >= 15 ? '32px' : '28px', height: '28px', borderRadius: '6px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontSize: Math.abs(m) >= 15 ? '12px' : '14px', fontWeight: 700, color: '#64748b' }}
@@ -75,28 +81,30 @@ export function TimeTrackingPanel({
         )}
 
         {!timerRunning && timerSeconds === 0 && (
-          <button onClick={() => handleTimerStart(true)} style={{ ...s.btn('#dc2626', false), fontSize: '12px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button type="button" onClick={() => handleTimerStart(true)} style={{ ...s.btn('#dc2626', false), fontSize: '12px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             &#9654; Démarrer
           </button>
         )}
         {timerRunning && (
-          <button onClick={handleTimerStop} style={{ ...s.btn('#374151', false), fontSize: '12px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button type="button" onClick={handleTimerStop} style={{ ...s.btn('#374151', false), fontSize: '12px', padding: '6px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             &#9208; Pause
           </button>
         )}
         {!timerRunning && timerSeconds > 0 && (
           <>
-            <button onClick={() => handleTimerStart(false)} style={{ ...s.btn('#dc2626', false), fontSize: '12px', padding: '6px 14px' }}>
+            <button type="button" onClick={() => handleTimerStart(false)} style={{ ...s.btn('#dc2626', false), fontSize: '12px', padding: '6px 14px' }}>
               &#9654; Reprendre
             </button>
             <input
               type="text"
+              aria-label="Description du temps en cours"
               value={timerDescription}
               onChange={(e) => setTimerDescription(e.target.value)}
               placeholder="Description..."
               style={{ ...s.input, fontSize: '12px', flex: 1, minWidth: '120px' }}
             />
             <button
+              type="button"
               onClick={handleTimerSave}
               disabled={addingTime || timerSeconds < 60}
               style={{ ...s.btn('#16a34a', addingTime || timerSeconds < 60), fontSize: '12px', padding: '6px 14px' }}
@@ -104,7 +112,7 @@ export function TimeTrackingPanel({
             >
               &#128190; {Math.round(timerSeconds / 60)} min
             </button>
-            <button onClick={handleTimerDiscard} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#94a3b8', padding: '4px' }} title="Annuler">
+            <button type="button" onClick={handleTimerDiscard} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: '#94a3b8', padding: '4px' }} title="Annuler">
               &#10005;
             </button>
           </>
@@ -119,14 +127,14 @@ export function TimeTrackingPanel({
       {/* Manual time entry */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '14px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '11px', color: C.textSecondary, marginBottom: '3px', fontWeight: 600 }}>Min</label>
-          <input type="number" min="1" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="30" style={{ ...s.input, width: '80px' }} />
+          <label htmlFor={minutesId} style={{ display: 'block', fontSize: '11px', color: C.textSecondary, marginBottom: '3px', fontWeight: 600 }}>Min</label>
+          <input id={minutesId} type="number" min="1" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="30" style={{ ...s.input, width: '80px' }} />
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '11px', color: C.textSecondary, marginBottom: '3px', fontWeight: 600 }}>Description</label>
-          <input type="text" value={timeDescription} onChange={(e) => setTimeDescription(e.target.value)} placeholder="Travail effectué..." style={{ ...s.input, width: '100%' }} />
+          <label htmlFor={workDescriptionId} style={{ display: 'block', fontSize: '11px', color: C.textSecondary, marginBottom: '3px', fontWeight: 600 }}>Description</label>
+          <input id={workDescriptionId} type="text" value={timeDescription} onChange={(e) => setTimeDescription(e.target.value)} placeholder="Travail effectué..." style={{ ...s.input, width: '100%' }} />
         </div>
-        <button onClick={handleAddTime} disabled={addingTime || !duration} style={s.btn(C.amber, addingTime || !duration)}>
+        <button type="button" onClick={handleAddTime} disabled={addingTime || !duration} style={s.btn(C.amber, addingTime || !duration)}>
           {addingTime ? '...' : '+ Temps'}
         </button>
         {timeSuccess && <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600 }}>{timeSuccess}</span>}

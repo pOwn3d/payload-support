@@ -76,7 +76,7 @@ export const RewriteDropdown: React.FC<{
               onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent' }}
             >
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--theme-text, #111)' }}>{style.label}</span>
-              <span style={{ fontSize: 10, color: 'var(--theme-elevation-500, #6b7280)' }}>{style.desc}</span>
+              <span style={{ fontSize: 10, color: 'var(--theme-elevation-650, #6b7280)' }}>{style.desc}</span>
             </button>
           ))}
         </div>
