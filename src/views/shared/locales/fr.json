@@ -348,7 +348,9 @@
       "responseAwaitedFor": "En attente depuis {{duration}}",
       "target": "Échéance : {{target}}",
       "escalate": "Escalader"
-    }
+    },
+    "slaPaused": "en pause",
+    "slaPausedTitle": "SLA en pause depuis {since} — le compteur repart à la réponse du client"
   },
   "emailTracking": {
     "title": "Suivi des emails",
@@ -695,19 +697,58 @@
     "saved2": "✓ Sauvegardé",
     "saveChanges": "Sauvegarder les modifications",
     "features": {
-      "canned": { "label": "Réponses rapides", "description": "Templates de réponses pré-enregistrées avec variables dynamiques" },
-      "scheduledReplies": { "label": "Réponses programmées", "description": "Envoyer une réponse à une date/heure future" },
-      "activityLog": { "label": "Journal d'activité", "description": "Timeline des actions sur chaque ticket (changements de statut, assignation...)" },
-      "emailTracking": { "label": "Suivi des emails", "description": "Tracking d'envoi et d'ouverture des notifications email" },
-      "chat": { "label": "Live Chat", "description": "Chat en temps réel avec conversion en ticket" },
-      "externalMessages": { "label": "Messages externes", "description": "Ajouter manuellement des messages reçus par email, SMS, WhatsApp..." },
-      "ai": { "label": "Intelligence Artificielle", "description": "Analyse de sentiment, synthèse, suggestion de réponse, reformulation" },
-      "timeTracking": { "label": "Suivi du temps", "description": "Timer, entrées manuelles, facturation" },
-      "satisfaction": { "label": "Enquêtes satisfaction", "description": "Score CSAT après résolution du ticket" },
-      "merge": { "label": "Fusion de tickets", "description": "Combiner deux tickets en un seul" },
-      "splitTicket": { "label": "Extraction de message", "description": "Extraire un message en nouveau ticket lié" },
-      "snooze": { "label": "Snooze", "description": "Masquer temporairement un ticket et rappel automatique" },
-      "clientHistory": { "label": "Historique client", "description": "Tickets passés, projets et notes internes du client" }
+      "canned": {
+        "label": "Réponses rapides",
+        "description": "Templates de réponses pré-enregistrées avec variables dynamiques"
+      },
+      "scheduledReplies": {
+        "label": "Réponses programmées",
+        "description": "Envoyer une réponse à une date/heure future"
+      },
+      "activityLog": {
+        "label": "Journal d'activité",
+        "description": "Timeline des actions sur chaque ticket (changements de statut, assignation...)"
+      },
+      "emailTracking": {
+        "label": "Suivi des emails",
+        "description": "Tracking d'envoi et d'ouverture des notifications email"
+      },
+      "chat": {
+        "label": "Live Chat",
+        "description": "Chat en temps réel avec conversion en ticket"
+      },
+      "externalMessages": {
+        "label": "Messages externes",
+        "description": "Ajouter manuellement des messages reçus par email, SMS, WhatsApp..."
+      },
+      "ai": {
+        "label": "Intelligence Artificielle",
+        "description": "Analyse de sentiment, synthèse, suggestion de réponse, reformulation"
+      },
+      "timeTracking": {
+        "label": "Suivi du temps",
+        "description": "Timer, entrées manuelles, facturation"
+      },
+      "satisfaction": {
+        "label": "Enquêtes satisfaction",
+        "description": "Score CSAT après résolution du ticket"
+      },
+      "merge": {
+        "label": "Fusion de tickets",
+        "description": "Combiner deux tickets en un seul"
+      },
+      "splitTicket": {
+        "label": "Extraction de message",
+        "description": "Extraire un message en nouveau ticket lié"
+      },
+      "snooze": {
+        "label": "Snooze",
+        "description": "Masquer temporairement un ticket et rappel automatique"
+      },
+      "clientHistory": {
+        "label": "Historique client",
+        "description": "Tickets passés, projets et notes internes du client"
+      }
     },
     "categories": {
       "core": "Fonctionnalités de base",

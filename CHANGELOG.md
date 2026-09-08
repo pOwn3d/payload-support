@@ -4,6 +4,67 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.2] - 2026-09-08
+
+Fixes an SLA indicator that accused the team of breaches the client had caused.
+Worth taking if you use the `waiting_client` status — on a support desk where
+that is the most common state, the indicator was unusable.
+
+### Fixed
+
+- **A ticket whose SLA is paused no longer shows as breached.**
+  `createPauseSlaOnHold` stamps `slaPausedAt` when a ticket enters
+  `waiting_client`, but it only pushes `slaResolutionDue` forward when the
+  ticket *leaves* that status. For the whole duration of the pause the stored
+  deadline is therefore stale by exactly the elapsed pause — and everything
+  comparing it to the current time read a breach the server did not consider
+  one. Reported in production with three tickets flagged at once, all of them
+  simply waiting on their client.
+
+  `computeSlaState` now adds the elapsed pause back before comparing, which is
+  the same arithmetic the resume hook performs later, so the badge during the
+  pause and the stored deadline after it agree. It returns a new `paused` state,
+  rendered as a neutral italic label with the pause duration in its tooltip.
+
+  The pause stops the **resolution** clock only. A first-response SLA keeps
+  running while the client is being waited on: the agent still has not answered,
+  which is precisely what that target measures.
+
+- **The nav counter and the list no longer disagree.** The counter queried the
+  persisted `slaResolutionBreached` / `slaFirstResponseBreached` flags while the
+  list recomputed live, so the two diverged the moment an SLA was paused — one
+  saying 1, the other showing 3. A REST `/count` cannot run the shared function,
+  so the same rule is expressed as `where[slaPausedAt][exists]=false`, applied to
+  the counter *and* to the "SLA breached" tab.
+
+- **`GET /support/sla-check` stopped reporting paused tickets as breached.** Its
+  query includes `waiting_client` and did not even select `slaPausedAt`, so it
+  raised the same false positives — by email, through the escalation path.
+
+- **Resolving a ticket straight out of `waiting_client` no longer persists a
+  false breach.** `createPauseSlaOnHold` runs immediately before
+  `createCheckSlaOnResolve` and extends `slaResolutionDue` in the database, but
+  the `doc` handed to the second hook was captured before that write. It
+  compared against the un-extended deadline and stored
+  `slaResolutionBreached: true`. Unlike the display defects, that one left a
+  permanent mark on the row. The hook now re-adds the pause locally, which
+  yields the deadline its sibling just wrote without depending on hook order.
+
+### Added
+
+- `pausedForMs()` exported alongside `computeSlaState`, and `slaPausedAt` added
+  to `SlaInput`.
+- `inbox.slaPaused` / `inbox.slaPausedTitle` translation keys (fr, en).
+- Six regression tests, two of which fail against the previous logic — verified
+  by restoring it. Suite: 393 to 399.
+
+### Known limitation
+
+`computeSlaState` still ignores `resolved`: a ticket closed after its deadline
+keeps the breach state on screen. That is deliberate for now — in a list of
+resolved tickets it is an honest historical record — but it is a product call
+rather than a settled one.
+
 ## [6.0.1] - 2026-09-08
 
 Fixes a packaging defect that made 5.0.0 and 6.0.0 unusable: a host application

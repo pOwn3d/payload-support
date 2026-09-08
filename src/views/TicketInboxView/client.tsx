@@ -26,6 +26,7 @@ interface Ticket {
   slaFirstResponseBreached?: boolean | null
   slaResolutionDue?: string | null
   slaResolutionBreached?: boolean | null
+  slaPausedAt?: string | null
   firstResponseAt?: string | null
 }
 
@@ -128,13 +129,21 @@ export const TicketInboxClient: React.FC = () => {
       `select[client]=true`, `select[updatedAt]=true`,
       `select[lastClientMessageAt]=true`, `select[lastAdminReadAt]=true`,
       `select[slaFirstResponseDue]=true`, `select[slaFirstResponseBreached]=true`,
-      `select[slaResolutionDue]=true`, `select[slaResolutionBreached]=true`,
+      `select[slaResolutionDue]=true`, `select[slaResolutionBreached]=true`, `select[slaPausedAt]=true`,
       `select[firstResponseAt]=true`,
     ]
     if (tab === 'sla_breach') {
-      // Either first-response breached or resolution breached
+      // Either first-response breached or resolution breached.
+      //
+      // A paused ticket is excluded. `createPauseSlaOnHold` stamps `slaPausedAt`
+      // on the way into `waiting_client` and only pushes `slaResolutionDue`
+      // forward on the way out, so during the pause the stored deadline is stale
+      // and this list would show a breach the server does not consider one.
+      // `computeSlaState` applies the same rule when it renders the row, so the
+      // tab and the badge cannot disagree.
       params.push(`where[or][0][slaFirstResponseBreached][equals]=true`)
       params.push(`where[or][1][slaResolutionBreached][equals]=true`)
+      params.push(`where[slaPausedAt][exists]=false`)
     } else if (tab !== 'all') {
       params.push(`where[status][equals]=${tab}`)
     }
@@ -178,7 +187,7 @@ export const TicketInboxClient: React.FC = () => {
           fetch(`/api/tickets/count?where[status][equals]=open&${sn}`, { credentials: 'include' }),
           fetch(`/api/tickets/count?where[status][equals]=waiting_client&${sn}`, { credentials: 'include' }),
           fetch(`/api/tickets/count?where[status][equals]=resolved&${sn}`, { credentials: 'include' }),
-          fetch(`/api/tickets/count?where[or][0][slaFirstResponseBreached][equals]=true&where[or][1][slaResolutionBreached][equals]=true&${sn}`, { credentials: 'include' }),
+          fetch(`/api/tickets/count?where[or][0][slaFirstResponseBreached][equals]=true&where[or][1][slaResolutionBreached][equals]=true&where[slaPausedAt][exists]=false&${sn}`, { credentials: 'include' }),
         ])
         const [a, o, w, r, b] = await Promise.all([all.json(), openRes.json(), waiting.json(), resolved.json(), breach.json()])
         setCounts({
@@ -350,6 +359,7 @@ export const TicketInboxClient: React.FC = () => {
             const priorityColor = PRIORITY_COLORS[tk.priority] || 'transparent'
             const sla = computeSlaState(tk)
             const isBreach = sla.state === 'breach'
+            const isPaused = sla.state === 'paused'
             const statusVariant: 'open' | 'pending' | 'resolved' | 'closed' = STATUS_VARIANT[tk.status] || 'open'
 
             return (
@@ -388,10 +398,15 @@ export const TicketInboxClient: React.FC = () => {
                     sla.state === 'breach' ? s.slaBreach : '',
                     sla.state === 'warn' ? s.slaWarn : '',
                     sla.state === 'ok' ? s.slaOk : '',
+                    isPaused ? s.slaPaused : '',
                   ].filter(Boolean).join(' ')}
-                  title={sla.due ? new Date(sla.due).toLocaleString(DATE_LOCALE) : ''}
+                  title={
+                    isPaused
+                      ? t('inbox.slaPausedTitle', { since: formatSlaRemaining(sla.pausedMs ?? 0) })
+                      : sla.due ? new Date(sla.due).toLocaleString(DATE_LOCALE) : ''
+                  }
                 >
-                  {formatSlaRemaining(sla.remainingMs)}
+                  {isPaused ? t('inbox.slaPaused') : formatSlaRemaining(sla.remainingMs)}
                 </span>
                 <span className={s.timeAgo}>{relativeTime(tk.updatedAt, t)}</span>
                 {isUnread ? <div className={s.unreadDot} /> : <span />}

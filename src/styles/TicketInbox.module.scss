@@ -286,6 +286,10 @@
 .slaOk     { color: var(--theme-elevation-400); }
 .slaWarn   { color: var(--theme-warning-500, #c97a0a); font-weight: 600; }
 .slaBreach { color: var(--theme-error-500, #c4392c); font-weight: 700; }
+// Paused: deliberately neutral and italic. The clock is stopped because the
+// team is waiting on the client, so this is not a state anyone should act on —
+// it must not compete with the warn and breach colours next to it.
+.slaPaused { color: var(--theme-elevation-650); font-style: italic; }
 
 .timeAgo {
   font-size: 12px;

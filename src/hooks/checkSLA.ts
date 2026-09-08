@@ -353,7 +353,20 @@ export function createCheckSlaOnResolve(slugs: CollectionSlugs, notificationSlug
     try {
       const { payload } = req
       const now = new Date()
-      const deadline = new Date(doc.slaResolutionDue as string)
+
+      // `createPauseSlaOnHold` is registered just before this hook and, when the
+      // ticket is resolved straight out of `waiting_client`, it pushes
+      // `slaResolutionDue` forward by the paused span. That write lands in the
+      // database, but the `doc` handed to THIS hook was captured before it — so
+      // reading `doc.slaResolutionDue` here compares against the un-extended
+      // deadline and persists a breach that never happened.
+      //
+      // Re-adding the pause locally gives the same deadline the sibling hook
+      // just wrote, without depending on hook ordering or on re-reading the row.
+      const pausedMs = doc.slaPausedAt
+        ? Math.max(0, now.getTime() - new Date(doc.slaPausedAt as string).getTime())
+        : 0
+      const deadline = new Date(new Date(doc.slaResolutionDue as string).getTime() + pausedMs)
       const breached = now > deadline
 
       await dbUpdate(payload, slugs.tickets, {

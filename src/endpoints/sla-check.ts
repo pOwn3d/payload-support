@@ -47,6 +47,7 @@ export function createSlaCheckEndpoint(slugs: CollectionSlugs): Endpoint {
             slaResolutionDue: true,
             slaFirstResponseBreached: true,
             slaResolutionBreached: true,
+            slaPausedAt: true,
             firstResponseAt: true,
             createdAt: true,
           },
@@ -85,9 +86,19 @@ export function createSlaCheckEndpoint(slugs: CollectionSlugs): Endpoint {
             }
           }
 
-          // Check resolution SLA
+          // Check resolution SLA.
+          //
+          // A ticket sitting in `waiting_client` has its resolution clock
+          // stopped, but `createPauseSlaOnHold` only pushes `slaResolutionDue`
+          // forward when the ticket LEAVES that status. During the pause the
+          // stored deadline is stale by exactly the elapsed pause, so comparing
+          // it to `now` reports a breach the server does not consider one — and
+          // this endpoint is what feeds the escalation mail.
           if (t.slaResolutionDue) {
-            const deadline = new Date(t.slaResolutionDue)
+            const pausedMs = t.slaPausedAt
+              ? Math.max(0, now.getTime() - new Date(t.slaPausedAt).getTime())
+              : 0
+            const deadline = new Date(new Date(t.slaResolutionDue).getTime() + pausedMs)
             if (now > deadline) {
               ticketData.breachTypes.push('resolution')
             } else {

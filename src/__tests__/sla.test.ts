@@ -256,3 +256,107 @@ describe('calculateBusinessHoursDeadline', () => {
     expect(result.getMinutes()).toBe(0)
   })
 })
+
+// ─── Pause on hold ────────────────────────────────────────────────────────────
+//
+// Reported in production on 2026-09-08: three tickets in `waiting_client` all
+// carried the red "SLA breached" badge, and the nav counter said 1 while the
+// list showed 3.
+//
+// Root cause: `createPauseSlaOnHold` stamps `slaPausedAt` when the ticket enters
+// `waiting_client` but only pushes `slaResolutionDue` forward when it LEAVES.
+// For the whole duration of the pause the stored deadline is stale by exactly
+// the elapsed pause, and anything comparing it to `now` reads a breach the
+// server does not consider one.
+
+describe('computeSlaState — resolution clock paused on hold', () => {
+  const hour = 3_600_000
+  const now = new Date('2026-09-08T12:00:00.000Z')
+
+  it('does not report a breach while the clock is paused', () => {
+    const result = computeSlaState(
+      {
+        firstResponseAt: '2026-09-08T08:00:00.000Z',
+        // Deadline passed an hour ago…
+        slaResolutionDue: new Date(now.getTime() - hour).toISOString(),
+        // …but the clock has been stopped for two hours.
+        slaPausedAt: new Date(now.getTime() - 2 * hour).toISOString(),
+      },
+      now,
+    )
+
+    expect(result.state).toBe('paused')
+    // Two hours paused against an hour overdue leaves an hour of real budget.
+    expect(result.remainingMs).toBe(hour)
+    expect(result.pausedMs).toBe(2 * hour)
+  })
+
+  it('reports the breach once the pause no longer covers the overrun', () => {
+    const result = computeSlaState(
+      {
+        firstResponseAt: '2026-09-08T08:00:00.000Z',
+        slaResolutionDue: new Date(now.getTime() - 3 * hour).toISOString(),
+        slaPausedAt: new Date(now.getTime() - hour).toISOString(),
+      },
+      now,
+    )
+
+    // Still paused, so the badge stays neutral — but the remaining time is
+    // honestly negative rather than pretending the ticket is on track.
+    expect(result.state).toBe('paused')
+    expect(result.remainingMs).toBe(-2 * hour)
+  })
+
+  it('keeps a breach that was already recorded before the pause', () => {
+    const result = computeSlaState(
+      {
+        firstResponseAt: '2026-09-08T08:00:00.000Z',
+        slaResolutionDue: new Date(now.getTime() - hour).toISOString(),
+        slaResolutionBreached: true,
+        slaPausedAt: new Date(now.getTime() - 2 * hour).toISOString(),
+      },
+      now,
+    )
+
+    expect(result.state).toBe('breach')
+  })
+
+  it('leaves the FIRST-RESPONSE clock running during the pause', () => {
+    // The pause exists because the team is waiting on the client. A first
+    // response has by definition not happened yet, so that target keeps running.
+    const result = computeSlaState(
+      {
+        firstResponseAt: null,
+        slaFirstResponseDue: new Date(now.getTime() - hour).toISOString(),
+        slaPausedAt: new Date(now.getTime() - 2 * hour).toISOString(),
+      },
+      now,
+    )
+
+    expect(result.state).toBe('breach')
+  })
+
+  it('behaves exactly as before when nothing is paused', () => {
+    const before = computeSlaState(
+      {
+        firstResponseAt: '2026-09-08T08:00:00.000Z',
+        slaResolutionDue: new Date(now.getTime() - hour).toISOString(),
+      },
+      now,
+    )
+    expect(before.state).toBe('breach')
+    expect(before.pausedMs).toBeUndefined()
+  })
+
+  it('ignores an unparseable slaPausedAt rather than throwing', () => {
+    const result = computeSlaState(
+      {
+        firstResponseAt: '2026-09-08T08:00:00.000Z',
+        slaResolutionDue: new Date(now.getTime() + hour).toISOString(),
+        slaPausedAt: 'not-a-date',
+      },
+      now,
+    )
+    expect(result.state).toBe('ok')
+  })
+})

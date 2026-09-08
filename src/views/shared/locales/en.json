@@ -348,7 +348,9 @@
       "responseAwaitedFor": "Awaiting for {{duration}}",
       "target": "Due: {{target}}",
       "escalate": "Escalate"
-    }
+    },
+    "slaPaused": "paused",
+    "slaPausedTitle": "SLA paused for {since} — the clock resumes when the client replies"
   },
   "emailTracking": {
     "title": "Email tracking",
@@ -695,19 +697,58 @@
     "saved2": "✓ Saved",
     "saveChanges": "Save changes",
     "features": {
-      "canned": { "label": "Quick replies", "description": "Pre-registered response templates with dynamic variables" },
-      "scheduledReplies": { "label": "Scheduled replies", "description": "Send a reply at a future date/time" },
-      "activityLog": { "label": "Activity log", "description": "Timeline of actions on each ticket (status changes, assignment...)" },
-      "emailTracking": { "label": "Email tracking", "description": "Send and open tracking for email notifications" },
-      "chat": { "label": "Live Chat", "description": "Real-time chat with ticket conversion" },
-      "externalMessages": { "label": "External messages", "description": "Manually add messages received by email, SMS, WhatsApp..." },
-      "ai": { "label": "Artificial Intelligence", "description": "Sentiment analysis, summary, reply suggestion, rewriting" },
-      "timeTracking": { "label": "Time tracking", "description": "Timer, manual entries, billing" },
-      "satisfaction": { "label": "Satisfaction surveys", "description": "CSAT score after ticket resolution" },
-      "merge": { "label": "Ticket merge", "description": "Combine two tickets into one" },
-      "splitTicket": { "label": "Message extraction", "description": "Extract a message into a new linked ticket" },
-      "snooze": { "label": "Snooze", "description": "Temporarily hide a ticket with automatic reminder" },
-      "clientHistory": { "label": "Client history", "description": "Past tickets, projects and internal notes" }
+      "canned": {
+        "label": "Quick replies",
+        "description": "Pre-registered response templates with dynamic variables"
+      },
+      "scheduledReplies": {
+        "label": "Scheduled replies",
+        "description": "Send a reply at a future date/time"
+      },
+      "activityLog": {
+        "label": "Activity log",
+        "description": "Timeline of actions on each ticket (status changes, assignment...)"
+      },
+      "emailTracking": {
+        "label": "Email tracking",
+        "description": "Send and open tracking for email notifications"
+      },
+      "chat": {
+        "label": "Live Chat",
+        "description": "Real-time chat with ticket conversion"
+      },
+      "externalMessages": {
+        "label": "External messages",
+        "description": "Manually add messages received by email, SMS, WhatsApp..."
+      },
+      "ai": {
+        "label": "Artificial Intelligence",
+        "description": "Sentiment analysis, summary, reply suggestion, rewriting"
+      },
+      "timeTracking": {
+        "label": "Time tracking",
+        "description": "Timer, manual entries, billing"
+      },
+      "satisfaction": {
+        "label": "Satisfaction surveys",
+        "description": "CSAT score after ticket resolution"
+      },
+      "merge": {
+        "label": "Ticket merge",
+        "description": "Combine two tickets into one"
+      },
+      "splitTicket": {
+        "label": "Message extraction",
+        "description": "Extract a message into a new linked ticket"
+      },
+      "snooze": {
+        "label": "Snooze",
+        "description": "Temporarily hide a ticket with automatic reminder"
+      },
+      "clientHistory": {
+        "label": "Client history",
+        "description": "Past tickets, projects and internal notes"
+      }
     },
     "categories": {
       "core": "Core features",
