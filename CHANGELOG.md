@@ -4,6 +4,43 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.3] - 2026-09-08
+
+Ships the cleanup tool for the flags 6.0.2 stopped producing. Only useful if you
+ran 5.x or 6.0.0–6.0.1 and resolve tickets out of `waiting_client`; nothing here
+changes runtime behaviour.
+
+### Added
+
+- **`npx support-audit-sla` — clears the flags the resolve race already stored.**
+  6.0.2 closes the cause; nothing sweeps what came through, and the field is
+  `readOnly` so it cannot be cleared from the admin panel.
+
+  It is read-only by default and only ever writes `slaResolutionBreached: false`.
+  The identification is a proof, not a heuristic: the pause hook *did* write the
+  extended deadline, only its sibling read a stale copy, so a row carries a
+  correct `slaResolutionDue` next to an incorrect flag. Re-comparing settles it —
+  `resolvedAt <= slaResolutionDue` means the ticket met its SLA. A ticket that
+  was never paused has an unmodified deadline, so the same test confirms its flag
+  instead of clearing it; there is no window in which a genuine breach is erased.
+
+  What it cannot see, and says so: if the resume hook itself failed — its body
+  swallows errors after a `console.error` — the deadline was never extended and
+  the row is indistinguishable from an honest breach. Grep your logs for
+  `[sla] Failed to pause/resume SLA on hold`. `slaFirstResponseBreached` is never
+  touched.
+
+  ```bash
+  npx payload run node_modules/@consilioweb/payload-support/scripts/audit-sla-breaches.mjs
+  # then, once you have read the list:
+  npx payload run node_modules/@consilioweb/payload-support/scripts/audit-sla-breaches.mjs --fix
+  ```
+
+- Eight tests pinning the script's decision rule and its safety properties — that
+  it is read-only without `--fix`, that the only value it ever writes is
+  `slaResolutionBreached: false`, and that it never touches the first-response
+  flag. Suite: 399 to 407.
+
 ## [6.0.2] - 2026-09-08
 
 Fixes an SLA indicator that accused the team of breaches the client had caused.

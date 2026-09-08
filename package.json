@@ -1,6 +1,6 @@
 {
   "name": "@consilioweb/payload-support",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "Payload CMS plugin — professional support & ticketing system with AI, SLA, time tracking, live chat, and more",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -41,7 +41,8 @@
     }
   },
   "bin": {
-    "support-uninstall": "./scripts/uninstall.mjs"
+    "support-uninstall": "./scripts/uninstall.mjs",
+    "support-audit-sla": "./scripts/audit-sla-breaches.mjs"
   },
   "files": [
     "dist",
