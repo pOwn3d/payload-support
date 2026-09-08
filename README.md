@@ -328,6 +328,8 @@ Two flags are projections, deliberately not stored twice: `features.autoClose` m
 | `NEXT_PUBLIC_SUPPORT_PHONE` | for the portal ticket page | Support phone number shown on the portal ticket detail page. Set it: the fallback is the placeholder `01 23 45 67 89`. |
 | `NEXT_PUBLIC_SUPPORT_SEND_ALIASES` | optional | Comma-separated "send as" identities offered in the agent composer. Empty by default, and then the composer offers only the agent themselves. |
 | `NEXT_PUBLIC_SMTP_HOST` / `NEXT_PUBLIC_SMTP_PORT` | optional | Shown read-only in the Settings view. Informational only — mail is sent through `payload.sendEmail`, so these change nothing about delivery. |
+| `SUPPORT_CHATBOT_MAX_PER_HOUR` | optional | Global hourly ceiling on `POST /api/support/chatbot`, all callers combined (default `200`). The per-IP window is keyed on `X-Forwarded-For`, which an anonymous caller can rotate at will; this unkeyed ceiling is what bounds the Anthropic bill. Trade-off to accept knowingly: being unkeyed, it turns a cost abuse into an availability one — one anonymous caller burning the quota mutes the chatbot for every visitor until the next window. On a high-traffic public portal, raise it and enforce the per-IP limit at the reverse proxy, where the real client address is known. |
+| `SUPPORT_ALLOW_INSECURE_WEBHOOKS` | local dev only | `1` allows `http://` webhook endpoint URLs. Without it only `https://` is accepted, at save time and at delivery time. |
 
 ### Cron jobs
 
@@ -428,11 +430,21 @@ to stay enabled for the endpoint to be registered.
 | Method | Path | Access | Purpose |
 |---|---|---|---|
 | `POST` | `/support/login` | public, rate-limited | Portal password login. Sets an `HttpOnly` cookie; the JWT is never returned in JSON. |
-| `POST` | `/support/2fa` | public, rate-limited | Email second factor. |
+| `POST` | `/support/2fa` | public, rate-limited | Email second factor. `action: 'send'` requires the short-lived `challenge` returned by `/support/login` (or by the Google callback) alongside `requires2FA` — without it an anonymous caller could burn a victim's send quota and lock them out. `action: 'verify'` takes the code. |
 | `POST` | `/support/oauth/google` | public | Google sign-in, optionally restricted by `allowedEmailDomains`. |
+| `GET` | `/support/email-stats` | **staff**, rate-limited | Email pipeline aggregate. Was reachable by any authenticated session before 3.0.1. |
 | `GET` | `/support/export-data` | client | GDPR data export. |
 | `POST` | `/support/delete-account` | client | GDPR right to erasure. |
 | `POST` | `/support/merge-clients` | staff | Merge two client records. |
+
+**Google OAuth, CSRF state.** `{ "action": "login" }` now answers with a `Set-Cookie:
+support-oauth-state=…; HttpOnly; SameSite=Lax` alongside the `url` and `state` it already returned.
+The callback reads that cookie **server-side** and compares it, in constant time, with the `state`
+Google sends back — it no longer accepts a `cookieState` field in the request body, which any
+non-browser caller could simply send twice. If you wrote your own Google button, drop `cookieState`
+from the callback payload and let the browser carry the cookie (`credentials: 'include'` on a
+cross-origin fetch). The callback also enforces 2FA: an account with `twoFactorEnabled` gets
+`{ requires2FA: true }` and no token, exactly like `/support/login`.
 
 ### AI
 
@@ -511,6 +523,15 @@ X-Webhook-Signature: <HMAC-SHA256 of the raw body, keyed with the endpoint secre
 The signature header is only sent when the endpoint has a `secret`, so always set one. There is no
 `X-Webhook-Secret` header any more — verify the HMAC signature instead. `lastTriggeredAt` and
 `lastStatus` are written back on the endpoint after every attempt. Requires `features.webhooks`.
+
+**The endpoint URL is validated as an SSRF target, not as free text.** Only `https://` is accepted
+(set `SUPPORT_ALLOW_INSECURE_WEBHOOKS=1` for local `http://`), literal loopback / private /
+link-local / IPv4-mapped-IPv6 hosts are rejected at save time, the hostname is re-resolved and
+re-checked immediately before the request (DNS rebinding), and redirects are followed **manually**
+so a `302` towards `127.0.0.1` or `169.254.169.254` cannot slip past the checks. An endpoint saved
+before 3.0 with an `http://` URL or an internal host stops delivering and must be re-pointed — but
+it stays editable: the check runs only on a URL you actually write, so such a row can still be
+renamed or deactivated, and `lastStatus: 0` is still recorded on it so a dead endpoint is visible.
 
 | Event | `data` |
 |---|---|
@@ -617,7 +638,15 @@ Installing on Node 18, React 18, Next 14 or Payload < 3.37 warns, and fails outr
   outside development. Login, OAuth and 2FA responses never return the token in JSON.
 - **2FA enforced server-side** (`beforeLogin`), and the endpoint refuses to run without
   `PAYLOAD_SECRET` rather than falling back to an insecure default. OAuth verifies the Google email.
-- **Stored-XSS protection** — message HTML is sanitized on write, not on render.
+- **Stored-XSS protection** — message HTML is sanitized on write, not on render, and the portal
+  renders plain-text bodies as JSX (no hand-rolled HTML escaping) so an inbound email cannot inject
+  an attribute into a link.
+- **Owner-scoped preferences** — the plugin's `payload-preferences` rows (settings, per-agent
+  signature and locale) are read back with a `user.relationTo` constraint on the staff collection.
+  `payload-preferences` accepts a write from *any* authenticated principal, so reading by key alone
+  let a client own the server settings.
+- **Auth-collection checks, not duck typing** — every guard compares `user.collection` to the
+  configured slug: a user of another auth collection of the host app is not a support client.
 - **HMAC everywhere it matters** — webhook deliveries and tracking pixels are signed and verified in
   constant time, with idempotent writes. Cron and webhook secrets are read from headers only; a
   query-string secret is rejected.
@@ -626,6 +655,11 @@ Installing on Node 18, React 18, Next 14 or Payload < 3.37 warns, and fails outr
 - **No silent third-party AI host** — the `ollama` provider fails loudly on a missing
   `OLLAMA_API_URL` instead of defaulting to someone else's server.
 - **Bounded inbound email** payloads and attachments.
+- **Bounded outbound mail** — ticket transfers and collaborator invitations are capped per user over
+  a long window, not only per ticket (a client can create tickets at will).
+- **SSRF-guarded outbound webhooks** — scheme, literal host, resolved address and every redirect hop.
+- **2FA also enforced on the Google OAuth path**, which mints its session outside `payload.login`
+  and therefore outside the `beforeLogin` hook.
 
 ### Reporting security issues
 

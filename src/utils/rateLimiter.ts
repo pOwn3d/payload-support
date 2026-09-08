@@ -119,27 +119,61 @@ export class PayloadRateLimitStore implements RateLimitStore {
   }
 }
 
+/**
+ * Identity part of a rate-limit key for an authenticated caller.
+ *
+ * Ids are per-collection sequences: support-client #7 and agent #7 are different
+ * people with the same `id`. Keying a limiter on `String(user.id)` alone let one
+ * consume the other's budget, so the auth collection travels with the id.
+ */
+export function principalRateKey(
+  user: { id?: unknown; collection?: unknown } | null | undefined,
+): string {
+  if (!user || user.id === undefined || user.id === null) return 'anonymous'
+  const collection = typeof user.collection === 'string' && user.collection ? user.collection : 'unknown'
+  return `${collection}:${String(user.id)}`
+}
+
 export class RateLimiter {
   private readonly store: RateLimitStore
+  private readonly prefix: string
 
+  /**
+   * @param namespace  Endpoint-scoped prefix for every key this limiter writes.
+   *   The store is SHARED (`rateLimitStore: 'payload'` builds one instance for
+   *   all endpoints), and the raw keys collide across endpoints: `ip` was used
+   *   by both the login and the chatbot limiter — 10 forged chatbot requests
+   *   locked a victim out of the portal for 15 minutes — and `String(user.id)`
+   *   by five different endpoints. Always pass one; it is optional only because
+   *   `RateLimiter` is part of the published API surface.
+   */
   constructor(
     private readonly windowMs: number,
     private readonly maxRequests: number,
     store?: RateLimitStore,
+    namespace?: string,
   ) {
     this.store = store ?? new MemoryRateLimitStore()
+    this.prefix = namespace ? `${namespace}:` : ''
+  }
+
+  /** The key actually written to the store. Exposed for assertions in tests. */
+  scopedKey(key: string): string {
+    return `${this.prefix}${key}`
   }
 
   async check(key: string, context?: unknown): Promise<boolean> {
+    const scoped = this.scopedKey(key)
     const entry = context === undefined
-      ? await this.store.increment(key, this.windowMs)
-      : await this.store.increment(key, this.windowMs, context)
+      ? await this.store.increment(scoped, this.windowMs)
+      : await this.store.increment(scoped, this.windowMs, context)
     return entry.count > this.maxRequests
   }
 
   async reset(key: string, context?: unknown): Promise<void> {
-    if (context === undefined) await this.store.reset(key)
-    else await this.store.reset(key, context)
+    const scoped = this.scopedKey(key)
+    if (context === undefined) await this.store.reset(scoped)
+    else await this.store.reset(scoped, context)
   }
 }
 import { commitTransaction, initTransaction, killTransaction, type PayloadRequest } from 'payload'

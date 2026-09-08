@@ -5,12 +5,37 @@ import { dbFind } from '../utils/db'
 
 
 /**
+ * Global hourly ceiling on chatbot calls, all callers combined.
+ *
+ * The per-IP window below is keyed on the FIRST hop of `X-Forwarded-For`, a
+ * value the caller sends itself: an anonymous client rotating that header gets a
+ * fresh window on every request. Unlike `login.ts` — where the account lock is
+ * the primary control — this endpoint has no second line of defence, and every
+ * accepted call ships ~50 KB of knowledge base to the Anthropic API on the
+ * operator's key. This unkeyed ceiling makes the bill bounded even when the
+ * per-IP key is bypassed. Raise it with `SUPPORT_CHATBOT_MAX_PER_HOUR` on a
+ * high-traffic portal, or pass `maxPerHour` when building the endpoint.
+ */
+export const DEFAULT_CHATBOT_MAX_PER_HOUR = 200
+
+function resolveMaxPerHour(explicit?: number): number {
+  if (typeof explicit === 'number' && explicit > 0) return explicit
+  const fromEnv = Number(process.env.SUPPORT_CHATBOT_MAX_PER_HOUR)
+  return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : DEFAULT_CHATBOT_MAX_PER_HOUR
+}
+
+/**
  * POST /api/support/chatbot
  * AI chatbot that answers from the knowledge base before creating a ticket.
  * Public endpoint (accessible from the support portal).
  */
-export function createChatbotEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const chatbotLimiter = new RateLimiter(60_000, 10, store)
+export function createChatbotEndpoint(
+  slugs: CollectionSlugs,
+  store?: RateLimitStore,
+  maxPerHour?: number,
+): Endpoint {
+  const chatbotLimiter = new RateLimiter(60_000, 10, store, 'chatbot:ip')
+  const globalLimiter = new RateLimiter(60 * 60_000, resolveMaxPerHour(maxPerHour), store, 'chatbot:global')
   return {
     path: '/support/chatbot',
     method: 'post',
@@ -31,6 +56,27 @@ export function createChatbotEndpoint(slugs: CollectionSlugs, store?: RateLimitS
 
         if (!question?.trim() || question.trim().length < 5) {
           return Response.json({ error: 'Question too short' }, { status: 400 })
+        }
+
+        // Not keyed on anything the caller controls — see the note above.
+        // Placed after validation so malformed requests do not eat the budget.
+        //
+        // Over budget, the answer DEGRADES, it does not fail: a shared counter
+        // that returns 429 hands an anonymous visitor a switch to turn the
+        // chatbot off for everybody (the per-IP key above is spoofable, so
+        // exhausting the ceiling costs nothing). The deflection path — "no
+        // answer here, open a ticket" — is the exact response this endpoint
+        // already returns when the knowledge base is empty or the API key is
+        // missing, so no caller learns a new shape, and the bill stays capped
+        // because the AI call below is never reached.
+        if (await globalLimiter.check('all', req)) {
+          return Response.json({
+            answer: null,
+            confidence: 0,
+            suggestion: 'create_ticket',
+            aiUnavailable: true,
+            message: 'L\'assistant est momentanément indisponible. Créez un ticket, un agent vous répondra.',
+          })
         }
 
         const payload = req.payload

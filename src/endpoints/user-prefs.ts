@@ -30,8 +30,11 @@ export function createUserPrefsGetEndpoint(slugs: CollectionSlugs): Endpoint {
 
         const key = `${PREF_KEY_PREFIX}-${req.user!.id}`
 
+        // Scope to the staff auth collection: `payload-preferences` accepts a
+        // write from ANY authenticated principal, and ids collide between auth
+        // collections.
         const prefs = await dbFind(payload, 'payload-preferences', {
-          where: { key: { equals: key } },
+          where: { key: { equals: key }, 'user.relationTo': { equals: slugs.users } },
           limit: 1,
           depth: 0,
           overrideAccess: true,
@@ -75,7 +78,7 @@ export function createUserPrefsPostEndpoint(slugs: CollectionSlugs): Endpoint {
 
         // Read existing prefs to merge
         const existing = await dbFind(payload, 'payload-preferences', {
-          where: { key: { equals: key } },
+          where: { key: { equals: key }, 'user.relationTo': { equals: slugs.users } },
           limit: 1,
           depth: 0,
           overrideAccess: true,

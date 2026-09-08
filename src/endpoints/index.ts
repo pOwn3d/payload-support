@@ -199,7 +199,7 @@ export function createSupportEndpoints(slugs: CollectionSlugs, options?: Support
   }
   if (!f || f.satisfaction !== false) endpoints.push(createSatisfactionEndpoint(slugs))
   if (!f || f.emailTracking !== false) {
-    endpoints.push(createEmailStatsEndpoint(slugs), createTrackOpenEndpoint(slugs))
+    endpoints.push(createEmailStatsEndpoint(slugs, rateLimitStore), createTrackOpenEndpoint(slugs))
   }
   if (!f || f.pendingEmails !== false) endpoints.push(createPendingEmailsProcessEndpoint(slugs))
   if (!f || f.scheduledReplies !== false) endpoints.push(createProcessScheduledEndpoint(slugs))

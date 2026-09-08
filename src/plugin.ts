@@ -31,6 +31,7 @@ import {
   createSupportCountersCollection,
 } from './collections'
 import { PayloadRateLimitStore } from './utils/rateLimiter'
+import { SUPPORT_STAFF_SLUG_CONFIG_KEY } from './utils/readSettings'
 
 function viewConfig(component: string, path: string): AdminViewConfig {
   return { Component: component, path: path as `/${string}` }
@@ -169,6 +170,17 @@ export function supportPlugin(config?: SupportPluginConfig): Plugin {
 
     return {
       ...incomingConfig,
+      // Publish the resolved staff collection so the server-side readers share
+      // ONE source of truth with the writers. `requireAdmin` compares against
+      // `slugs.users`; the `payload-preferences` reads used to scope themselves
+      // on `config.admin.user`, which Payload silently defaults to the first
+      // auth collection of the host app — a different collection on any app
+      // that declares `collectionSlugs.users`, and the settings-poisoning hole
+      // reopened right there.
+      custom: {
+        ...incomingConfig.custom,
+        [SUPPORT_STAFF_SLUG_CONFIG_KEY]: slugs.users,
+      },
       collections: config?.skipCollections
         ? existingCollections
         : [...existingCollections, ...supportCollections],

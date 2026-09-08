@@ -18,8 +18,26 @@ export type SupportUser = {
   collection: 'support-clients'
 }
 
+/**
+ * The ONLY reliable discriminant is the auth collection the session belongs to.
+ *
+ * This used to be a duck test on the presence of a `company` field, which any
+ * user of another auth collection of the host app (front-office members,
+ * subscribers — `company` is a very common field on such a document) satisfied:
+ * they entered the portal shell instead of being redirected to the login page.
+ *
+ * `'support-clients'` is hard-coded on purpose — every other portal file already
+ * hard-codes it (`/api/support-clients/login`, `/api/support-clients/me`, the
+ * `user.collection` tests in `tickets/detail/page.tsx`), because the portal is a
+ * copied template with no access to the plugin's resolved `collectionSlugs`. An
+ * integrator who renames the collection must adjust the whole template.
+ */
 function isSupportUser(user: unknown): user is SupportUser {
-  return typeof user === 'object' && user !== null && 'company' in user
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    (user as { collection?: unknown }).collection === 'support-clients'
+  )
 }
 
 async function getSupportUser(): Promise<SupportUser | null> {

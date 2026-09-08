@@ -4,6 +4,7 @@ import crypto, { createHmac } from 'crypto'
 import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { escapeHtml } from '../utils/emailTemplate'
 import { dbFind, dbUpdate } from '../utils/db'
+import { verifyTwoFactorChallenge } from '../utils/twoFactorChallenge'
 
 function generateSecureCode(): string {
   const buf = crypto.randomBytes(4)
@@ -25,21 +26,21 @@ function hashCode(code: string): string {
  * Send or verify a 2FA code.
  */
 export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const sendLimiter = new RateLimiter(60 * 60 * 1000, 3, store)
-  const verifyLimiter = new RateLimiter(15 * 60 * 1000, 5, store)
+  const sendLimiter = new RateLimiter(60 * 60 * 1000, 3, store, '2fa:send')
+  const verifyLimiter = new RateLimiter(15 * 60 * 1000, 5, store, '2fa:verify')
   return {
     path: '/support/2fa',
     method: 'post',
     handler: async (req) => {
       try {
         const payload = req.payload
-        let body: { action?: string; email?: string; code?: string }
+        let body: { action?: string; email?: string; code?: string; challenge?: string }
         try {
           body = await req.json!()
         } catch {
           return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
         }
-        const { action, email, code } = body
+        const { action, email, code, challenge } = body
 
         if (!action || !email) {
           return Response.json({ error: 'Paramètres manquants' }, { status: 400 })
@@ -48,6 +49,17 @@ export function createAuth2faEndpoint(slugs: CollectionSlugs, store?: RateLimitS
         const genericSendResponse = { success: true, message: 'Si un compte existe, un code a été envoyé.' }
 
         if (action === 'send') {
+          // The challenge is checked BEFORE the limiter on purpose: the limiter
+          // is keyed on the VICTIM's email, so letting an unauthenticated caller
+          // reach it is what made the lockout possible. No challenge, no budget
+          // consumed, no mail sent, no code overwritten.
+          if (!verifyTwoFactorChallenge(email, challenge)) {
+            return Response.json(
+              { error: 'Authentification requise avant l\'envoi d\'un code.' },
+              { status: 401 },
+            )
+          }
+
           if (await sendLimiter.check(email, req)) {
             return Response.json(genericSendResponse)
           }

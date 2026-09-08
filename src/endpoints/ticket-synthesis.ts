@@ -4,7 +4,7 @@ import { requireAdmin, handleAuthError } from '../utils/auth'
 import { generateTicketSynthesis } from '../utils/generateTicketSynthesis'
 import { dbFindByID } from '../utils/db'
 import type { SupportCapabilities } from '../types'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 
 /**
  * POST /api/support/ticket-synthesis?ticketId=X[&force=true]
@@ -23,14 +23,14 @@ export function createTicketSynthesisEndpoint(
   generator?: SupportCapabilities['aiSummaries'],
   store?: RateLimitStore,
 ): Endpoint {
-  const limiter = new RateLimiter(60_000, 20, store)
+  const limiter = new RateLimiter(60_000, 20, store, 'ticket-synthesis')
   return {
     path: '/support/ticket-synthesis',
     method: 'post',
     handler: async (req) => {
       try {
         requireAdmin(req, slugs)
-        if (await limiter.check(String(req.user!.id), req)) {
+        if (await limiter.check(principalRateKey(req.user), req)) {
           return Response.json({ error: 'Rate limit exceeded' }, { status: 429 })
         }
         const payload = req.payload

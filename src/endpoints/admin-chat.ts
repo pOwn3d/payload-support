@@ -1,7 +1,7 @@
 import type { Endpoint } from 'payload'
 import type { Where } from 'payload'
 import type { CollectionSlugs } from '../utils/slugs'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { requireAdmin, handleAuthError } from '../utils/auth'
 import { dbFind, dbCreate, dbUpdate } from '../utils/db'
 
@@ -111,7 +111,7 @@ export function createAdminChatGetEndpoint(slugs: CollectionSlugs): Endpoint {
  * Admin sends a message or closes a session.
  */
 export function createAdminChatPostEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const adminChatLimiter = new RateLimiter(60_000, 30, store)
+  const adminChatLimiter = new RateLimiter(60_000, 30, store, 'admin-chat')
   return {
     path: '/support/admin-chat',
     method: 'post',
@@ -150,7 +150,7 @@ export function createAdminChatPostEndpoint(slugs: CollectionSlugs, store?: Rate
 
         // Agent sends a message
         if (action === 'send' && message) {
-          if (await adminChatLimiter.check(String(req.user.id), req)) {
+          if (await adminChatLimiter.check(principalRateKey(req.user), req)) {
             return Response.json({ error: 'Rate limit atteint.' }, { status: 429 })
           }
 

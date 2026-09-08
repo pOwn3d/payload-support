@@ -3,7 +3,7 @@ import type { CollectionSlugs } from '../utils/slugs'
 import { handleAuthError, AuthError } from '../utils/auth'
 import { escapeHtml, emailWrapper, emailButton, emailParagraph } from '../utils/emailTemplate'
 import { readSupportSettings } from '../utils/readSettings'
-import { RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
+import { principalRateKey, RateLimiter, type RateLimitStore } from '../utils/rateLimiter'
 import { dbFindByID, dbFind, dbCreate, dbCount } from '../utils/db'
 
 // Simple RFC-5322 style sanity check — same level of strictness as the
@@ -12,6 +12,21 @@ import { dbFindByID, dbFind, dbCreate, dbCount } from '../utils/db'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const MAX_TRANSFERS_PER_DAY = 5
+
+/**
+ * Per-USER ceiling, ticket-independent.
+ *
+ * Both existing quotas (the in-memory limiter keyed `<user>:<ticket>` and the
+ * `email-logs` count) are per TICKET, and a support-client can open as many
+ * tickets as they want — so "5 transfers / 24 h" resets on every new ticket and
+ * the endpoint is an unbounded outbound mailer: the operator's From address, a
+ * "Récapitulatif support" subject, and 1 000 characters chosen by the caller,
+ * to any mailbox. This second quota is what actually bounds the volume.
+ *
+ * Applied to support-clients only: staff already hold the whole mailing surface
+ * of the admin panel, and capping them here would break legitimate bulk recaps.
+ */
+const MAX_TRANSFERS_PER_USER_PER_DAY = 15
 
 // In-memory fail-closed rate limiter — enforced even when the persistent
 // emailLogs-based check is unavailable (collection disabled). Prevents the
@@ -33,7 +48,8 @@ const MAX_TRANSFERS_PER_DAY = 5
  *  - Rate-limited to 5 transfers per ticket per 24h
  */
 export function createTransferTicketEndpoint(slugs: CollectionSlugs, store?: RateLimitStore): Endpoint {
-  const transferLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_DAY, store)
+  const transferLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_DAY, store, 'transfer:ticket')
+  const transferUserLimiter = new RateLimiter(24 * 60 * 60 * 1000, MAX_TRANSFERS_PER_USER_PER_DAY, store, 'transfer:user')
   return {
     path: '/support/tickets/:id/transfer',
     method: 'post',
@@ -82,9 +98,18 @@ export function createTransferTicketEndpoint(slugs: CollectionSlugs, store?: Rat
 
         // Fail-closed in-memory rate limit (per user + ticket): enforced even
         // when the persistent emailLogs check below cannot run.
-        if (await transferLimiter.check(`${req.user.id}:${ticketId}`, req)) {
+        if (await transferLimiter.check(`${principalRateKey(req.user)}:${ticketId}`, req)) {
           return Response.json(
             { error: `Limite atteinte (${MAX_TRANSFERS_PER_DAY} transferts par 24h sur ce ticket)` },
+            { status: 429 },
+          )
+        }
+
+        // Ticket-independent quota — the per-ticket ones above reset on every
+        // newly created ticket, which a client can do at will.
+        if (!isAdmin && await transferUserLimiter.check(principalRateKey(req.user), req)) {
+          return Response.json(
+            { error: `Limite atteinte (${MAX_TRANSFERS_PER_USER_PER_DAY} transferts par 24h)` },
             { status: 429 },
           )
         }

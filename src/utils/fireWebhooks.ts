@@ -1,6 +1,7 @@
 import type { Payload } from 'payload'
 import type { CollectionSlugs } from './slugs'
 import { dbFind, dbUpdate } from './db'
+import { safeFetch } from './urlSafety'
 
 /**
  * Fire all active webhooks matching the given event.
@@ -39,7 +40,9 @@ export async function fireWebhooks(
     await Promise.allSettled(
       endpoints.docs.map(async (endpoint: any) => {
         try {
-          const res = await fetch(endpoint.url, {
+          // Same SSRF guards as `dispatchWebhook` — this transport is deprecated
+          // but still exported, so it must not stay an open door.
+          const res = await safeFetch(endpoint.url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
