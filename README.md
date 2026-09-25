@@ -1018,6 +1018,6 @@ Larger Work be distributed under other terms. `payload-support` neither modifies
 `dist/index.cjs:7` — so the obligation is already met by npm shipping `web-push` with its own
 licence. The licence of this plugin is unaffected: it stays MIT.
 
-Built and maintained by [ConsilioWEB](https://consilioweb.fr) ·
+Built and maintained by [ConsilioWEB](https://consilioweb.fr/services/developpement-web/payload-cms) ·
 [Issues](https://github.com/pOwn3d/payload-support/issues) ·
 [npm](https://www.npmjs.com/package/@consilioweb/payload-support)
