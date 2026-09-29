@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.4] - 2026-09-29
+
+Documentation release. No code change: nothing to migrate.
+
+### Changed
+
+- **The README credit links to the page about Payload CMS development.** It pointed to the root
+  of consilioweb.fr; it now points to https://consilioweb.fr/services/developpement-web/payload-cms,
+  the subject of this package.
+
 ## [6.0.3] - 2026-09-08
 
 Ships the cleanup tool for the flags 6.0.2 stopped producing. Only useful if you
