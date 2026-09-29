@@ -19,6 +19,8 @@ ships as a template you copy into your own `app/` directory — see
 [Mounting the client portal](#mounting-the-client-portal)), and it does not bundle an LLM SDK
 (install `@anthropic-ai/sdk` yourself if you enable the AI features).
 
+Built and maintained by [ConsilioWEB](https://consilioweb.fr/services/developpement-web/payload-cms).
+
 ## Table of Contents
 
 - [Features](#features)
