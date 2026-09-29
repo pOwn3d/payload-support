@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [6.0.5] - 2026-09-29
+
+Documentation release. No code change: nothing to migrate.
+
+### Changed
+
+- **The ConsilioWEB credit also appears at the top of the README.** npm keeps only the first 65,536
+  characters of a README, and this one is longer: the credit at the very end, re-pointed in 6.0.4,
+  never reached the npm page. It now closes the About section as well.
+
 ## [6.0.4] - 2026-09-29
 
 Documentation release. No code change: nothing to migrate.
